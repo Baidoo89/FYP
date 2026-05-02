@@ -1,0 +1,101 @@
+{
+  "lecturers": [
+    {
+      "id": 1,
+      "name": "Dr. John Smith",
+      "email": "john.smith@university.edu",
+      "department": "Computer Science",
+      "rank": "Associate Professor",
+      "hire_date": "2015-09-01",
+      "is_active": true,
+      "created_at": "2026-04-17T11:25:26.274Z",
+      "updated_at": "2026-04-17T11:25:26.274Z"
+    },
+    {
+      "id": 2,
+      "name": "Dr. Sarah Johnson",
+      "email": "sarah.johnson@university.edu",
+      "department": "Computer Science",
+      "rank": "Lecturer",
+      "hire_date": "2018-08-15",
+      "is_active": true,
+      "created_at": "2026-04-17T11:25:26.274Z",
+      "updated_at": "2026-04-17T11:25:26.274Z"
+    },
+    {
+      "id": 3,
+      "name": "Prof. Michael Brown",
+      "email": "michael.brown@university.edu",
+      "department": "Computer Science",
+      "rank": "Professor",
+      "hire_date": "2010-01-10",
+      "is_active": true,
+      "created_at": "2026-04-17T11:25:26.274Z",
+      "updated_at": "2026-04-17T11:25:26.274Z"
+    },
+    {
+      "id": 4,
+      "name": "Dr. Emily Davis",
+      "email": "emily.davis@university.edu",
+      "department": "Information Systems",
+      "rank": "Lecturer",
+      "hire_date": "2019-07-01",
+      "is_active": true,
+      "created_at": "2026-04-17T11:25:26.274Z",
+      "updated_at": "2026-04-17T11:25:26.274Z"
+    },
+    {
+      "id": 5,
+      "name": "Dr. Robert Wilson",
+      "email": "robert.wilson@university.edu",
+      "department": "Information Systems",
+      "rank": "Senior Lecturer",
+      "hire_date": "2016-06-15",
+      "is_active": true,
+      "created_at": "2026-04-17T11:25:26.274Z",
+      "updated_at": "2026-04-17T11:25:26.274Z"
+    }
+  ],
+  "nextLecturer_id": 7,
+  "appraisals": [
+    {
+      "lecturer_id": 1,
+      "teaching_score": 88,
+      "research_score": 75,
+      "service_score": 82,
+      "total_score": 82.9,
+      "category": "Excellent",
+      "is_promotion_recommended": true,
+      "appraisal_date": "2026-04-17",
+      "created_at": "2026-04-17T12:22:31.597Z",
+      "updated_at": "2026-04-17T12:22:31.597Z"
+    },
+    {
+      "id": 2,
+      "lecturer_id": 1,
+      "teaching_score": 88,
+      "research_score": 75,
+      "service_score": 82,
+      "total_score": 82.9,
+      "category": "Excellent",
+      "is_promotion_recommended": true,
+      "appraisal_date": "2026-04-17",
+      "created_at": "2026-04-17T12:22:51.896Z",
+      "updated_at": "2026-04-17T12:22:51.896Z"
+    },
+    {
+      "id": 3,
+      "lecturer_id": 1,
+      "teaching_score": 88,
+      "research_score": 75,
+      "service_score": 82,
+      "total_score": 82.9,
+      "category": "Excellent",
+      "is_promotion_recommended": true,
+      "appraisal_date": "2026-04-17",
+      "created_at": "2026-04-17T12:59:26.233Z",
+      "updated_at": "2026-04-17T12:59:26.233Z"
+    }
+  ],
+  "nextAppraisalId": 4
+}

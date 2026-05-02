@@ -1,0 +1,43 @@
+// Prisma schema for Lecturer Performance System
+// Add all tables: admin_accounts, lecturers, appraisals, etc.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminAccount {
+  id           Int      @id @default(autoincrement())
+  username     String  @unique
+  password_hash String
+  is_active    Boolean @default(true)
+  created_at   DateTime @default(now())
+
+  @@map("admin_accounts")
+}
+
+model Lecturer {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String  @unique
+  department   String
+  rank         String
+  hire_date    DateTime
+  is_active    Boolean @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  appraisals   Appraisal[]
+}
+
+model Appraisal {
+  id           Int      @id @default(autoincrement())
+  lecturer     Lecturer @relation(fields: [lecturer_Id], references: [id])
+  lecturerI_d   Int
+  score        Int
+  comments     String?
+  created_at   DateTime @default(now())
+}

@@ -1,0 +1,75 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  --brand-blue-950: #10224a;
+  --brand-blue-900: #1e3a7a;
+  --brand-blue-700: #1d4ed8;
+  --brand-blue-100: #dbeafe;
+  --brand-gold-500: #f59e0b;
+  --brand-gold-300: #fcd34d;
+  --brand-gold-100: #fef3c7;
+  --brand-surface-soft: linear-gradient(180deg, rgba(219, 234, 254, 0.75) 0%, rgba(255, 255, 255, 0.96) 100%);
+  --brand-surface-medium: linear-gradient(180deg, rgba(191, 219, 254, 0.62) 0%, rgba(255, 255, 255, 0.97) 100%);
+  --brand-surface-strong: linear-gradient(135deg, #10224a 0%, #1e3a7a 56%, #a16207 100%);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
+}
+
+.brand-surface-soft {
+  border: 1px solid #dbeafe;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  background: var(--brand-surface-soft);
+}
+
+.brand-surface-medium {
+  border: 1px solid #bfdbfe;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  background: var(--brand-surface-medium);
+}
+
+.brand-hero {
+  border: 1px solid #bfdbfe;
+  border-radius: 1rem;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  background: var(--brand-surface-strong);
+}
+
+.brand-table-head {
+  border-bottom: 1px solid #dbeafe;
+  background: rgba(239, 246, 255, 0.8);
+}
+
+.brand-input {
+  width: 100%;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.brand-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #fbbf24;
+}
+
+.brand-muted-panel {
+  border: 1px solid #dbeafe;
+  border-radius: 0.75rem;
+  background: rgba(239, 246, 255, 0.7);
+}

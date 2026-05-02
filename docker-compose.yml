@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: gctu-promotion-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: lecturer_performance_db
+      MYSQL_USER: promotion_user
+      MYSQL_PASSWORD: promotion123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+    networks:
+      - gctu-network
+
+  app:
+    image: node:20-alpine
+    container_name: gctu-promotion-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root123
+      DB_NAME: lecturer_performance_db
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "npm install &&
+             npm run build &&
+             npm start"
+    networks:
+      - gctu-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  gctu-network:
+    driver: bridge
