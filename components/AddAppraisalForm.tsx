@@ -171,10 +171,22 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
     return { total, category, recommendation, decisionBand, priorityAction };
   }, [teachingScore, researchScore, serviceScore]);
 
+  const resetForm = () => {
+    setLecturer_id('');
+    setEditingAppraisalId(null);
+    setTeachingScore('');
+    setResearchScore('');
+    setServiceScore('');
+    setAppraisalDate(new Date().toISOString().slice(0, 10));
+    setReviewedBy('');
+    setComments('');
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setToast((previous) => ({ ...previous, open: false }));
     setSubmitting(true);
+    const wasEditing = editingAppraisalId !== null;
 
     try {
       const response = await fetch('/api/appraisals', {
@@ -202,13 +214,12 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
 
       setToast({
         open: true,
-        title: editingAppraisalId ? 'Appraisal Updated' : 'Appraisal Saved',
-        description: editingAppraisalId ? 'Existing appraisal was updated successfully.' : 'Performance record has been stored and list refreshed.',
+        title: wasEditing ? 'Appraisal Updated' : 'Appraisal Saved',
+        description: wasEditing ? 'Existing appraisal was updated successfully.' : 'Performance record has been stored and list refreshed.',
         variant: 'success',
       });
-      if (Number.isInteger(savedId) && savedId > 0) {
-        setEditingAppraisalId(savedId);
-      }
+
+      resetForm();
 
       onSuccess?.();
     } catch (submissionError) {
@@ -333,13 +344,7 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
               disabled={submitting}
               onClick={() => {
                 setToast((previous) => ({ ...previous, open: false }));
-                setLecturer_id('');
-                setTeachingScore('');
-                setResearchScore('');
-                setServiceScore('');
-                setAppraisalDate(new Date().toISOString().slice(0, 10));
-                setReviewedBy('');
-                setComments('');
+                resetForm();
               }}
               className="w-full rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 disabled:opacity-60"
             >
