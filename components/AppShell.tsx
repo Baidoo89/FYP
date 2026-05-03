@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import LogoutButton from './LogoutButton';
 import SidebarNavLink from './SidebarNavLink';
@@ -14,6 +14,10 @@ export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAuthPage = pathname === '/login' || pathname.startsWith('/login/');
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   if (isAuthPage) {
     return <div className="min-h-screen lpads-fade-in">{children}</div>;
@@ -46,22 +50,22 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
 
         <ul className="space-y-1 px-3 py-5">
-          <SidebarNavLink href="/dashboard" icon="📊">
+          <SidebarNavLink href="/dashboard" icon="📊" onNavigate={() => setMobileOpen(false)}>
             Dashboard
           </SidebarNavLink>
-          <SidebarNavLink href="/lecturers" icon="👥">
+          <SidebarNavLink href="/lecturers" icon="👥" onNavigate={() => setMobileOpen(false)}>
             Lecturers
           </SidebarNavLink>
-          <SidebarNavLink href="/appraisals" icon="📋">
+          <SidebarNavLink href="/appraisals" icon="📋" onNavigate={() => setMobileOpen(false)}>
             Appraisals
           </SidebarNavLink>
-          <SidebarNavLink href="/analytics" icon="📈">
+          <SidebarNavLink href="/analytics" icon="📈" onNavigate={() => setMobileOpen(false)}>
             Analytics
           </SidebarNavLink>
-          <SidebarNavLink href="/audit" icon="🧾">
+          <SidebarNavLink href="/audit" icon="🧾" onNavigate={() => setMobileOpen(false)}>
             Audit Logs
           </SidebarNavLink>
-          <SidebarNavLink href="/promotions" icon="🏆">
+          <SidebarNavLink href="/promotions" icon="🏆" onNavigate={() => setMobileOpen(false)}>
             Promotions
           </SidebarNavLink>
         </ul>

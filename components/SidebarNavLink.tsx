@@ -8,9 +8,10 @@ type SidebarNavLinkProps = {
   href: string;
   icon: string;
   children: ReactNode;
+  onNavigate?: () => void;
 };
 
-export default function SidebarNavLink({ href, icon, children }: SidebarNavLinkProps) {
+export default function SidebarNavLink({ href, icon, children, onNavigate }: SidebarNavLinkProps) {
   const pathname = usePathname();
   const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
@@ -19,6 +20,7 @@ export default function SidebarNavLink({ href, icon, children }: SidebarNavLinkP
       <Link
         href={href}
         aria-current={isActive ? 'page' : undefined}
+        onClick={onNavigate}
         className={[
           'group flex items-center gap-3 rounded-xl px-4 py-3 transition hover:translate-x-0.5',
           'text-blue-100/90 hover:bg-white/10 hover:text-white',

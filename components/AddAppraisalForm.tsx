@@ -10,6 +10,20 @@ type LecturerOption = {
   rank: string;
 };
 
+type ExistingAppraisal = {
+  id: number;
+  lecturer_id: number;
+  lecturer_name: string;
+  department: string;
+  rank: string;
+  teaching_score: number;
+  research_score: number;
+  service_score: number;
+  appraisal_date: string;
+  reviewed_by?: string | null;
+  comments?: string | null;
+};
+
 type ApiResponse<T> = {
   success: boolean;
   data?: T;
@@ -24,6 +38,7 @@ type AddAppraisalFormProps = {
 export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
   const [lecturers, setLecturers] = useState<LecturerOption[]>([]);
   const [loadingLecturers, setLoadingLecturers] = useState(true);
+  const [loadingExistingAppraisal, setLoadingExistingAppraisal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{
     open: boolean;
@@ -38,6 +53,7 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
   });
 
   const [lecturer_id, setLecturer_id] = useState('');
+  const [editingAppraisalId, setEditingAppraisalId] = useState<number | null>(null);
   const [teachingScore, setTeachingScore] = useState('');
   const [researchScore, setResearchScore] = useState('');
   const [serviceScore, setServiceScore] = useState('');
@@ -77,6 +93,58 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
 
     fetchLecturers();
   }, []);
+
+  useEffect(() => {
+    if (!lecturer_id) {
+      setEditingAppraisalId(null);
+      return;
+    }
+
+    async function fetchExistingAppraisal() {
+      setLoadingExistingAppraisal(true);
+      setEditingAppraisalId(null);
+
+      try {
+        const response = await fetch(`/api/appraisals?lecturer_id=${lecturer_id}`);
+        const payload = (await response.json()) as ApiResponse<ExistingAppraisal | null>;
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error || 'Failed to load existing appraisal');
+        }
+
+        const existingAppraisal = payload.data;
+
+        if (existingAppraisal) {
+          setEditingAppraisalId(existingAppraisal.id);
+          setTeachingScore(String(existingAppraisal.teaching_score));
+          setResearchScore(String(existingAppraisal.research_score));
+          setServiceScore(String(existingAppraisal.service_score));
+          setAppraisalDate(existingAppraisal.appraisal_date);
+          setReviewedBy(existingAppraisal.reviewed_by ?? '');
+          setComments(existingAppraisal.comments ?? '');
+        } else {
+          setEditingAppraisalId(null);
+          setTeachingScore('');
+          setResearchScore('');
+          setServiceScore('');
+          setAppraisalDate(new Date().toISOString().slice(0, 10));
+          setReviewedBy('');
+          setComments('');
+        }
+      } catch (loadError) {
+        setToast({
+          open: true,
+          title: 'Unable to Load Appraisal',
+          description: loadError instanceof Error ? loadError.message : 'Failed to load existing appraisal',
+          variant: 'error',
+        });
+      } finally {
+        setLoadingExistingAppraisal(false);
+      }
+    }
+
+    fetchExistingAppraisal();
+  }, [lecturer_id]);
 
   const computedPreview = useMemo(() => {
     const t = Number(teachingScore);
@@ -130,17 +198,17 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
         throw new Error(payload.error || 'Failed to save appraisal');
       }
 
+      const savedId = Number(payload.data && typeof payload.data === 'object' ? payload.data.id : undefined);
+
       setToast({
         open: true,
-        title: 'Appraisal Saved',
-        description: 'Performance record has been stored and list refreshed.',
+        title: editingAppraisalId ? 'Appraisal Updated' : 'Appraisal Saved',
+        description: editingAppraisalId ? 'Existing appraisal was updated successfully.' : 'Performance record has been stored and list refreshed.',
         variant: 'success',
       });
-      setTeachingScore('');
-      setResearchScore('');
-      setServiceScore('');
-      setReviewedBy('');
-      setComments('');
+      if (Number.isInteger(savedId) && savedId > 0) {
+        setEditingAppraisalId(savedId);
+      }
 
       onSuccess?.();
     } catch (submissionError) {
@@ -181,7 +249,7 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
               onChange={(event) => setLecturer_id(event.target.value)}
               className="brand-input"
               required
-              disabled={loadingLecturers}
+              disabled={loadingLecturers || loadingExistingAppraisal}
             >
               <option value="">Select lecturer</option>
               {lecturers.map((lecturer) => (
@@ -190,6 +258,11 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
                 </option>
               ))}
             </select>
+            {editingAppraisalId && (
+              <p className="mt-2 text-xs font-medium text-blue-800">
+                Existing appraisal loaded. Update the values below to edit the same lecturer record.
+              </p>
+            )}
           </div>
 
           <div className="brand-muted-panel p-3">
@@ -250,10 +323,10 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
           <div className="grid grid-cols-1 gap-3 border-t border-slate-200 pt-1 sm:grid-cols-2">
             <button
               type="submit"
-              disabled={submitting || loadingLecturers}
+              disabled={submitting || loadingLecturers || loadingExistingAppraisal}
               className="w-full rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-blue-800 hover:to-blue-700 disabled:opacity-60"
             >
-              {submitting ? 'Saving Appraisal...' : 'Save Appraisal'}
+              {submitting ? 'Saving Appraisal...' : editingAppraisalId ? 'Update Appraisal' : 'Save Appraisal'}
             </button>
             <button
               type="button"

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRow, getRows, insert } from '../../../lib/db';
+import { getRow, getRows, insert, update } from '../../../lib/db';
 import { computeAppraisalMetrics } from '../../../lib/calculations';
 import { appendAuditLog } from '../../../lib/audit';
 import { appraisalSchema } from '../../../lib/validation/appraisal.schema';
@@ -24,9 +24,87 @@ type AppraisalWithLecturer = {
   updated_at?: string;
 };
 
+function buildAppraisalPayload(data: {
+  lecturer_id: number;
+  teaching_score: number;
+  research_score: number;
+  service_score: number;
+  appraisal_date?: string;
+  reviewed_by?: string | null;
+  comments?: string | null;
+}) {
+  const metrics = computeAppraisalMetrics(
+    data.teaching_score,
+    data.research_score,
+    data.service_score
+  );
+
+  return {
+    lecturer_id: data.lecturer_id,
+    teaching_score: data.teaching_score,
+    research_score: data.research_score,
+    service_score: data.service_score,
+    total_score: metrics.total_score,
+    category: metrics.category,
+    is_promotion_recommended: metrics.is_promotion_recommended,
+    appraisal_date: data.appraisal_date || new Date().toISOString().slice(0, 10),
+    reviewed_by: data.reviewed_by ?? null,
+    comments: data.comments ?? null,
+  };
+}
+
+async function getAppraisalByLecturerId(lecturerId: number) {
+  return getRow(
+    `
+      SELECT
+        a.id,
+        a.lecturer_id,
+        l.name AS lecturer_name,
+        l.department,
+        l.rank,
+        a.teaching_score,
+        a.research_score,
+        a.service_score,
+        a.total_score,
+        a.category,
+        a.is_promotion_recommended,
+        a.appraisal_date,
+        a.reviewed_by,
+        a.comments,
+        a.created_at,
+        a.updated_at
+      FROM appraisals a
+      JOIN lecturers l ON l.id = a.lecturer_id
+      WHERE a.lecturer_id = $1
+      LIMIT 1
+    `,
+    [lecturerId]
+  );
+}
+
 // ================= GET =================
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const lecturerIdParam = request.nextUrl.searchParams.get('lecturer_id');
+
+    if (lecturerIdParam) {
+      const lecturerId = Number(lecturerIdParam);
+
+      if (!Number.isInteger(lecturerId) || lecturerId <= 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'lecturer_id must be a positive number',
+        }, { status: 400 });
+      }
+
+      const appraisal = await getAppraisalByLecturerId(lecturerId);
+
+      return NextResponse.json({
+        success: true,
+        data: appraisal,
+      } as ApiResponse<AppraisalWithLecturer | null>);
+    }
+
     const appraisals = await getRows(`
       SELECT
         a.id,
@@ -126,39 +204,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const metrics = computeAppraisalMetrics(
-      data.teaching_score,
-      data.research_score,
-      data.service_score
-    );
+    const payload = buildAppraisalPayload(data);
+    const existingAppraisal = await getAppraisalByLecturerId(data.lecturer_id);
 
-    const payload = {
-      lecturer_id: data.lecturer_id,
-      teaching_score: data.teaching_score,
-      research_score: data.research_score,
-      service_score: data.service_score,
-      total_score: metrics.total_score,
-      category: metrics.category,
-      is_promotion_recommended: metrics.is_promotion_recommended,
-      appraisal_date:
-        data.appraisal_date || new Date().toISOString().slice(0, 10),
-      reviewed_by: data.reviewed_by ?? null,
-      comments: data.comments ?? null,
-    };
+    let id = existingAppraisal?.id;
 
-    const id = await insert('appraisals', payload);
+    if (existingAppraisal?.id) {
+      await update('appraisals', payload, 'id = $11', [existingAppraisal.id]);
+    } else {
+      id = await insert('appraisals', payload);
+    }
 
     await appendAuditLog({
-      action: 'appraisal.create',
+      action: existingAppraisal?.id ? 'appraisal.update' : 'appraisal.create',
       details: payload,
       request,
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Appraisal created successfully',
+      message: existingAppraisal?.id ? 'Appraisal updated successfully' : 'Appraisal created successfully',
       data: { id, ...payload },
-    }, { status: 201 });
+    }, { status: existingAppraisal?.id ? 200 : 201 });
 
   } catch (error: any) {
     console.error("❌ POST appraisal error:", error);
