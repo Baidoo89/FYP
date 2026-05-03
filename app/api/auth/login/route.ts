@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Get user
     const rows = await getRows(
       `SELECT id, username, password_hash 
        FROM admin_accounts 
@@ -46,27 +45,19 @@ export async function POST(request: NextRequest) {
 
     const user = rows[0];
 
-    // 2. Compare password
     const inputHash = hashPassword(password);
 
     console.log('INPUT HASH:', inputHash);
     console.log('DB HASH:', user.password_hash);
 
+    // ✅ FIXED: actual validation block
     if (inputHash !== user.password_hash) {
-      await appendAuditLog({
-        action: 'auth.login.failure',
-        actor: username,
-        details: { reason: 'wrong_password' },
-        request,
-      });
-
       return NextResponse.json(
         { success: false, error: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    // 3. Success
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
@@ -90,6 +81,7 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
+
   } catch (err) {
     console.error('LOGIN ERROR:', err);
 

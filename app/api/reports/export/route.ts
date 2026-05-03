@@ -152,7 +152,8 @@ function buildAuditCsv(filters: {
   endDate?: string;
 }) {
   return async () => {
-    const logs = await readRecentAuditLogs(1000);
+    const logsAll = await readRecentAuditLogs();
+    const logs = Array.isArray(logsAll) ? logsAll.slice(0, 1000) : [];
     const actor = (filters.actor || '').trim().toLowerCase();
     const action = (filters.action || '').trim().toLowerCase();
     const text = (filters.text || '').trim().toLowerCase();

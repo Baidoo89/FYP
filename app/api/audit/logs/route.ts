@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
   const limit = Number.isFinite(limitParam) ? Math.max(1, Math.min(limitParam, 500)) : 100;
   const page = Number.isFinite(pageParam) ? Math.max(1, pageParam) : 1;
 
-  const logs = await readRecentAuditLogs(500);
+  const logsAll = await readRecentAuditLogs();
+  const logs = Array.isArray(logsAll) ? logsAll.slice(0, 500) : [];
 
   const filtered = logs.filter((log) => {
     if (actor && !String(log.actor || '').toLowerCase().includes(actor)) {
