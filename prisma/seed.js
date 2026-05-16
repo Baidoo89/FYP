@@ -11,25 +11,29 @@ function hashPassword(password) {
 }
 
 async function main() {
-  const username = process.env.ADMIN_USERNAME || 'admin';
-  const password = process.env.ADMIN_PASSWORD || 'admin123';
+  const hrPassword = 'hradmin123';
 
-  const password_hash = hashPassword(password);
-
-  await prisma.adminAccount.upsert({
-    where: { username },
-    update: { password_hash, is_active: true },
+  await prisma.user.upsert({
+    where: { email: 'hr.admin@gctu.edu.gh' },
+    update: {
+      name: 'HR Admin',
+      password: hashPassword(hrPassword),
+      role: 'HR_ADMIN',
+      department: 'Human Resources',
+    },
     create: {
-      username,
-      password_hash,
-      is_active: true,
+      name: 'HR Admin',
+      email: 'hr.admin@gctu.edu.gh',
+      password: hashPassword(hrPassword),
+      role: 'HR_ADMIN',
+      department: 'Human Resources',
     },
   });
 
   console.log('======================');
-  console.log('ADMIN SEEDED SUCCESS');
-  console.log('Username:', username);
-  console.log('Password:', password);
+  console.log('HR admin seeded successfully');
+  console.log('HR Portal Login:', 'hr.admin@gctu.edu.gh / hradmin123');
+  console.log('Lecturers should self-register with @live.gctu.edu.gh');
   console.log('======================');
 }
 

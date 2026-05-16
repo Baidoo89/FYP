@@ -3,16 +3,16 @@
 @import "tailwindcss/utilities";
 
 :root {
-  --brand-blue-950: #10224a;
-  --brand-blue-900: #1e3a7a;
-  --brand-blue-700: #1d4ed8;
+  --brand-blue-950: #102244;
+  --brand-blue-900: #173a7a;
+  --brand-blue-700: #2563eb;
   --brand-blue-100: #dbeafe;
-  --brand-gold-500: #f59e0b;
-  --brand-gold-300: #fcd34d;
+  --brand-gold-500: #f4b400;
+  --brand-gold-300: #facc15;
   --brand-gold-100: #fef3c7;
-  --brand-surface-soft: linear-gradient(180deg, rgba(219, 234, 254, 0.75) 0%, rgba(255, 255, 255, 0.96) 100%);
-  --brand-surface-medium: linear-gradient(180deg, rgba(191, 219, 254, 0.62) 0%, rgba(255, 255, 255, 0.97) 100%);
-  --brand-surface-strong: linear-gradient(135deg, #10224a 0%, #1e3a7a 56%, #a16207 100%);
+  --brand-surface-soft: linear-gradient(180deg, rgba(219, 234, 254, 0.8) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --brand-surface-medium: linear-gradient(180deg, rgba(219, 234, 254, 0.68) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --brand-surface-strong: linear-gradient(135deg, #102244 0%, #173a7a 58%, #f4b400 100%);
 }
 
 html,
@@ -24,7 +24,8 @@ body {
   color: #1e293b;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
+  background: linear-gradient(180deg, #eef4ff 0%, #ffffff 55%, #fef8e7 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 .brand-surface-soft {
@@ -65,11 +66,120 @@ body {
 
 .brand-input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #fbbf24;
+  box-shadow: 0 0 0 2px #f4b400;
 }
 
 .brand-muted-panel {
   border: 1px solid #dbeafe;
   border-radius: 0.75rem;
   background: rgba(239, 246, 255, 0.7);
+}
+
+.brand-badge-blue {
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  background: rgba(219, 234, 254, 0.95);
+  color: #1d4ed8;
+}
+
+.brand-badge-gold {
+  border: 1px solid rgba(244, 180, 0, 0.2);
+  background: rgba(254, 243, 199, 0.98);
+  color: #92400e;
+}
+
+/*
+  Theme override layer:
+  Convert older rose/emerald/green utility classes into the school blue/yellow palette
+  without rewriting every page component.
+*/
+.bg-rose-50,
+.bg-emerald-50,
+.bg-green-50,
+.bg-pink-50 {
+  background-color: #eff6ff !important;
+}
+
+.bg-rose-100,
+.bg-emerald-100,
+.bg-green-100,
+.bg-pink-100 {
+  background-color: #dbeafe !important;
+}
+
+.bg-rose-200,
+.bg-emerald-200,
+.bg-green-200,
+.bg-pink-200 {
+  background-color: #bfdbfe !important;
+}
+
+.bg-rose-300,
+.bg-emerald-300,
+.bg-green-300,
+.bg-pink-300 {
+  background-color: #93c5fd !important;
+}
+
+.bg-rose-500,
+.bg-emerald-500,
+.bg-green-500,
+.bg-pink-500,
+.bg-rose-600,
+.bg-emerald-600,
+.bg-green-600,
+.bg-pink-600 {
+  background-color: #1d4ed8 !important;
+}
+
+.border-rose-100,
+.border-emerald-100,
+.border-green-100,
+.border-pink-100,
+.border-rose-200,
+.border-emerald-200,
+.border-green-200,
+.border-pink-200,
+.border-rose-300,
+.border-emerald-300,
+.border-green-300,
+.border-pink-300 {
+  border-color: #bfdbfe !important;
+}
+
+.text-rose-700,
+.text-emerald-700,
+.text-green-700,
+.text-pink-700,
+.text-rose-800,
+.text-emerald-800,
+.text-green-800,
+.text-pink-800,
+.text-rose-900,
+.text-emerald-900,
+.text-green-900,
+.text-pink-900 {
+  color: #173a7a !important;
+}
+
+.from-rose-600,
+.from-emerald-600,
+.from-green-600,
+.from-pink-600 {
+  --tw-gradient-from: #173a7a var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(23 58 122 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.via-rose-500,
+.via-emerald-500,
+.via-green-500,
+.via-pink-500 {
+  --tw-gradient-stops: var(--tw-gradient-from), #f4b400 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+.to-rose-500,
+.to-emerald-500,
+.to-green-500,
+.to-pink-500 {
+  --tw-gradient-to: #f4b400 var(--tw-gradient-to-position) !important;
 }

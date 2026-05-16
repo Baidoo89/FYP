@@ -70,7 +70,7 @@ export default function AnalyticsPage() {
   }
 
   if (error || !summary) {
-    return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-700 shadow-sm">{error || 'Failed to load analytics summary'}</div>;
+    return <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-8 text-center text-yellow-900 shadow-sm">{error || 'Failed to load analytics summary'}</div>;
   }
 
   return (
@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
           <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
             <a
               href={`/api/reports/export?type=analytics&format=csv&department=${encodeURIComponent(departmentFilter)}&startDate=${encodeURIComponent(startDateFilter)}&endDate=${encodeURIComponent(endDateFilter)}`}
-              className="inline-flex w-full items-center justify-center rounded-xl border border-amber-200/40 bg-amber-300/20 px-4 py-2 text-sm font-semibold text-amber-100 hover:bg-amber-300/30 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-yellow-200/40 bg-yellow-300/20 px-4 py-2 text-sm font-semibold text-yellow-100 hover:bg-yellow-300/30 sm:w-auto"
             >
               Export CSV
             </a>
@@ -106,7 +106,7 @@ export default function AnalyticsPage() {
             value={departmentFilter}
             onChange={(event) => setDepartmentFilter(event.target.value)}
             placeholder="e.g. Computer Science"
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
         <div>
@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
             type="date"
             value={startDateFilter}
             onChange={(event) => setStartDateFilter(event.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
         <div>
@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
             type="date"
             value={endDateFilter}
             onChange={(event) => setEndDateFilter(event.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
         <div className="flex items-end">
@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
                 <div className="text-sm font-medium text-slate-700">{trend.appraisal_date}</div>
                 <div className="h-6 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="flex h-full items-center justify-center bg-gradient-to-r from-blue-700 to-amber-500 text-xs font-semibold text-white"
+                    className="flex h-full items-center justify-center bg-gradient-to-r from-blue-700 to-yellow-500 text-xs font-semibold text-white"
                     style={{ width: `${Math.max((trend.avg_total_score / 100) * 100, 4)}%` }}
                   >
                     {trend.avg_total_score}

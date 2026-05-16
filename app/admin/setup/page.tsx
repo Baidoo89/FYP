@@ -69,20 +69,20 @@ export default function AdminSetup() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.14),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(29,78,216,0.2),_transparent_28%),linear-gradient(135deg,_#0f172a_0%,_#102a56_42%,_#0f172a_100%)] px-4 py-8 sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-8 text-center">
-          <p className="inline-block rounded-full border border-amber-300/40 bg-amber-400/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-amber-200 sm:text-xs">Initial Configuration</p>
+          <p className="inline-block rounded-full border border-yellow-300/40 bg-yellow-400/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100 sm:text-xs">Initial Configuration</p>
           <h1 className="mt-4 text-3xl font-bold text-white sm:text-4xl">Admin Setup</h1>
           <p className="mt-2 text-sm text-blue-100 sm:text-base">Create the first school management account to access the system.</p>
         </div>
 
         <div className="rounded-2xl border border-blue-100/70 bg-white/95 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.35)] sm:p-8">
           {error && (
-            <div className="mb-6 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+            <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-900">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-6 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
               {success}
             </div>
           )}
@@ -97,7 +97,7 @@ export default function AdminSetup() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="school@example.com"
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
@@ -110,7 +110,7 @@ export default function AdminSetup() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter username"
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
@@ -124,7 +124,7 @@ export default function AdminSetup() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400"
                 />
               </div>
 
@@ -145,7 +145,7 @@ export default function AdminSetup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 text-sm font-bold text-slate-900 shadow-lg transition hover:from-amber-500 hover:to-amber-600 disabled:opacity-50"
+              className="w-full rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 px-4 py-3 text-sm font-bold text-slate-900 shadow-lg transition hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50"
             >
               {loading ? 'Creating Account...' : 'Create Admin Account'}
             </button>

@@ -26,9 +26,9 @@
 |-------|-----------|
 | **Frontend** | Next.js 15, React 18, TypeScript |
 | **Backend** | Next.js API Routes |
-| **Database** | MySQL 8.0+ |
+| **Database** | SQLite (local dev), Neon PostgreSQL (production) |
 | **Styling** | Tailwind CSS / Plain CSS |
-| **ORM** | Raw SQL (mysql2/promise) |
+| **ORM** | Prisma |
 
 ---
 
@@ -83,7 +83,6 @@ See [database/schema.sql](database/schema.sql) for complete schema.
 
 ### Prerequisites
 - Node.js 18+ and npm/yarn
-- MySQL 8.0+ running locally or remote
 - Git
 
 ### Installation
@@ -100,34 +99,42 @@ npm install
 
 #### 3. Setup Database
 
-**See [DATABASE_SETUP.md](DATABASE_SETUP.md) for detailed instructions.**
-
-Quick commands (if MySQL is installed):
+Local development uses SQLite via Prisma:
 
 ```bash
-# Load schema
-mysql -u root -p < database/schema.sql
-
-# Verify
-mysql -u root -p -e "USE lecturer_performance_db; SHOW TABLES;"
+npx prisma generate
+npx prisma db push
 ```
-
-**Docker option:** For reproducible FYP setup, see DATABASE_SETUP.md for Docker Compose configuration.
 
 #### 4. Configure Environment
 ```bash
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` with your database credentials:
+Edit `.env.local`:
 ```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=lecturer_performance_db
+DATABASE_URL=file:./dev.db
 NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
+
+### Production (Neon)
+
+Set these environment variables in your hosting provider:
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@ep-xxxxx.us-east-1.aws.neon.tech/DBNAME?sslmode=require
+```
+
+Then run migrations/deploy steps:
+
+```bash
+npx prisma generate --schema prisma/schema.postgres.prisma
+npx prisma migrate deploy --schema prisma/schema.postgres.prisma
+```
+
+Production templates and runbooks:
+- `.env.production.example`
+- `SQLITE_TO_NEON_MIGRATION.md`
 
 #### 5. Start Development Server
 ```bash

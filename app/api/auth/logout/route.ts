@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { appendAuditLog } from '../../../../lib/audit';
 import { SESSION_COOKIE_NAME } from '../../../../lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -16,11 +15,6 @@ export async function POST(request: NextRequest) {
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 0,
-  });
-
-  await appendAuditLog({
-    action: 'auth.logout',
-    request,
   });
 
   return response;

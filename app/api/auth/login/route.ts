@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { SESSION_COOKIE_NAME, getSessionCookieValue } from '../../../../lib/auth';
-import { appendAuditLog } from '../../../../lib/audit';
-import { getRows } from '../../../../lib/db';
+import { SESSION_COOKIE_NAME, createSessionToken } from '../../../../lib/auth';
+import { prisma } from '../../../../lib/prisma';
+import { findLocalAdminAccount } from '../../../../lib/admin-storage';
 
 function hashPassword(password: string) {
   return crypto
@@ -27,57 +27,111 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rows = await getRows(
-      `SELECT id, username, password_hash 
-       FROM admin_accounts 
-       WHERE username = $1 AND is_active = TRUE`,
-      [username]
+    const inputHash = hashPassword(password);
+    const normalizedUsername = username.toLowerCase();
+
+    const invalidCredentialsResponse = () => {
+      const response = NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
+        { status: 401 }
+      );
+
+      // Clear stale session cookie so users are not kept in previous portal context.
+      response.cookies.set({
+        name: SESSION_COOKIE_NAME,
+        value: '',
+        path: '/',
+        maxAge: 0,
+      });
+
+      return response;
+    };
+
+    let sessionUser: { id: number; name: string; email: string; role: 'LECTURER' | 'HR_ADMIN'; department?: string; legacy?: boolean; onboarded?: boolean } | null = null;
+
+    // Authenticate HR admin accounts first to avoid accidental lecturer-user collisions.
+    const adminAccounts = await prisma.adminAccount.findMany({
+      where: { is_active: true },
+      select: {
+        id: true,
+        username: true,
+        password_hash: true,
+      },
+    });
+
+    const matchedAdmin = adminAccounts.find(
+      (admin) => admin.username.toLowerCase() === normalizedUsername
     );
 
-    console.log('DB RESULT:', rows);
-
-    if (rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
-        { status: 401 }
-      );
+    if (matchedAdmin && inputHash === matchedAdmin.password_hash) {
+      sessionUser = {
+        id: matchedAdmin.id,
+        name: matchedAdmin.username,
+        email: `${matchedAdmin.username}@admin.local`,
+        role: 'HR_ADMIN',
+        onboarded: true,
+      };
     }
 
-    const user = rows[0];
+    if (!sessionUser) {
+      const promotionUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: normalizedUsername },
+            { name: username },
+          ],
+        },
+      });
 
-    const inputHash = hashPassword(password);
+      if (promotionUser && promotionUser.password === inputHash) {
+        sessionUser = {
+          id: promotionUser.id,
+          name: promotionUser.name,
+          email: promotionUser.email,
+          role: promotionUser.role,
+          department: promotionUser.department || undefined,
+          onboarded: promotionUser.onboarded,
+        };
+      }
+    }
 
-    console.log('INPUT HASH:', inputHash);
-    console.log('DB HASH:', user.password_hash);
+    if (!sessionUser) {
+      const localAdmin = await findLocalAdminAccount(username, inputHash);
 
-    // ✅ FIXED: actual validation block
-    if (inputHash !== user.password_hash) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
-        { status: 401 }
-      );
+      if (!localAdmin) {
+        return invalidCredentialsResponse();
+      }
+
+      sessionUser = {
+        id: localAdmin.id,
+        name: localAdmin.username,
+        email: localAdmin.email || `${localAdmin.username}@admin.local`,
+        role: 'HR_ADMIN',
+        onboarded: true,
+      };
     }
 
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
+      role: sessionUser!.role,
     });
 
     response.cookies.set({
       name: SESSION_COOKIE_NAME,
-      value: getSessionCookieValue(),
+      value: createSessionToken({
+        userId: sessionUser!.id,
+        name: sessionUser!.name,
+        email: sessionUser!.email,
+        role: sessionUser!.role,
+        department: sessionUser!.department,
+        onboarded: sessionUser!.role === 'HR_ADMIN' ? true : (sessionUser! as any).onboarded,
+      }),
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: 60 * 60 * 8,
-    });
-
-    await appendAuditLog({
-      action: 'auth.login.success',
-      actor: username,
-      details: { authenticated: true },
-      request,
     });
 
     return response;

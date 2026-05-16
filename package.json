@@ -7,6 +7,10 @@
     "dev:safe": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-safe.ps1",
     "clean": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path .next) { Remove-Item .next -Recurse -Force -ErrorAction SilentlyContinue }\"",
     "build": "next build",
+    "db:deploy": "prisma migrate deploy --schema prisma/schema.postgres.prisma",
+    "deploy:prod": "prisma generate --schema prisma/schema.postgres.prisma && prisma migrate deploy --schema prisma/schema.postgres.prisma && next build",
+    "cutover:prod": "node ./scripts/cutover-prod.js",
+    "cutover:prod:check": "node ./scripts/cutover-prod.js --check-only",
     "start": "next start",
     "lint": "next lint"
   },

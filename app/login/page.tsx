@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 type LoginResponse = {
   success: boolean;
   error?: string;
+  role?: 'LECTURER' | 'HR_ADMIN';
 };
 
 export default function LoginPage() {
@@ -35,7 +36,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      router.push('/dashboard');
+      router.push(data.role === 'HR_ADMIN' ? '/hr/dashboard' : '/lecturer-portal');
       router.refresh();
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'Login failed');
@@ -46,17 +47,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 lg:px-10 lpads-fade-in bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.16),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(29,78,216,0.22),_transparent_28%),linear-gradient(135deg,_#0f172a_0%,_#102a56_42%,_#0f172a_100%)]">
-      <div className="mx-auto grid w-full max-w-6xl overflow-hidden rounded-[1.75rem] border border-amber-300/80 bg-white/98 shadow-[0_30px_100px_rgba(15,23,42,0.35)] backdrop-blur lg:grid-cols-[1.02fr_0.98fr]">
+      <div className="mx-auto grid w-full max-w-6xl overflow-hidden rounded-[1.75rem] border border-yellow-200/80 bg-white/98 shadow-[0_30px_100px_rgba(15,23,42,0.35)] backdrop-blur lg:grid-cols-[1.02fr_0.98fr]">
         <section className="relative order-2 flex min-h-[220px] flex-col justify-between overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-blue-900 px-5 py-6 text-white sm:px-8 sm:py-8 lg:order-1 lg:min-h-full lg:px-10 lg:py-10">
-          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-amber-400/25 blur-3xl sm:h-56 sm:w-56" />
-          <div className="absolute bottom-0 left-0 h-32 w-64 bg-gradient-to-r from-amber-400/30 to-transparent blur-2xl" />
-          <div className="absolute right-0 top-1/2 h-52 w-52 rounded-full bg-amber-300/20 blur-3xl" />
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-yellow-400/25 blur-3xl sm:h-56 sm:w-56" />
+          <div className="absolute bottom-0 left-0 h-32 w-64 bg-gradient-to-r from-yellow-400/30 to-transparent blur-2xl" />
+          <div className="absolute right-0 top-1/2 h-52 w-52 rounded-full bg-yellow-300/20 blur-3xl" />
 
           <div className="relative">
-            <p className="inline-block rounded-full border border-amber-300/40 bg-amber-400/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-amber-200 sm:text-xs">Admin Portal</p>
+            <p className="inline-block rounded-full border border-yellow-300/40 bg-yellow-400/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100 sm:text-xs">Admin Portal</p>
             <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl xl:text-6xl">
               GCTU Promotion
-              <span className="block bg-gradient-to-r from-amber-300 to-amber-200 bg-clip-text text-transparent">Analysis & Decisions</span>
+              <span className="block bg-gradient-to-r from-yellow-300 to-yellow-200 bg-clip-text text-transparent">Analysis & Decisions</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-blue-100/95 sm:mt-5 sm:text-base">
               Advanced analytics, secure appraisals, promotion decisions, and complete audit trails—all in one professional system.
@@ -64,10 +65,10 @@ export default function LoginPage() {
           </div>
 
           <div className="relative mt-7 grid gap-3 text-sm text-blue-50/95 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-xl border border-amber-300/60 bg-gradient-to-br from-amber-400/15 to-blue-400/5 px-4 py-4 font-medium shadow-sm">
+            <div className="rounded-xl border border-yellow-300/60 bg-gradient-to-br from-yellow-400/15 to-blue-400/5 px-4 py-4 font-medium shadow-sm">
               Session-Protected Authentication
             </div>
-            <div className="rounded-xl border border-amber-300/60 bg-gradient-to-br from-amber-400/15 to-blue-400/5 px-4 py-4 font-medium shadow-sm">
+            <div className="rounded-xl border border-yellow-300/60 bg-gradient-to-br from-yellow-400/15 to-blue-400/5 px-4 py-4 font-medium shadow-sm">
               Complete Audit Coverage
             </div>
           </div>
@@ -75,17 +76,17 @@ export default function LoginPage() {
 
         <section className="order-1 bg-gradient-to-br from-slate-50 to-blue-50/50 px-5 py-6 sm:px-8 sm:py-8 md:px-10 md:py-10 lg:order-2 lpads-slide-in">
           <div className="mb-7 sm:mb-8">
-            <div className="inline-flex items-center gap-2 rounded-full border-2 border-amber-400 bg-gradient-to-r from-amber-300 to-amber-200 px-4 py-2 text-[11px] font-bold tracking-[0.22em] text-amber-950 shadow-md sm:text-xs">
+            <div className="inline-flex items-center gap-2 rounded-full border-2 border-yellow-400 bg-gradient-to-r from-yellow-300 to-yellow-200 px-4 py-2 text-[11px] font-bold tracking-[0.22em] text-yellow-950 shadow-md sm:text-xs">
               Secure Login
             </div>
             <h2 className="mt-4 text-3xl font-bold text-blue-900 sm:text-4xl lg:text-5xl">Access Management Console</h2>
             <p className="mt-2 max-w-md text-sm font-medium text-slate-700 sm:text-base">
-              Enter your administrator credentials to unlock the full system.
+              Enter your lecturer or HR credentials to unlock the right portal.
             </p>
           </div>
 
           {error && (
-            <div className="mb-5 rounded-xl border-2 border-rose-400 bg-gradient-to-r from-rose-50 to-rose-100/50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm">
+            <div className="mb-5 rounded-xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-900 shadow-sm">
               {error}
             </div>
           )}
@@ -93,7 +94,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             <div>
               <label htmlFor="username" className="mb-2 block text-sm font-bold text-blue-900">
-                Admin Username
+                Email or Username
               </label>
               <input
                 id="username"
@@ -101,15 +102,15 @@ export default function LoginPage() {
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
-                className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
-                placeholder="Enter admin username"
+                className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                placeholder="name@live.gctu.edu.gh or HR username"
                 required
               />
             </div>
 
             <div>
               <label htmlFor="password" className="mb-2 block text-sm font-bold text-blue-900">
-                Admin Password
+                Password
               </label>
               <div className="relative">
                 <input
@@ -118,7 +119,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="current-password"
-                  className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 pr-12 text-sm font-medium text-slate-900 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 pr-12 text-sm font-medium text-slate-900 shadow-sm transition focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                   placeholder="Enter admin password"
                   required
                 />
@@ -126,7 +127,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute inset-y-0 right-0 flex items-center justify-center rounded-r-xl px-3 text-slate-500 transition hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="absolute inset-y-0 right-0 flex items-center justify-center rounded-r-xl px-3 text-slate-500 transition hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 >
                   {showPassword ? (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
@@ -148,13 +149,13 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-300 px-4 py-4 text-sm font-bold text-amber-950 shadow-[0_12px_32px_rgba(217,119,6,0.4)] transition hover:shadow-[0_16px_40px_rgba(217,119,6,0.5)] hover:from-amber-300 hover:to-yellow-200 disabled:opacity-60 uppercase tracking-wide"
+              className="w-full rounded-xl bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-300 px-4 py-4 text-sm font-bold text-yellow-950 shadow-[0_12px_32px_rgba(217,119,6,0.4)] transition hover:shadow-[0_16px_40px_rgba(217,119,6,0.5)] hover:from-yellow-300 hover:to-yellow-200 disabled:opacity-60 uppercase tracking-wide"
             >
               {loading ? 'Authenticating...' : 'Sign In'}
             </button>
 
             <div className="rounded-lg border border-blue-200 bg-blue-50/70 px-3 py-2 text-center text-xs font-medium text-blue-700">
-              Encrypted connection • Admin access only
+              New lecturer? <a href="/register" className="font-semibold text-blue-800 underline">Create your account</a>
             </div>
           </form>
         </section>

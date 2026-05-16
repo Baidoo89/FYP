@@ -1,12 +1,8 @@
 import type { ReactNode } from 'react';
-import { Sora } from 'next/font/google';
 import AppShell from '../components/AppShell';
 import './globals.css';
 
-const sora = Sora({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-});
+// Use system font stack to avoid fetching Google Fonts at build time
 
 export default function RootLayout({
   children,
@@ -90,7 +86,7 @@ export default function RootLayout({
           `}
         </style>
       </head>
-      <body className={sora.className}>
+      <body className="font-sans">
         <AppShell>{children}</AppShell>
       </body>
     </html>

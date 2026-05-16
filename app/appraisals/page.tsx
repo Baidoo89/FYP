@@ -18,18 +18,18 @@ export default function AppraisalsPage() {
           <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">Teaching 50%</span>
           <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">Research 30%</span>
           <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">Service 20%</span>
-          <span className="rounded-full border border-amber-200/40 bg-amber-300/20 px-3 py-1 text-amber-100">Promotion Threshold: 80+</span>
+          <span className="rounded-full border border-yellow-200/40 bg-yellow-300/20 px-3 py-1 text-yellow-100">Promotion Threshold: 80+</span>
         </div>
         <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
           <span className="rounded-full border border-blue-200/40 bg-blue-300/20 px-3 py-1 text-blue-50">Step 1: Capture Assessment</span>
-          <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-blue-100">Step 2: Review Decision Records</span>
+          <span className="rounded-full border border-yellow-200/25 bg-yellow-300/15 px-3 py-1 text-yellow-100">Step 2: Review Decision Records</span>
         </div>
       </div>
 
       <section className="brand-surface-medium p-4 sm:p-5">
         <div className="mb-4 px-1">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-900">Step 1: Capture Assessment</h2>
-          <p className="mt-1 text-xs text-slate-600">Submit structured appraisal inputs and decision context.</p>
+          <p className="mt-1 text-xs text-blue-800">Submit structured appraisal inputs and decision context.</p>
         </div>
         <div className="mx-auto max-w-6xl">
           <AddAppraisalForm onSuccess={() => setRefreshToken((value) => value + 1)} />
@@ -39,7 +39,7 @@ export default function AppraisalsPage() {
       <section className="brand-surface-soft p-4 sm:p-5">
         <div className="mb-4 px-1">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-900">Step 2: Decision Records</h2>
-          <p className="mt-1 text-xs text-slate-600">Review filters, recommendation bands, and outcome trends.</p>
+          <p className="mt-1 text-xs text-blue-800">Review filters, recommendation bands, and outcome trends.</p>
         </div>
         <AppraisalList refreshToken={refreshToken} />
       </section>

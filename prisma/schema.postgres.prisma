@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  LECTURER
+  HR_ADMIN
+}
+
+enum AcademicRank {
+  ASSISTANT_LECTURER
+  LECTURER
+  SENIOR_LECTURER
+  ASSOCIATE_PROFESSOR
+}
+
+enum RequestStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum DocumentCategory {
+  RESEARCH
+  TEACHING
+  SERVICE
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum EligibilityStatus {
+  NOT_CALCULATED
+  ELIGIBLE
+  NOT_ELIGIBLE
+  NEEDS_REVIEW
+}
+
+model AdminAccount {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  password_hash String
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  @@map("admin_accounts")
+}
+
+model Lecturer {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  department String
+  rank       String
+  hire_date  DateTime
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("lecturers")
+}
+
+model User {
+  id             Int           @id @default(autoincrement())
+  name           String
+  email          String        @unique
+  password       String
+  role           Role          @default(LECTURER)
+  department     String?
+  staffId        String?       @unique
+  currentRank    AcademicRank?
+  onboarded      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  lecturerRequests     PromotionRequest[] @relation("LecturerPromotionRequests")
+  requestedPromotions   PromotionRequest[] @relation("RequestedPromotions")
+  verifiedDocuments     Document[] @relation("VerifiedDocuments")
+  auditLogs             AuditLog[] @relation("AuditActor")
+
+  @@map("users")
+}
+
+model PromotionRequest {
+  id                Int               @id @default(autoincrement())
+  lecturerId        Int
+  lecturer          User              @relation("LecturerPromotionRequests", fields: [lecturerId], references: [id], onDelete: Cascade)
+  requestedById     Int?
+  requestedBy       User?             @relation("RequestedPromotions", fields: [requestedById], references: [id])
+  status            RequestStatus     @default(DRAFT)
+  submittedAt       DateTime?
+  verifiedAt        DateTime?
+  totalScore        Float?
+  eligibilityStatus EligibilityStatus  @default(NOT_CALCULATED)
+  adminComment      String?
+  currentRank       String
+  targetRank        String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  documents         Document[]
+  auditLogs         AuditLog[]
+
+  @@index([lecturerId])
+  @@index([status])
+  @@map("promotion_requests")
+}
+
+model Document {
+  id                  Int                @id @default(autoincrement())
+  requestId           Int
+  request             PromotionRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  category            DocumentCategory
+  title               String
+  fileUrl             String
+  fileName            String
+  mimeType            String
+  fileSize            Int
+  verificationStatus  VerificationStatus @default(PENDING)
+  verifiedById        Int?
+  verifiedBy          User?              @relation("VerifiedDocuments", fields: [verifiedById], references: [id])
+  verificationComment String?
+  uploadedAt          DateTime           @default(now())
+
+  @@unique([requestId, category])
+  @@index([requestId, verificationStatus])
+  @@map("documents")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  requestId Int?
+  request   PromotionRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actorId   Int?
+  actor     User?     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([actorId])
+  @@map("audit_logs")
+}

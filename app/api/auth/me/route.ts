@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAuthenticatedRequest } from '../../../../lib/auth';
+import { getAuthSession } from '../../../../lib/auth';
 
 export async function GET(request: NextRequest) {
-  if (!isAuthenticatedRequest(request)) {
+  const session = getAuthSession(request);
+
+  if (!session) {
     return NextResponse.json(
       {
         authenticated: false,
@@ -13,6 +15,12 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     authenticated: true,
-    role: 'admin',
+    role: session.role,
+    user: {
+      id: session.userId,
+      name: session.name,
+      email: session.email,
+      department: session.department || null,
+    },
   });
 }

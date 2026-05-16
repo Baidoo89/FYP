@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthSession } from '../../../../lib/auth';
 import { readRecentAuditLogs } from '../../../../lib/audit';
 
 export async function GET(request: NextRequest) {
+  const session = getAuthSession(request);
+
+  if (!session || session.legacy || session.role !== 'HR_ADMIN') {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const limitParam = Number(searchParams.get('limit') || 100);
   const pageParam = Number(searchParams.get('page') || 1);

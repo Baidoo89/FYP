@@ -3,49 +3,35 @@ import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  // Generate admin credentials
-  const username = 'admin_fyp';
-  const password = crypto.randomBytes(8).toString('base64');
-  const password_hash = crypto.createHash('sha256').update(password).digest('hex');
+function hashPassword(password: string) {
+  return crypto.createHash('sha256').update(password + 'lpads-salt-2026').digest('hex');
+}
 
-  // Create admin account
-  const admin = await prisma.adminAccount.upsert({
-    where: { username },
-    update: {},
+async function main() {
+  const hrPassword = 'hradmin123';
+
+  await prisma.user.upsert({
+    where: { email: 'hr.admin@gctu.edu.gh' },
+    update: {
+      password: hashPassword(hrPassword),
+      role: 'HR_ADMIN',
+      department: 'Human Resources',
+      name: 'HR Admin',
+    },
     create: {
-      username,
-      password_hash,
-      is_active: true,
+      name: 'HR Admin',
+      email: 'hr.admin@gctu.edu.gh',
+      password: hashPassword(hrPassword),
+      role: 'HR_ADMIN',
+      department: 'Human Resources',
     },
   });
 
-  // Seed example lecturers
-  await prisma.lecturer.createMany({
-    data: [
-      {
-        name: 'Dr. John Smith',
-        email: 'john.smith@university.edu',
-        department: 'Computer Science',
-        rank: 'Associate Professor',
-        hire_date: new Date('2015-09-01'),
-        is_active: true,
-      },
-      {
-        name: 'Dr. Sarah Johnson',
-        email: 'sarah.johnson@university.edu',
-        department: 'Computer Science',
-        rank: 'Lecturer',
-        hire_date: new Date('2018-08-15'),
-        is_active: true,
-      },
-    ],
-    skipDuplicates: true,
-  });
-
-  // Output admin credentials
-  console.log('Admin username:', username);
-  console.log('Admin password:', password);
+  console.log('======================');
+  console.log('HR admin seeded successfully');
+  console.log('HR admin login:', 'hr.admin@gctu.edu.gh / hradmin123');
+  console.log('Lecturers should self-register with @live.gctu.edu.gh');
+  console.log('======================');
 }
 
 main()

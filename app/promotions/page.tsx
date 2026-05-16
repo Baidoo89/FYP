@@ -59,7 +59,7 @@ export default function PromotionsPage() {
   }
 
   if (error) {
-    return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700 shadow-sm">{error}</div>;
+    return <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-blue-900 shadow-sm">{error}</div>;
   }
 
   const summary = {
@@ -80,7 +80,7 @@ export default function PromotionsPage() {
           <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:shrink-0 lg:justify-end">
             <a
               href="/api/reports/export?type=promotions&format=csv"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-amber-200/40 bg-amber-300/20 px-4 py-2 text-sm font-semibold text-amber-100 hover:bg-amber-300/30 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-yellow-200/40 bg-yellow-300/20 px-4 py-2 text-sm font-semibold text-yellow-100 hover:bg-yellow-300/30 sm:w-auto"
             >
               Export CSV
             </a>
@@ -95,10 +95,10 @@ export default function PromotionsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="Approved" value={summary.approved} className="border-emerald-200 bg-emerald-50 text-emerald-900" />
+        <SummaryCard title="Approved" value={summary.approved} className="border-blue-200 bg-blue-50 text-blue-900" />
         <SummaryCard title="Reviewed" value={summary.reviewed} className="border-blue-200 bg-blue-50 text-blue-900" />
         <SummaryCard title="Draft" value={summary.draft} className="border-slate-200 bg-slate-50 text-slate-900" />
-        <SummaryCard title="High Risk" value={summary.highRisk} className="border-rose-200 bg-rose-50 text-rose-900" />
+        <SummaryCard title="High Risk" value={summary.highRisk} className="border-yellow-200 bg-yellow-50 text-yellow-900" />
       </div>
 
       <div className="brand-surface-soft overflow-hidden">
@@ -134,8 +134,8 @@ export default function PromotionsPage() {
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         candidate.recommendation === 'Recommended for Promotion'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-rose-100 text-rose-800'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-yellow-100 text-yellow-900'
                       }`}
                     >
                       {candidate.recommendation}
@@ -144,16 +144,16 @@ export default function PromotionsPage() {
 
                   <div className="mt-2">
                     {candidate.risk_flags.length === 0 ? (
-                      <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">Low Risk</span>
+                      <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">Low Risk</span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {candidate.risk_flags.slice(0, 2).map((flag) => (
-                          <span key={flag} className="inline-flex rounded-full bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700">
+                          <span key={flag} className="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">
                             {flag}
                           </span>
                         ))}
                         {candidate.risk_flags.length > 2 && (
-                          <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">+{candidate.risk_flags.length - 2}</span>
+                          <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">+{candidate.risk_flags.length - 2}</span>
                         )}
                       </div>
                     )}
@@ -203,16 +203,16 @@ export default function PromotionsPage() {
                       </td>
                       <td className="px-4 py-3">
                         {candidate.risk_flags.length === 0 ? (
-                          <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">Low Risk</span>
+                          <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">Low Risk</span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {candidate.risk_flags.slice(0, 2).map((flag) => (
-                              <span key={flag} className="inline-flex rounded-full bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700">
+                              <span key={flag} className="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">
                                 {flag}
                               </span>
                             ))}
                             {candidate.risk_flags.length > 2 && (
-                              <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">+{candidate.risk_flags.length - 2}</span>
+                              <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">+{candidate.risk_flags.length - 2}</span>
                             )}
                           </div>
                         )}
@@ -227,8 +227,8 @@ export default function PromotionsPage() {
                         <span
                           className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                             candidate.recommendation === 'Recommended for Promotion'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-rose-100 text-rose-800'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-yellow-100 text-yellow-900'
                           }`}
                         >
                           {candidate.recommendation}
@@ -270,14 +270,14 @@ type TrendBadgeProps = {
 
 function TrendBadge({ delta, hasPrevious }: TrendBadgeProps) {
   if (!hasPrevious) {
-    return <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">Baseline</span>;
+    return <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">Baseline</span>;
   }
 
   if (delta >= 0) {
-    return <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">+{delta}</span>;
+    return <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">+{delta}</span>;
   }
 
-  return <span className="inline-flex rounded-full bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-800">{delta}</span>;
+  return <span className="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">{delta}</span>;
 }
 
 type StatusBadgeProps = {
@@ -287,10 +287,10 @@ type StatusBadgeProps = {
 function StatusBadge({ status }: StatusBadgeProps) {
   const className =
     status === 'Approved'
-      ? 'bg-emerald-100 text-emerald-800'
-      : status === 'Reviewed'
       ? 'bg-blue-100 text-blue-800'
-      : 'bg-slate-100 text-slate-700';
+      : status === 'Reviewed'
+      ? 'bg-yellow-100 text-yellow-900'
+      : 'bg-blue-50 text-blue-900';
 
   return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${className}`}>{status}</span>;
 }
@@ -302,12 +302,12 @@ type CategoryBadgeProps = {
 function CategoryBadge({ category }: CategoryBadgeProps) {
   const className =
     category === 'Excellent'
-      ? 'bg-green-100 text-green-800'
-      : category === 'Good'
       ? 'bg-blue-100 text-blue-800'
+      : category === 'Good'
+      ? 'bg-yellow-100 text-yellow-900'
       : category === 'Average'
-      ? 'bg-yellow-100 text-yellow-800'
-      : 'bg-red-100 text-red-800';
+      ? 'bg-blue-50 text-blue-900'
+      : 'bg-yellow-50 text-yellow-900';
 
   return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${className}`}>{category}</span>;
 }

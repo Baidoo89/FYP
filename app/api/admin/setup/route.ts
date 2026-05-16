@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { hashPassword } from '../../../../lib/auth';
 import { createLocalAdminAccount } from '../../../../lib/admin-storage';
-import { getRows, query } from '../../../../lib/db';
+import { prisma } from '../../../../lib/prisma';
 
 type SetupRequestBody = {
   username?: string;
@@ -12,7 +13,7 @@ type SetupRequestBody = {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as SetupRequestBody;
-    const username = (body.username || '').trim();
+    const username = (body.username || '').trim().toLowerCase();
     const password = body.password || '';
     const email = (body.email || '').trim();
 
@@ -49,22 +50,26 @@ export async function POST(request: NextRequest) {
     const passwordHash = hashPassword(password);
 
     try {
-      // Check if admin already exists in the database.
-      const existingAdmins = await getRows(
-        'SELECT id FROM admin_accounts WHERE username = $1 OR email = $2',
-        [username, email]
-      );
-      if (existingAdmins.length > 0) {
+      const existingAdmin = await prisma.adminAccount.findUnique({
+        where: { username },
+        select: { id: true },
+      });
+
+      if (existingAdmin) {
         return NextResponse.json(
-          { success: false, error: 'Username or email already exists' },
+          { success: false, error: 'Username already exists' },
           { status: 409 }
         );
       }
-      // Insert new admin into the database.
-      await query(
-        'INSERT INTO admin_accounts (username, email, password_hash, is_active) VALUES ($1, $2, $3, TRUE)',
-        [username, email, passwordHash]
-      );
+
+      await prisma.adminAccount.create({
+        data: {
+          username,
+          password_hash: passwordHash,
+          is_active: true,
+        },
+      });
+
       return NextResponse.json(
         {
           success: true,
@@ -73,6 +78,13 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     } catch (dbError) {
+      if (dbError instanceof Prisma.PrismaClientKnownRequestError && dbError.code === 'P2002') {
+        return NextResponse.json(
+          { success: false, error: 'Username already exists' },
+          { status: 409 }
+        );
+      }
+
       console.warn('Database unavailable for admin setup. Falling back to local storage.');
       const localResult = await createLocalAdminAccount({
         username,

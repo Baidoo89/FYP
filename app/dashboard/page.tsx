@@ -58,13 +58,13 @@ export default function DashboardPage() {
   return (
     <div className="relative overflow-hidden rounded-[1.75rem] border border-blue-100/80 bg-[linear-gradient(180deg,#f8fbff_0%,#eef4ff_100%)] p-3 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:p-5 lg:p-6">
       <div className="pointer-events-none absolute -top-16 -right-10 h-56 w-56 rounded-full bg-blue-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 -left-8 h-48 w-48 rounded-full bg-amber-200/25 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 -left-8 h-48 w-48 rounded-full bg-yellow-200/25 blur-3xl" />
 
       <div className="relative space-y-8 lg:space-y-10">
         <section className="overflow-hidden rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-950 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.2)] sm:px-8 sm:py-10">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <div className="inline-flex rounded-full border border-amber-300/25 bg-amber-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-amber-200">
+            <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
               Overview
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
@@ -78,7 +78,7 @@ export default function DashboardPage() {
           <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-[28rem] lg:grid-cols-2">
             <a
               href="/api/reports/export?type=dashboard&format=csv"
-              className="inline-flex items-center justify-center rounded-xl border border-amber-300/40 bg-amber-400 px-4 py-3 text-sm font-bold text-amber-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"
+              className="inline-flex items-center justify-center rounded-xl border border-yellow-300/40 bg-yellow-400 px-4 py-3 text-sm font-bold text-yellow-950 shadow-lg shadow-yellow-500/20 transition hover:bg-yellow-300"
             >
               Export CSV
             </a>
@@ -125,7 +125,7 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-slate-900">Performance Distribution</h2>
               <p className="mt-1 text-sm text-slate-600">How current lecturer outcomes are distributed across categories.</p>
             </div>
-            <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
+            <span className="w-fit rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-900">
               Updated live from the database
             </span>
           </div>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
             <PerformanceBar
               label="Excellent (80-100)"
               count={metrics.excellent_count}
-              color="bg-gradient-to-r from-emerald-500 to-emerald-400"
+              color="bg-gradient-to-r from-blue-700 to-blue-600"
             />
             <PerformanceBar
               label="Good (70-79)"
@@ -143,12 +143,12 @@ export default function DashboardPage() {
             <PerformanceBar
               label="Average (50-69)"
               count={metrics.average_count}
-              color="bg-gradient-to-r from-amber-400 to-amber-300"
+              color="bg-gradient-to-r from-yellow-400 to-yellow-300"
             />
             <PerformanceBar
               label="Poor (<50)"
               count={metrics.poor_count}
-              color="bg-gradient-to-r from-rose-500 to-rose-400"
+              color="bg-gradient-to-r from-yellow-500 to-yellow-400"
             />
           </div>
         </div>
@@ -169,25 +169,25 @@ export default function DashboardPage() {
             </Link>
             <Link
               href="/appraisals"
-              className="group rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-500 via-amber-400 to-yellow-300 p-5 text-amber-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              className="group rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-500 via-yellow-400 to-yellow-300 p-5 text-yellow-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900/85">Record</div>
-              <div className="mt-2 text-lg font-bold text-amber-950">Appraisals</div>
-              <div className="mt-2 text-sm leading-6 text-amber-950/85">Add performance scores and evaluations.</div>
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-yellow-900/85">Record</div>
+              <div className="mt-2 text-lg font-bold text-yellow-950">Appraisals</div>
+              <div className="mt-2 text-sm leading-6 text-yellow-950/85">Add performance scores and evaluations.</div>
             </Link>
             <Link
               href="/analytics"
-              className="group rounded-2xl border border-cyan-300 bg-gradient-to-br from-cyan-600 via-sky-600 to-blue-600 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              className="group rounded-2xl border border-blue-300 bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-100">Explore</div>
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">Explore</div>
               <div className="mt-2 text-lg font-bold text-white">Analytics</div>
-              <div className="mt-2 text-sm leading-6 text-cyan-50/95">View performance trends and insights.</div>
+              <div className="mt-2 text-sm leading-6 text-blue-50/95">View performance trends and insights.</div>
             </Link>
             <Link
               href="/promotions"
-              className="group rounded-2xl border border-indigo-300 bg-gradient-to-br from-indigo-700 via-blue-700 to-amber-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              className="group rounded-2xl border border-blue-300 bg-gradient-to-br from-blue-700 via-blue-600 to-yellow-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-100">Decide</div>
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-yellow-100">Decide</div>
               <div className="mt-2 text-lg font-bold text-white">Promotions</div>
               <div className="mt-2 text-sm leading-6 text-blue-50/95">Review promotion candidates.</div>
             </Link>
