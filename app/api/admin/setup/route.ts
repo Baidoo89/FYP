@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { hashPassword } from '../../../../lib/auth';
 import { createLocalAdminAccount } from '../../../../lib/admin-storage';
 import { prisma } from '../../../../lib/prisma';
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     } catch (dbError) {
-      if (dbError instanceof Prisma.PrismaClientKnownRequestError && dbError.code === 'P2002') {
+      if (dbError instanceof PrismaClientKnownRequestError && dbError.code === 'P2002') {
         return NextResponse.json(
           { success: false, error: 'Username already exists' },
           { status: 409 }
