@@ -8,8 +8,12 @@ function run(command) {
   })
 }
 
-const databaseUrl = process.env.DATABASE_URL || ''
-const schemaPath = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')
+const isProductionBuild =
+  process.env.PRISMA_SCHEMA === 'postgres' ||
+  process.env.VERCEL === '1' ||
+  process.env.NODE_ENV === 'production'
+
+const schemaPath = isProductionBuild
   ? 'prisma/schema.postgres.prisma'
   : 'prisma/schema.prisma'
 
