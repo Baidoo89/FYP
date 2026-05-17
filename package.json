@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:safe": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-safe.ps1",
     "clean": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path .next) { Remove-Item .next -Recurse -Force -ErrorAction SilentlyContinue }\"",
+    "prebuild": "node ./scripts/prisma-generate.js",
     "build": "next build",
     "db:deploy": "prisma migrate deploy --schema prisma/schema.postgres.prisma",
     "deploy:prod": "prisma generate --schema prisma/schema.postgres.prisma && prisma migrate deploy --schema prisma/schema.postgres.prisma && next build",
