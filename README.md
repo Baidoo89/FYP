@@ -386,6 +386,18 @@ This project is for educational purposes. All rights reserved.
 
 ---
 
+## Neon + Prisma Workflow (Production-Ready)
+
+- All environments use Neon Postgres.
+- `.env.local` and `.env.production` must contain your Neon `DATABASE_URL`.
+- To apply migrations:
+  `npm run db:migrate:dev -- --name <migration-name>`
+- To force a reset (drops all data, use with care):
+  `npm run db:reset:dev`
+- All Prisma commands are wrapped with `dotenv-cli` for cross-platform env loading.
+
+---
+
 **Status:** ✅ Phase 1 Complete | 🔄 Phase 2-4 In Development
 
 **Last Updated:** April 2026

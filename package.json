@@ -13,7 +13,10 @@
     "cutover:prod": "node ./scripts/cutover-prod.js",
     "cutover:prod:check": "node ./scripts/cutover-prod.js --check-only",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate:dev": "dotenv -e .env.local -- prisma migrate dev --schema prisma/schema.prisma"
+    ,
+    "db:reset:dev": "dotenv -e .env.local -- prisma migrate reset --schema prisma/schema.prisma --force"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -34,6 +37,7 @@
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.0",
+    "dotenv-cli": "^11.0.0",
     "postcss": "^8.4.0",
     "prisma": "^6.19.3",
     "tailwindcss": "^3.4.0",
