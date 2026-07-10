@@ -9,7 +9,10 @@ datasource db {
 
 enum Role {
   LECTURER
+  HOD_DEAN
   HR_ADMIN
+  COMMITTEE_REVIEWER
+  SYSTEM_ADMIN
 }
 
 enum AcademicRank {
@@ -17,33 +20,73 @@ enum AcademicRank {
   LECTURER
   SENIOR_LECTURER
   ASSOCIATE_PROFESSOR
+  PROFESSOR
 }
 
 enum RequestStatus {
   DRAFT
   SUBMITTED
+  UNDER_DEPARTMENT_REVIEW
   UNDER_REVIEW
+  RETURNED_FOR_CORRECTION
+  UNDER_HR_VERIFICATION
+  UNDER_COMMITTEE_REVIEW
+  ELIGIBLE
+  NOT_ELIGIBLE
+  REQUIRES_FURTHER_REVIEW
+  RECOMMENDED
+  NOT_RECOMMENDED
+  APPROVED_BY_AUTHORITY
   APPROVED
   REJECTED
+  COMPLETED
 }
 
 enum DocumentCategory {
-  RESEARCH
   TEACHING
+  RESEARCH
   SERVICE
+  QUALIFICATIONS
+  PUBLICATIONS
+  PROFESSIONAL_DEVELOPMENT
+  OTHER_SUPPORTING_EVIDENCE
 }
 
 enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+  REQUIRES_CORRECTION
 }
 
 enum EligibilityStatus {
   NOT_CALCULATED
   ELIGIBLE
   NOT_ELIGIBLE
+  INCOMPLETE_APPLICATION
+  REQUIRES_FURTHER_REVIEW
   NEEDS_REVIEW
+}
+
+enum PerformanceCategory {
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  SATISFACTORY
+  UNSATISFACTORY
+}
+
+enum ReviewRecommendation {
+  RECOMMENDED
+  NOT_RECOMMENDED
+  REQUIRES_FURTHER_REVIEW
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
 }
 
 model AdminAccount {
@@ -56,98 +99,320 @@ model AdminAccount {
   @@map("admin_accounts")
 }
 
+model Faculty {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  departments Department[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("faculties")
+}
+
+model Department {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  facultyId   Int?
+  faculty     Faculty? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  users       User[]
+  lecturers   Lecturer[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([facultyId])
+  @@map("departments")
+}
+
 model Lecturer {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  department String
-  rank       String
-  hire_date  DateTime
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id           Int         @id @default(autoincrement())
+  name         String
+  email        String      @unique
+  department   String
+  departmentId Int?
+  departmentRef Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  rank         String
+  hire_date    DateTime
+  is_active    Boolean     @default(true)
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
 
   @@map("lecturers")
 }
 
 model User {
-  id             Int           @id @default(autoincrement())
-  name           String
-  email          String        @unique
-  password       String
-  role           Role          @default(LECTURER)
-  department     String?
-  staffId        String?       @unique
-  currentRank    AcademicRank?
-  onboarded      Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String?
+  passwordHash String?
+  role         Role          @default(LECTURER)
+  staffId      String?       @unique
+  department   String?
+  departmentId Int?
+  departmentRef Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  facultyId    Int?
+  faculty      Faculty?      @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  currentRank  AcademicRank?
+  phone        String?
+  emailVerified Boolean       @default(false)
+  emailVerifiedAt DateTime?
+  isActive     Boolean       @default(true)
+  onboarded    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  lecturerRequests     PromotionRequest[] @relation("LecturerPromotionRequests")
+  lecturerRequests      PromotionRequest[] @relation("LecturerPromotionRequests")
+  applicantRequests     PromotionRequest[] @relation("ApplicantPromotionRequests")
   requestedPromotions   PromotionRequest[] @relation("RequestedPromotions")
-  verifiedDocuments     Document[] @relation("VerifiedDocuments")
-  auditLogs             AuditLog[] @relation("AuditActor")
+  completedReviews      PromotionRequest[] @relation("CompletedPromotionReviews")
+  verifiedDocuments     Document[]         @relation("VerifiedDocuments")
+  uploadedDocuments     Document[]         @relation("UploadedDocuments")
+  verifications         Verification[]     @relation("VerifierVerifications")
+  reviewComments        ReviewComment[]    @relation("ReviewerComments")
+  auditLogs             AuditLog[]         @relation("AuditActor")
+  statusChanges         StatusHistory[]    @relation("StatusChangedBy")
+  notifications         Notification[]
+  emailVerificationTokens EmailVerificationToken[]
+  scores                Score[]            @relation("ScoreCreatedBy")
+  criteriaCreated       PromotionCriteria[] @relation("CriteriaCreatedBy")
+  criteriaUpdated       PromotionCriteria[] @relation("CriteriaUpdatedBy")
 
+  @@index([role])
+  @@index([departmentId])
+  @@index([facultyId])
   @@map("users")
 }
 
 model PromotionRequest {
-  id                Int               @id @default(autoincrement())
-  lecturerId        Int
-  lecturer          User              @relation("LecturerPromotionRequests", fields: [lecturerId], references: [id], onDelete: Cascade)
-  requestedById     Int?
-  requestedBy       User?             @relation("RequestedPromotions", fields: [requestedById], references: [id])
-  status            RequestStatus     @default(DRAFT)
-  submittedAt       DateTime?
-  verifiedAt        DateTime?
-  totalScore        Float?
-  eligibilityStatus EligibilityStatus  @default(NOT_CALCULATED)
-  adminComment      String?
-  currentRank       String
-  targetRank        String
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id                 Int                @id @default(autoincrement())
+  applicantId        Int?
+  lecturerId         Int
+  applicant          User?              @relation("ApplicantPromotionRequests", fields: [applicantId], references: [id], onDelete: SetNull)
+  lecturer           User               @relation("LecturerPromotionRequests", fields: [lecturerId], references: [id], onDelete: Cascade)
+  requestedById      Int?
+  requestedBy        User?              @relation("RequestedPromotions", fields: [requestedById], references: [id], onDelete: SetNull)
+  currentRank        String
+  targetRank         String
+  yearsInCurrentRank Int                @default(0)
+  status             RequestStatus      @default(DRAFT)
+  eligibilityStatus  EligibilityStatus  @default(NOT_CALCULATED)
+  eligibilityReason  String?
+  totalScore         Float?
+  adminComment       String?
+  submittedAt        DateTime?
+  verifiedAt         DateTime?
+  reviewedAt         DateTime?
+  reviewedById       Int?
+  reviewedBy         User?              @relation("CompletedPromotionReviews", fields: [reviewedById], references: [id], onDelete: SetNull)
+  completedAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
-  documents         Document[]
-  auditLogs         AuditLog[]
+  documents          Document[]
+  scores             Score[]
+  reviewComments     ReviewComment[]
+  auditLogs          AuditLog[]
+  statusHistory      StatusHistory[]
+  notifications      Notification[]
 
+  @@index([applicantId])
   @@index([lecturerId])
   @@index([status])
+  @@index([eligibilityStatus])
   @@map("promotion_requests")
 }
 
 model Document {
   id                  Int                @id @default(autoincrement())
+  promotionRequestId  Int?
   requestId           Int
   request             PromotionRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedById        Int?
+  uploadedBy          User?              @relation("UploadedDocuments", fields: [uploadedById], references: [id], onDelete: SetNull)
   category            DocumentCategory
   title               String
+  description         String?
   fileUrl             String
   fileName            String
-  mimeType            String
+  fileType            String             @default("")
+  mimeType            String?
   fileSize            Int
+  status              VerificationStatus @default(PENDING)
   verificationStatus  VerificationStatus @default(PENDING)
   verifiedById        Int?
-  verifiedBy          User?              @relation("VerifiedDocuments", fields: [verifiedById], references: [id])
+  verifiedBy          User?              @relation("VerifiedDocuments", fields: [verifiedById], references: [id], onDelete: SetNull)
   verificationComment String?
+  verifiedAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
   uploadedAt          DateTime           @default(now())
 
+  verifications       Verification[]
+
   @@unique([requestId, category])
-  @@index([requestId, verificationStatus])
+  @@index([promotionRequestId])
+  @@index([requestId])
+  @@index([uploadedById])
+  @@index([verifiedById])
+  @@index([category])
+  @@index([status])
   @@map("documents")
 }
 
+model Verification {
+  id         Int                @id @default(autoincrement())
+  documentId Int
+  document   Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  verifierId Int
+  verifier   User               @relation("VerifierVerifications", fields: [verifierId], references: [id], onDelete: Restrict)
+  decision   VerificationStatus
+  comment    String?
+  createdAt  DateTime           @default(now())
+
+  @@index([documentId])
+  @@index([verifierId])
+  @@map("verifications")
+}
+
+model PromotionCriteria {
+  id                                  Int                  @id @default(autoincrement())
+  currentRank                         AcademicRank
+  targetRank                          AcademicRank
+  minimumYearsInCurrentRank            Int
+  requiredDocumentCategories           DocumentCategory[]
+  requiredTeachingEvidence             Int                  @default(1)
+  requiredResearchPublicationEvidence  Int                  @default(1)
+  requiredServiceEvidence              Int                  @default(1)
+  minimumPerformanceCategory           PerformanceCategory
+  scoringEnabled                       Boolean              @default(true)
+  minimumTotalScore                    Float?
+  publicationRequirement               String?
+  professionalDevelopmentRequirement   String?
+  optionalReviewerNotes                String?
+  isActive                             Boolean              @default(true)
+  createdById                          Int?
+  createdBy                            User?                @relation("CriteriaCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById                          Int?
+  updatedBy                            User?                @relation("CriteriaUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt                            DateTime             @default(now())
+  updatedAt                            DateTime             @updatedAt
+
+  @@unique([currentRank, targetRank])
+  @@index([isActive])
+  @@map("promotion_criteria")
+}
+
+model Score {
+  id                 Int                 @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest    @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  category           DocumentCategory
+  score              Float
+  weight             Float
+  weightedScore      Float
+  performanceCategory PerformanceCategory?
+  createdById        Int?
+  createdBy          User?               @relation("ScoreCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([promotionRequestId, category])
+  @@index([promotionRequestId])
+  @@map("scores")
+}
+
+model ReviewComment {
+  id                 Int                   @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest      @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  reviewerId         Int
+  reviewer           User                  @relation("ReviewerComments", fields: [reviewerId], references: [id], onDelete: Restrict)
+  comment            String
+  recommendation     ReviewRecommendation?
+  createdAt          DateTime              @default(now())
+
+  @@index([promotionRequestId])
+  @@index([reviewerId])
+  @@map("review_comments")
+}
+
 model AuditLog {
-  id        Int      @id @default(autoincrement())
-  requestId Int?
-  request   PromotionRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  actorId   Int?
-  actor     User?     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Restrict)
-  action    String
-  metadata  Json?
-  createdAt DateTime @default(now())
+  id          Int       @id @default(autoincrement())
+  requestId   Int?
+  request     PromotionRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actorId     Int?
+  actor       User?     @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String?
+  entityId    String?
+  description String?
+  ipAddress   String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
 
   @@index([requestId])
   @@index([actorId])
+  @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+model Notification {
+  id                 Int               @id @default(autoincrement())
+  userId             Int
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotionRequestId Int?
+  promotionRequest   PromotionRequest? @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  title              String
+  message            String
+  type               NotificationType  @default(INFO)
+  isRead             Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+
+  @@index([userId, isRead])
+  @@index([promotionRequestId])
+  @@map("notifications")
+}
+
+model EmailVerificationToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model StatusHistory {
+  id                 Int            @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  changedById        Int
+  changedBy          User           @relation("StatusChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
+  oldStatus          RequestStatus?
+  newStatus          RequestStatus
+  comment            String?
+  createdAt          DateTime       @default(now())
+
+  @@index([promotionRequestId])
+  @@index([changedById])
+  @@map("status_history")
+}
+
+model SystemSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
 }

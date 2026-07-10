@@ -170,13 +170,13 @@ export default function LecturerDashboardOverview() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
-          <div className="text-3xl">📁</div>
+          <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Total Documents</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.recentDocuments.length}</div>
         </div>
 
         <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
-          <div className="text-3xl">✓</div>
+          <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Verified</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">
             {data.recentDocuments.filter(d => d.verificationStatus === 'VERIFIED').length}
@@ -184,7 +184,7 @@ export default function LecturerDashboardOverview() {
         </div>
 
         <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-100 to-amber-50/40 p-6 shadow-sm">
-          <div className="text-3xl">⏳</div>
+          <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Pending Review</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">
             {data.recentDocuments.filter(d => d.verificationStatus === 'PENDING').length}

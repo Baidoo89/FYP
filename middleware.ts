@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEdgeAuthSession } from './lib/auth-edge';
+import { canAccessPath, getDashboardForRole } from './lib/rbac';
 
-const publicRoutes = ['/login', '/register', '/onboarding'];
-const publicApiRoutes = ['/api/auth/login', '/api/auth/register'];
+const publicRoutes = ['/login', '/register', '/verify-email', '/check-email', '/onboarding'];
+const publicApiRoutes = ['/api/health', '/api/auth/login', '/api/auth/register', '/api/auth/verify-email', '/api/auth/resend-verification'];
 
 // Admin setup is a public route for initial account creation
 const adminSetupRoute = '/admin/setup';
@@ -34,28 +35,33 @@ export async function middleware(request: NextRequest) {
   const authenticated = Boolean(session);
   const role = session?.role;
   const onboarded = session?.onboarded;
-  const dashboardPath = role === 'HR_ADMIN' ? '/hr/dashboard' : '/lecturer-portal';
+  const emailVerified = session?.emailVerified;
+  const dashboardPath = getDashboardForRole(role);
 
   // Allow public routes if not authenticated
   if (isPublicRoute(pathname)) {
     // If authenticated and trying to access login/register, redirect based on onboarding status
     if (authenticated && (pathname === '/login' || pathname === '/register')) {
-      if (role === 'HR_ADMIN') {
-        return NextResponse.redirect(new URL('/hr/dashboard', request.url));
+      if (role === 'LECTURER' && !emailVerified) {
+        return NextResponse.redirect(new URL('/check-email', request.url));
       }
 
-      if (!onboarded) {
+      if (role === 'LECTURER' && !onboarded) {
         return NextResponse.redirect(new URL('/onboarding', request.url));
       }
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
 
     // If not onboarded and trying to access /onboarding, allow it
-    if (pathname === '/onboarding' && authenticated && role === 'HR_ADMIN') {
-      return NextResponse.redirect(new URL('/hr/dashboard', request.url));
+    if (pathname === '/onboarding' && authenticated && role !== 'LECTURER') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
 
-    if (pathname === '/onboarding' && authenticated && !onboarded) {
+    if (pathname === '/onboarding' && authenticated && role === 'LECTURER' && emailVerified && !onboarded) {
+      return NextResponse.next();
+    }
+
+    if (pathname === '/check-email' && authenticated && role === 'LECTURER' && !emailVerified) {
       return NextResponse.next();
     }
 
@@ -85,11 +91,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
       }
 
-      if (pathname.startsWith('/api/promotion-requests') && pathname.includes('/verify') && role !== 'HR_ADMIN') {
+      if (pathname.startsWith('/api/promotion-requests') && pathname.includes('/verify') && !['HOD_DEAN', 'HR_ADMIN', 'SYSTEM_ADMIN'].includes(role || '')) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
       }
 
-      if (pathname.startsWith('/api/uploads') && !['LECTURER', 'HR_ADMIN'].includes(role || '')) {
+      if (pathname.startsWith('/api/uploads') && !['LECTURER', 'HR_ADMIN', 'SYSTEM_ADMIN'].includes(role || '')) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
       }
 
@@ -115,12 +121,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is authenticated but not onboarded, redirect to onboarding
-  if (role !== 'HR_ADMIN' && !onboarded && pathname !== '/onboarding') {
-    return NextResponse.redirect(new URL('/onboarding', request.url));
+  if (role === 'LECTURER' && !emailVerified && pathname !== '/check-email' && pathname !== '/verify-email') {
+    return NextResponse.redirect(new URL('/check-email', request.url));
   }
 
-  if (pathname === '/dashboard' && role !== 'HR_ADMIN') {
-    return NextResponse.redirect(new URL('/lecturer-portal', request.url));
+  if (role === 'LECTURER' && !onboarded && pathname !== '/onboarding') {
+    return NextResponse.redirect(new URL('/onboarding', request.url));
   }
 
   if (session?.legacy && pathname.startsWith('/lecturer-portal')) {
@@ -131,12 +137,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/hr/dashboard', request.url));
   }
 
-  if (pathname.startsWith('/hr') && role !== 'HR_ADMIN') {
-    return NextResponse.redirect(new URL('/lecturer-portal', request.url));
-  }
-
-  if (pathname.startsWith('/lecturer-portal') && role === 'HR_ADMIN') {
-    return NextResponse.redirect(new URL('/hr/dashboard', request.url));
+  if (!canAccessPath(role, pathname)) {
+    return NextResponse.redirect(new URL(dashboardPath, request.url));
   }
 
   return NextResponse.next();

@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { hashPassword, createSessionToken, SESSION_COOKIE_NAME } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { registerSchema } from '../../../../lib/validation/auth.schema';
+import { sendVerificationEmail } from '../../../../lib/email-verification';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,14 +33,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const passwordHash = hashPassword(password);
+
     // Create user with onboarded: false
     const user = await prisma.user.create({
       data: {
         name: derivedName,
         email,
-        password: hashPassword(password),
+        password: passwordHash,
+        passwordHash,
         role: 'LECTURER',
+        emailVerified: false,
         onboarded: false, // User must complete onboarding
+      },
+    });
+
+    const verification = await sendVerificationEmail({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: 'USER_REGISTERED',
+        entityType: 'User',
+        entityId: String(user.id),
+        description: 'Lecturer account registered and email verification requested.',
       },
     });
 
@@ -47,8 +68,9 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        message: 'Account created successfully. Please complete your profile.',
+        message: 'Account created successfully. Please verify your email address.',
         userId: user.id,
+        verificationUrl: process.env.NODE_ENV === 'production' ? undefined : verification.verificationUrl,
       },
       { status: 201 }
     );
@@ -61,6 +83,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role,
         onboarded: false,
+        emailVerified: false,
       }),
       httpOnly: true,
       sameSite: 'lax',

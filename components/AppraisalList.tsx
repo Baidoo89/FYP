@@ -172,7 +172,7 @@ export default function AppraisalList({ refreshToken }: AppraisalListProps) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold text-slate-900">{item.lecturer_name}</h3>
-                    <p className="text-xs text-slate-500">{item.department} • {item.rank}</p>
+                    <p className="text-xs text-slate-500">{item.department}  {item.rank}</p>
                   </div>
                   <CategoryBadge category={item.category} />
                 </div>
@@ -224,7 +224,7 @@ export default function AppraisalList({ refreshToken }: AppraisalListProps) {
                   <tr key={item.id} className="border-b border-slate-100 hover:bg-blue-50/40">
                     <td className="px-4 py-3">
                       <div className="truncate font-semibold text-slate-900" title={item.lecturer_name}>{item.lecturer_name}</div>
-                      <div className="truncate text-xs text-slate-500" title={`${item.department} • ${item.rank}`}>{item.department} • {item.rank}</div>
+                      <div className="truncate text-xs text-slate-500" title={`${item.department}  ${item.rank}`}>{item.department}  {item.rank}</div>
                     </td>
                     <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
                       {item.teaching_score} / {item.research_score} / {item.service_score}

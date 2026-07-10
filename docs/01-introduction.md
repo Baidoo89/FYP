@@ -1,0 +1,3 @@
+# Introduction & System Overview
+
+The Lecturer Performance System is a modern web application designed to streamline the academic promotion process. It enables lecturers to submit promotion requests, upload supporting documents, and track their status, while HR/Admins can verify documents, manage requests, and maintain audit logs. The system is built for transparency, security, and efficiency, supporting both technical and non-technical users.

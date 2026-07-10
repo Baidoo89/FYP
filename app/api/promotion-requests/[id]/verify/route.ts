@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, VerificationStatus } from '@prisma/client';
+import { NotificationType, RequestStatus, VerificationStatus } from '@prisma/client';
 import { prisma } from '../../../../../lib/prisma';
 import { getAuthSession } from '../../../../../lib/auth';
 import { verificationSchema } from '../../../../../lib/validation/promotion-request.schema';
-import { evaluateEligibility } from '../../../../../lib/promotion-engine';
+import { calculateEligibility } from '../../../../../lib/promotion-engine';
 import { writePromotionAudit } from '../../../../../lib/promotion-audit';
+import { writeStatusHistory } from '../../../../../lib/audit-logger';
 import type { ApiResponse } from '../../../../../types';
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const { id } = await context.params;
   const requestId = Number(id);
 
-  if (!session || session.role !== 'HR_ADMIN' || session.legacy) {
+  if (!session || !['HR_ADMIN', 'HOD_DEAN', 'SYSTEM_ADMIN'].includes(session.role) || session.legacy) {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
@@ -53,9 +54,20 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const updatedDocument = await tx.document.update({
       where: { id: parsed.data.documentId },
       data: {
+        status: parsed.data.verificationStatus as VerificationStatus,
         verificationStatus: parsed.data.verificationStatus as VerificationStatus,
         verifiedById: session.userId,
         verificationComment: parsed.data.comment || null,
+        verifiedAt: new Date(),
+      },
+    });
+
+    await tx.verification.create({
+      data: {
+        documentId: updatedDocument.id,
+        verifierId: session.userId,
+        decision: parsed.data.verificationStatus as VerificationStatus,
+        comment: parsed.data.comment || null,
       },
     });
 
@@ -70,40 +82,22 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       },
     });
 
-    const allDocuments = await tx.document.findMany({
-      where: { requestId },
-      orderBy: { uploadedAt: 'asc' },
-    });
-
-    const eligibility = evaluateEligibility(
-      allDocuments.map((documentItem) => ({
-        category: documentItem.category,
-        verificationStatus: documentItem.verificationStatus,
-      }))
-    );
-
-    const allRequiredVerified = eligibility.allRequiredVerified;
     const nextStatus =
-      eligibility.eligibilityStatus === 'ELIGIBLE'
-        ? 'APPROVED'
-        : eligibility.eligibilityStatus === 'NOT_ELIGIBLE' && allRequiredVerified
-          ? 'REJECTED'
-          : 'UNDER_REVIEW';
+      parsed.data.verificationStatus === VerificationStatus.REJECTED ||
+      parsed.data.verificationStatus === VerificationStatus.REQUIRES_CORRECTION
+        ? RequestStatus.RETURNED_FOR_CORRECTION
+        : RequestStatus.UNDER_HR_VERIFICATION;
 
     const updatedRequest = await tx.promotionRequest.update({
       where: { id: requestId },
       data: {
         status: nextStatus,
-        totalScore: Number(eligibility.totalScore),
-        eligibilityStatus: eligibility.eligibilityStatus,
-        verifiedAt: allRequiredVerified ? new Date() : null,
+        verifiedAt: parsed.data.verificationStatus === VerificationStatus.VERIFIED ? new Date() : null,
         adminComment:
           parsed.data.comment ||
-          (eligibility.eligibilityStatus === 'ELIGIBLE'
-            ? 'All required documents verified. Lecturer is eligible for promotion review.'
-            : eligibility.eligibilityStatus === 'NOT_ELIGIBLE'
-              ? 'Promotion requirements were not met after verification.'
-              : 'Request is under review pending additional verification.'),
+          (nextStatus === RequestStatus.RETURNED_FOR_CORRECTION
+            ? 'Document requires correction before eligibility can be calculated.'
+            : 'Document verification saved. Application remains under HR verification.'),
       },
       include: {
         lecturer: true,
@@ -111,16 +105,39 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       },
     });
 
+    if (documentRecord.request.status !== nextStatus) {
+      await writeStatusHistory(tx, {
+        promotionRequestId: requestId,
+        changedById: session.userId,
+        oldStatus: documentRecord.request.status,
+        newStatus: nextStatus,
+        comment: updatedRequest.adminComment,
+      });
+    }
+
     await writePromotionAudit(tx, {
       requestId,
       actorId: session.userId,
       action: 'promotion_request.status_updated',
       metadata: {
         status: updatedRequest.status,
-        eligibilityStatus: updatedRequest.eligibilityStatus,
-        totalScore: updatedRequest.totalScore?.toString() || null,
       },
     });
+
+    await tx.notification.create({
+      data: {
+        userId: updatedRequest.lecturerId,
+        promotionRequestId: requestId,
+        title: parsed.data.verificationStatus === VerificationStatus.VERIFIED ? 'Document verified' : 'Document requires attention',
+        message: parsed.data.comment || `Your ${updatedDocument.category.toLowerCase().replace(/_/g, ' ')} document was ${parsed.data.verificationStatus.toLowerCase().replace(/_/g, ' ')}.`,
+        type: parsed.data.verificationStatus === VerificationStatus.VERIFIED ? NotificationType.SUCCESS : NotificationType.WARNING,
+      },
+    });
+
+    const eligibility =
+      parsed.data.verificationStatus === VerificationStatus.VERIFIED
+        ? await calculateEligibility(tx, requestId, session.userId)
+        : null;
 
     return {
       request: updatedRequest,
@@ -135,8 +152,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     data: {
       requestId: result.request.id,
       status: result.request.status,
-      eligibilityStatus: result.request.eligibilityStatus,
-      totalScore: result.request.totalScore ? Number(result.request.totalScore) : null,
+      eligibilityStatus: result.eligibility?.eligibilityStatus || result.request.eligibilityStatus,
+      eligibilityReason: result.eligibility?.eligibilityReason || result.request.eligibilityReason,
+      totalScore: result.eligibility?.totalScore ?? (result.request.totalScore ? Number(result.request.totalScore) : null),
       document: result.document,
     },
   } as ApiResponse<Record<string, unknown>>);

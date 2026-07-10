@@ -96,25 +96,25 @@ export default function DashboardPage() {
           <KPICard
             title="Total Lecturers"
             value={metrics.total_lecturers}
-            icon="👥"
+            icon=""
             tone="blue"
           />
           <KPICard
             title="Average Score"
             value={`${metrics.average_performance_score}%`}
-            icon="📊"
+            icon=""
             tone="gold"
           />
           <KPICard
             title="Excellent"
             value={metrics.excellent_count}
-            icon="⭐"
+            icon=""
             tone="amber"
           />
           <KPICard
             title="Promotion Candidates"
             value={metrics.promotion_candidates}
-            icon="🏆"
+            icon=""
             tone="slate"
           />
         </div>

@@ -160,7 +160,7 @@ export default function VerificationWorkspacePage() {
               href="/hr/requests"
               className="rounded-xl border border-blue-400 bg-transparent px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
             >
-              ← Back
+               Back
             </a>
           </div>
         </div>
@@ -212,7 +212,7 @@ export default function VerificationWorkspacePage() {
                   <div className="text-xs text-slate-500">{request.department}</div>
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-600">
-                      {request.currentRank} → {request.targetRank}
+                      {request.currentRank}  {request.targetRank}
                     </span>
                     <span className="text-xs font-semibold text-blue-700">
                       {request.documents.length} docs
@@ -303,7 +303,7 @@ export default function VerificationWorkspacePage() {
                       disabled={verifying}
                       className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
                     >
-                      {verifying ? 'Processing...' : '✅ Verify Document'}
+                      {verifying ? 'Processing...' : ' Verify Document'}
                     </button>
                     <button
                       type="button"
@@ -311,7 +311,7 @@ export default function VerificationWorkspacePage() {
                       disabled={verifying}
                       className="rounded-xl bg-yellow-500 px-6 py-3 font-semibold text-blue-950 hover:bg-yellow-400 disabled:opacity-50"
                     >
-                      {verifying ? 'Processing...' : '❌ Reject Document'}
+                      {verifying ? 'Processing...' : ' Reject Document'}
                     </button>
                   </div>
                 </div>
@@ -331,7 +331,7 @@ export default function VerificationWorkspacePage() {
       {/* PDF Preview Section */}
       {selectedFileUrl && (
         <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">📄 Document Preview</h2>
+          <h2 className="mb-4 text-lg font-bold text-slate-900"> Document Preview</h2>
           <iframe
             title="Document preview"
             src={selectedFileUrl}
@@ -363,9 +363,9 @@ function StatusBadge({ status }: { status: string }) {
 
 function VerificationStatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; text: string; icon: string }> = {
-    PENDING: { bg: 'bg-blue-100', text: 'text-blue-900', icon: '⏳' },
-    VERIFIED: { bg: 'bg-yellow-100', text: 'text-yellow-900', icon: '✅' },
-    REJECTED: { bg: 'bg-blue-950', text: 'text-white', icon: '❌' },
+    PENDING: { bg: 'bg-blue-100', text: 'text-blue-900', icon: '' },
+    VERIFIED: { bg: 'bg-yellow-100', text: 'text-yellow-900', icon: '' },
+    REJECTED: { bg: 'bg-blue-950', text: 'text-white', icon: '' },
   };
 
   const c = config[status] || config.PENDING;

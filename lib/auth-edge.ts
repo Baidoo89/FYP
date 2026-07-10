@@ -2,7 +2,7 @@ const SESSION_COOKIE_NAME = 'lpads_session';
 const LEGACY_SESSION_COOKIE_VALUE = 'admin-authenticated';
 const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'lpads-fyp-secret';
 
-export type EdgeAuthRole = 'LECTURER' | 'HR_ADMIN';
+export type EdgeAuthRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 type EdgeAuthSession = {
   userId: number;
@@ -11,6 +11,7 @@ type EdgeAuthSession = {
   role: EdgeAuthRole;
   department?: string;
   onboarded?: boolean;
+  emailVerified?: boolean;
   iat: number;
   exp: number;
   legacy?: boolean;

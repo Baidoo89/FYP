@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { Prisma } from '@prisma/client';
 import {
   applyReportingFilters,
   computeAnalyticsSummary,
@@ -7,7 +8,9 @@ import {
   computePromotionCandidates,
   loadReportingData,
 } from '../../../../lib/reporting';
-import { appendAuditLog, readRecentAuditLogs } from '../../../../lib/audit';
+import { getAuthSession } from '../../../../lib/auth';
+import { prisma } from '../../../../lib/prisma';
+import { writeAuditLog } from '../../../../lib/audit-logger';
 
 type ExportType = 'dashboard' | 'promotions' | 'analytics' | 'audit';
 type ExportFormat = 'csv' | 'pdf';
@@ -152,61 +155,68 @@ function buildAuditCsv(filters: {
   endDate?: string;
 }) {
   return async () => {
-    const logsAll = await readRecentAuditLogs();
-    const logs = Array.isArray(logsAll) ? logsAll.slice(0, 1000) : [];
-    const actor = (filters.actor || '').trim().toLowerCase();
-    const action = (filters.action || '').trim().toLowerCase();
-    const text = (filters.text || '').trim().toLowerCase();
+    const actor = (filters.actor || '').trim();
+    const action = (filters.action || '').trim();
+    const text = (filters.text || '').trim();
     const startDate = (filters.startDate || '').trim();
     const endDate = (filters.endDate || '').trim();
 
-    const filtered = logs.filter((log) => {
-      if (actor && !String(log.actor || '').toLowerCase().includes(actor)) {
-        return false;
-      }
+    const where: Prisma.AuditLogWhereInput = {};
 
-      if (action && !String(log.action || '').toLowerCase().includes(action)) {
-        return false;
-      }
+    if (action) {
+      where.action = { contains: action, mode: 'insensitive' };
+    }
 
-      if (text) {
-        const haystack = JSON.stringify(log).toLowerCase();
-        if (!haystack.includes(text)) {
-          return false;
-        }
-      }
+    if (actor) {
+      where.actor = {
+        OR: [
+          { name: { contains: actor, mode: 'insensitive' } },
+          { email: { contains: actor, mode: 'insensitive' } },
+        ],
+      };
+    }
 
+    if (text) {
+      where.OR = [
+        { action: { contains: text, mode: 'insensitive' } },
+        { entityType: { contains: text, mode: 'insensitive' } },
+        { entityId: { contains: text, mode: 'insensitive' } },
+        { description: { contains: text, mode: 'insensitive' } },
+      ];
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
       if (startDate) {
         const minDate = new Date(startDate);
-        const rowDate = new Date(log.timestamp);
-        if (!Number.isNaN(minDate.getTime()) && rowDate < minDate) {
-          return false;
-        }
+        if (!Number.isNaN(minDate.getTime())) where.createdAt.gte = minDate;
       }
-
       if (endDate) {
         const maxDate = new Date(endDate);
-        const rowDate = new Date(log.timestamp);
-
         if (!Number.isNaN(maxDate.getTime())) {
           maxDate.setHours(23, 59, 59, 999);
-          if (rowDate > maxDate) {
-            return false;
-          }
+          where.createdAt.lte = maxDate;
         }
       }
+    }
 
-      return true;
+    const logs = await prisma.auditLog.findMany({
+      where,
+      include: { actor: true },
+      orderBy: { createdAt: 'desc' },
+      take: 1000,
     });
 
-    const headers = ['Timestamp', 'Action', 'Actor', 'IP', 'User Agent', 'Details'];
-    const rows = filtered.map((log) => [
-      log.timestamp,
+    const headers = ['Timestamp', 'Action', 'Actor', 'Entity Type', 'Entity ID', 'IP', 'Description', 'Metadata'];
+    const rows = logs.map((log) => [
+      log.createdAt.toISOString(),
       log.action,
-      log.actor,
-      log.ip,
-      log.userAgent,
-      log.details ? JSON.stringify(log.details) : '',
+      log.actor ? `${log.actor.name} (${log.actor.email})` : 'System',
+      log.entityType,
+      log.entityId,
+      log.ipAddress,
+      log.description,
+      log.metadata ? JSON.stringify(log.metadata) : '',
     ]);
 
     return toCsv(headers, rows);
@@ -214,6 +224,12 @@ function buildAuditCsv(filters: {
 }
 
 export async function GET(request: NextRequest) {
+  const session = getAuthSession(request);
+
+  if (!session || session.legacy || !['HR_ADMIN', 'SYSTEM_ADMIN'].includes(session.role)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
+
   const type = (request.nextUrl.searchParams.get('type') || 'dashboard') as ExportType;
   const format = (request.nextUrl.searchParams.get('format') || 'csv') as ExportFormat;
   const department = request.nextUrl.searchParams.get('department') || '';
@@ -256,14 +272,17 @@ export async function GET(request: NextRequest) {
     const csv = await builders[type]();
     const timestamp = new Date().toISOString().slice(0, 10);
 
-    await appendAuditLog({
-      action: 'report.export',
-      details: {
+    await writeAuditLog(prisma, {
+      actorId: session.userId,
+      action: 'REPORT_EXPORTED',
+      entityType: 'Report',
+      entityId: `${type}:${format}`,
+      description: `${type} report exported as ${format}.`,
+      metadata: {
         type,
         format,
         filters,
       },
-      request,
     });
 
     if (format === 'pdf') {

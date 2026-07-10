@@ -14,9 +14,12 @@
     "cutover:prod:check": "node ./scripts/cutover-prod.js --check-only",
     "start": "next start",
     "lint": "next lint",
-    "db:migrate:dev": "dotenv -e .env.local -- prisma migrate dev --schema prisma/schema.prisma"
-    ,
-    "db:reset:dev": "dotenv -e .env.local -- prisma migrate reset --schema prisma/schema.prisma --force"
+    "db:migrate:dev": "dotenv -e .env.local -- prisma migrate dev --schema prisma/schema.prisma",
+    "db:reset:dev": "dotenv -e .env.local -- prisma migrate reset --schema prisma/schema.prisma --force",
+    "db:seed": "dotenv -e .env.local -- node prisma/seed.js",
+    "smoke": "dotenv -e .env.local -- node scripts/smoke-check.js",
+    "seed:demo": "dotenv -e .env.local -- node scripts/seed-demo-workflow.js",
+    "reset:demo-auth": "dotenv -e .env.local -- node scripts/reset-demo-auth.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

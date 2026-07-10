@@ -97,34 +97,34 @@ export default function LecturerDashboardOverview() {
 
   return (
     <div className="space-y-6">
-      <section id="home" className="rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-950 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
+      <section id="home" className="pro-hero px-6 py-8">
         <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr] xl:items-end">
           <div>
-            <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
+            <div className="pro-eyebrow">
               Overview Dashboard
             </div>
             <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
               Welcome back,
-              <span className="mt-1 block break-words text-blue-50"> {data.user.name}</span>
+              <span className="mt-1 block break-words text-teal-700"> {data.user.name}</span>
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
               Track your promotion readiness, manage evidence submissions, and stay updated with all HR decisions in one secure workspace.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm sm:p-5">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 backdrop-blur-sm sm:p-5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="min-w-0 rounded-xl border border-white/10 bg-slate-900/35 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/70">Full Name</p>
-                <p className="mt-2 break-words text-sm font-bold leading-snug text-white sm:text-base">{data.user.name}</p>
+              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Full Name</p>
+                <p className="mt-2 break-words text-sm font-bold leading-snug text-slate-950 sm:text-base">{data.user.name}</p>
               </div>
-              <div className="min-w-0 rounded-xl border border-white/10 bg-slate-900/35 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/70">Current Rank</p>
-                <p className="mt-2 break-words text-sm font-bold leading-snug text-white sm:text-base">{data.user.currentRank || 'Lecturer'}</p>
+              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Current Rank</p>
+                <p className="mt-2 break-words text-sm font-bold leading-snug text-slate-950 sm:text-base">{data.user.currentRank || 'Lecturer'}</p>
               </div>
-              <div className="min-w-0 rounded-xl border border-white/10 bg-slate-900/35 p-3 sm:col-span-2 lg:col-span-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/70">Department</p>
-                <p className="mt-2 break-words text-sm font-bold leading-snug text-white sm:text-base">{data.user.department || 'Not Assigned'}</p>
+              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:col-span-2 lg:col-span-1">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Department</p>
+                <p className="mt-2 break-words text-sm font-bold leading-snug text-slate-950 sm:text-base">{data.user.department || 'Not Assigned'}</p>
               </div>
             </div>
           </div>
@@ -156,27 +156,9 @@ export default function LecturerDashboardOverview() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
-          <div className="text-3xl">📁</div>
-          <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Total Documents</div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">{data.documentStats.totalDocuments}</div>
-        </div>
-
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
-          <div className="text-3xl">✓</div>
-          <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Verified</div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">
-            {data.documentStats.verifiedCount}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-yellow-100 bg-gradient-to-br from-yellow-100 to-yellow-50/40 p-6 shadow-sm">
-          <div className="text-3xl">⏳</div>
-          <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Pending Review</div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">
-            {data.documentStats.pendingCount}
-          </div>
-        </div>
+        <StatTile code="DOC" label="Total Documents" value={data.documentStats.totalDocuments} />
+        <StatTile code="OK" label="Verified" value={data.documentStats.verifiedCount} />
+        <StatTile code="PN" label="Pending Review" value={data.documentStats.pendingCount} tone="amber" />
       </div>
 
       {/* Recent Activity */}
@@ -184,29 +166,44 @@ export default function LecturerDashboardOverview() {
 
       {/* Quick Action Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/lecturer-portal/evidence" className="group rounded-2xl border border-blue-300 bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">Upload</div>
-          <div className="mt-2 text-lg font-bold text-white">Evidence</div>
-          <div className="mt-2 text-sm leading-6 text-blue-50/95">Submit research, teaching, and service documents.</div>
+        <Link href="/lecturer-portal/evidence" className="pro-action block p-5">
+          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Upload</div>
+          <div className="mt-2 text-lg font-semibold text-slate-950">Evidence</div>
+          <div className="mt-2 text-sm leading-6 text-slate-700">Submit research, teaching, and service documents.</div>
         </Link>
 
-        <Link href="/lecturer-portal/application" className="group rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-400 via-yellow-300 to-blue-200 p-5 text-blue-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-900/85">View</div>
-          <div className="mt-2 text-lg font-bold text-blue-950">Application</div>
-          <div className="mt-2 text-sm leading-6 text-blue-950/85">Check your promotion status and scores.</div>
+        <Link href="/lecturer-portal/application" className="pro-action block p-5">
+          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">View</div>
+          <div className="mt-2 text-lg font-semibold text-slate-950">Application</div>
+          <div className="mt-2 text-sm leading-6 text-slate-700/85">Check your promotion status and scores.</div>
         </Link>
 
-        <Link href="/lecturer-portal/queries" className="group rounded-2xl border border-blue-300 bg-gradient-to-br from-blue-900 via-blue-800 to-yellow-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-yellow-100">Inbox</div>
-          <div className="mt-2 text-lg font-bold text-white">HR Feedback</div>
-          <div className="mt-2 text-sm leading-6 text-blue-50/95">Review flagged documents and HR comments.</div>
+        <Link href="/lecturer-portal/queries" className="pro-action block p-5">
+          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Inbox</div>
+          <div className="mt-2 text-lg font-semibold text-slate-950">HR Feedback</div>
+          <div className="mt-2 text-sm leading-6 text-slate-700">Review flagged documents and HR comments.</div>
         </Link>
 
-        <Link href="/lecturer-portal/profile" className="group rounded-2xl border border-slate-300 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">Profile</div>
-          <div className="mt-2 text-lg font-bold text-white">Account Settings</div>
-          <div className="mt-2 text-sm leading-6 text-slate-50/95">View your official academic profile.</div>
+        <Link href="/lecturer-portal/profile" className="pro-action block p-5">
+          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Profile</div>
+          <div className="mt-2 text-lg font-semibold text-slate-950">Account Settings</div>
+          <div className="mt-2 text-sm leading-6 text-slate-700">View your official academic profile.</div>
         </Link>
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' }) {
+  const toneClass = tone === 'amber' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-teal-50 text-teal-800 border-teal-200';
+  return (
+    <div className="pro-tile p-5">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
+        </div>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
       </div>
     </div>
   );

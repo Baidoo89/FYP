@@ -17,7 +17,7 @@ export const registerSchema = z.object({
 export const onboardingSchema = z.object({
   department: z.string().min(2, 'Department is required'),
   staffId: z.string().min(2, 'Staff ID is required'),
-  currentRank: z.enum(['ASSISTANT_LECTURER', 'LECTURER', 'SENIOR_LECTURER', 'ASSOCIATE_PROFESSOR'] as const),
+  currentRank: z.enum(['ASSISTANT_LECTURER', 'LECTURER', 'SENIOR_LECTURER', 'ASSOCIATE_PROFESSOR', 'PROFESSOR'] as const),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

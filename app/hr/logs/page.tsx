@@ -64,12 +64,12 @@ export default function AuditLogsPage() {
   const uniqueActions = Array.from(new Set(logs.map((l) => l.action)));
 
   const getActionIcon = (action: string) => {
-    if (action.includes('verified')) return '✅';
-    if (action.includes('rejected')) return '❌';
-    if (action.includes('created')) return '📝';
-    if (action.includes('updated')) return '📝';
-    if (action.includes('submitted')) return '📤';
-    return '📋';
+    if (action.includes('verified')) return '';
+    if (action.includes('rejected')) return '';
+    if (action.includes('created')) return '';
+    if (action.includes('updated')) return '';
+    if (action.includes('submitted')) return '';
+    return '';
   };
 
   const getActionLabel = (action: string) => {
@@ -127,7 +127,7 @@ export default function AuditLogsPage() {
               href="/hr/dashboard"
               className="rounded-xl border border-blue-400 bg-transparent px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
             >
-              ← Back
+               Back
             </a>
           </div>
         </div>
@@ -135,18 +135,18 @@ export default function AuditLogsPage() {
 
       {/* Statistics */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Events" value={logs.length} icon="📊" />
+        <StatCard label="Total Events" value={logs.length} icon="" />
         <StatCard
           label="Verifications"
           value={logs.filter((l) => l.action.includes('verified')).length}
-          icon="✅"
+          icon=""
         />
         <StatCard
           label="Rejections"
           value={logs.filter((l) => l.action.includes('rejected')).length}
-          icon="❌"
+          icon=""
         />
-        <StatCard label="Unique Actions" value={uniqueActions.length} icon="📝" />
+        <StatCard label="Unique Actions" value={uniqueActions.length} icon="" />
       </section>
 
       {/* Filters */}
@@ -237,13 +237,13 @@ export default function AuditLogsPage() {
 
       {/* Info Card */}
       <section className="rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
-          <h3 className="font-semibold text-blue-950">📋 About Audit Logs</h3>
+          <h3 className="font-semibold text-blue-950"> About Audit Logs</h3>
         <ul className="mt-3 space-y-2 text-sm text-blue-800">
-          <li>• All system actions are logged automatically for compliance and transparency</li>
-          <li>• Logs include document verification, rejections, and status changes</li>
-          <li>• Each entry shows the timestamp, actor ID, and detailed metadata</li>
-          <li>• Use filters and search to find specific activities</li>
-          <li>• Logs are immutable and cannot be edited or deleted</li>
+          <li> All system actions are logged automatically for compliance and transparency</li>
+          <li> Logs include document verification, rejections, and status changes</li>
+          <li> Each entry shows the timestamp, actor ID, and detailed metadata</li>
+          <li> Use filters and search to find specific activities</li>
+          <li> Logs are immutable and cannot be edited or deleted</li>
         </ul>
       </section>
     </div>

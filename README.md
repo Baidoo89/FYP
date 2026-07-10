@@ -1,403 +1,152 @@
 # GCTU Promotion System
 
-**A comprehensive web-based platform for lecturer appraisal management, promotion readiness tracking, and transparent promotion decisions.**
+A professional Digital Staff Promotion Support System for Ghana Communication Technology University (GCTU). The platform supports lecturer promotion applications, verified evidence, role-based review workflows, audit trails, notifications, and configurable promotion criteria.
 
----
+## Core Capabilities
 
-## 🎯 Overview
+- Role-based authentication for Lecturer, HOD/Dean, HR Admin, Committee Reviewer, and System Admin.
+- Email verification and onboarding for lecturer accounts.
+- Promotion request submission with rank, department, years in rank, and evidence tracking.
+- Evidence upload and HR document verification.
+- Eligibility recommendation based on configured criteria and verified evidence only.
+- HOD/Dean departmental review workflow.
+- Committee recommendation workflow.
+- System Admin management for users, roles, faculties, departments, criteria, and settings.
+- In-app notifications for workflow feedback.
+- Audit logging for sensitive administrative actions.
+- Health check endpoint for database and system readiness.
 
-**GCTU Promotion System** is a full-stack Next.js application designed for managing lecturer appraisal evidence, promotion readiness analytics, and institutional decision support.
-
-### Key Features ✨
-- ✅ Lecturer management (Add, Edit, View, Delete)
-- ✅ Performance appraisal tracking
-- ✅ Weighted performance calculations (Teaching 50%, Research 30%, Service 20%)
-- ✅ Automatic performance categorization (Excellent, Good, Average, Poor)
-- ✅ Promotion recommendation logic
-- ✅ Interactive admin dashboard
-- ✅ Performance analytics and reporting
-- ✅ Clean, modern UI with Tailwind CSS
-
----
-
-## 🛠️ Tech Stack
+## Technology Stack
 
 | Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 15, React 18, TypeScript |
-| **Backend** | Next.js API Routes |
-| **Database** | SQLite (local dev), Neon PostgreSQL (production) |
-| **Styling** | Tailwind CSS / Plain CSS |
-| **ORM** | Prisma |
+| --- | --- |
+| Frontend | Next.js 15, React 18, TypeScript |
+| Backend | Next.js App Router API routes |
+| Database | Neon PostgreSQL |
+| ORM | Prisma |
+| Styling | Tailwind CSS |
+| Authentication | Custom signed session cookie with role claims |
 
----
+## Project Structure
 
-## 📁 Project Structure
-
-```
+```text
 lecturer-performance-system/
-├── app/                          # Next.js App Router
-│   ├── layout.tsx               # Root layout with navigation
-│   ├── page.tsx                 # Home page
-│   ├── api/                     # API Routes
-│   │   ├── lecturers/
-│   │   │   ├── route.ts         # GET/POST lecturers
-│   │   │   └── [id]/route.ts    # GET/PUT/DELETE lecturer
-│   │   └── appraisals/          # Appraisal APIs (Phase 2)
-│   ├── dashboard/               # Dashboard page
-│   ├── lecturers/               # Lecturers management page
-│   ├── appraisals/              # Appraisals page (Phase 2)
-│   ├── analytics/               # Analytics page (Phase 2)
-│   └── promotions/              # Promotions page (Phase 2)
-├── components/                   # Reusable React components
-│   ├── AddLecturerForm.tsx      # Form to add lecturer
-│   └── LecturerList.tsx         # Display lecturers table
-├── lib/                         # Utility libraries
-│   ├── db.ts                    # Database connection & helpers
-│   └── calculations.ts          # Performance calculation logic
-├── types/                       # TypeScript interfaces
-│   └── index.ts                 # All type definitions
-├── database/                    # Database scripts
-│   └── schema.sql              # Complete database schema
-├── package.json
-├── tsconfig.json
-├── next.config.js
-└── .env.local.example           # Environment variables template
+  app/                    Next.js routes, pages, and API handlers
+  components/             Shared UI components
+  docs/                   Supervisor, deployment, and project documentation
+  lib/                    Auth, RBAC, Prisma, workflow, email, audit, notification logic
+  prisma/                 Prisma schema and seed scripts
+  scripts/                Smoke checks, demo workflow seed, utility scripts
+  storage/                Local upload storage for promotion evidence
 ```
 
----
+## Local Run
 
-## 🗄️ Database Schema
+This machine currently exposes Node at:
 
-### Tables:
-1. **lecturers** - Store lecturer information
-2. **appraisals** - Performance scores and computed metrics
-3. **performance_trends** - Historical analytics data
-4. **promotion_history** - Track promotion decisions
-
-See [database/schema.sql](database/schema.sql) for complete schema.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+ and npm/yarn
-- Git
-
-### Installation
-
-#### 1. Clone or Navigate to Project
-```bash
-cd lecturer-performance-system
+```text
+D:\node.exe
 ```
 
-#### 2. Install Dependencies
-```bash
-npm install
+Start the development server:
+
+```powershell
+D:\node.exe node_modules\next\dist\bin\next dev
 ```
 
-#### 3. Setup Database
+Open:
 
-Local development uses SQLite via Prisma:
+```text
+http://localhost:3000/login
+```
+
+## Demo Credentials
+
+All seeded/demo accounts use:
+
+```text
+Password123!
+```
+
+| Interface | Login | Role |
+| --- | --- | --- |
+| Lecturer Portal | lecturer.demo@live.gctu.edu.gh | LECTURER |
+| HOD / Dean Portal | hod.demo@gctu.edu.gh | HOD_DEAN |
+| HR Admin Portal | hr.admin@gctu.edu.gh | HR_ADMIN |
+| Committee Portal | committee.demo@gctu.edu.gh | COMMITTEE_REVIEWER |
+| System Admin Portal | system.admin@gctu.edu.gh | SYSTEM_ADMIN |
+| Legacy Admin | admin | HR_ADMIN |
+
+Additional local lecturer accounts may also be reset to the same demo password with:
+
+```powershell
+D:\node.exe scripts\reset-demo-auth.js
+```
+
+## Useful Commands
+
+When Node is on PATH:
 
 ```bash
-npx prisma generate
-npx prisma db push
+npm run smoke
+npm run seed:demo
+npm run reset:demo-auth
+npx tsc --noEmit
+npx next build
 ```
 
-#### 4. Configure Environment
-```bash
-cp .env.local.example .env.local
+Using the current direct Node executable:
+
+```powershell
+D:\node.exe node_modules\typescript\bin\tsc --noEmit
+D:\node.exe node_modules\next\dist\bin\next build
 ```
 
-Edit `.env.local`:
-```env
-DATABASE_URL=file:./dev.db
-NEXT_PUBLIC_API_URL=http://localhost:3000
+## Health Check
+
+```text
+GET /api/health
 ```
 
-### Production (Neon)
+Expected healthy response includes:
 
-Set these environment variables in your hosting provider:
-
-```env
-DATABASE_URL=postgresql://USER:PASSWORD@ep-xxxxx.us-east-1.aws.neon.tech/DBNAME?sslmode=require
+```json
+{
+  "success": true,
+  "status": "healthy",
+  "service": "GCTU Promotion System",
+  "database": "connected"
+}
 ```
 
-Then run migrations/deploy steps:
+## Recommended Supervisor Demo Flow
 
-```bash
-npx prisma generate --schema prisma/schema.postgres.prisma
-npx prisma migrate deploy --schema prisma/schema.postgres.prisma
-```
+1. Log in as System Admin and show users, roles, faculties, departments, settings, and criteria.
+2. Log in as Lecturer and show dashboard, application status, evidence upload, profile, and notifications.
+3. Log in as HOD/Dean and show departmental application review.
+4. Log in as HR Admin and show master queue, document verification, eligibility review, audit logs, and reports.
+5. Log in as Committee Reviewer and show committee recommendation workflow.
+6. Return to notifications and audit logs to demonstrate traceability.
 
-Production templates and runbooks:
-- `.env.production.example`
-- `SQLITE_TO_NEON_MIGRATION.md`
+## Important Academic Point
 
-#### 5. Start Development Server
-```bash
-npm run dev:safe
-```
+The system does not automatically promote staff. It supports the university process by producing eligibility recommendations from verified evidence and configured criteria. Final promotion decisions remain with authorized university officers and committees.
 
-`dev:safe` is recommended on Windows because it clears stale Node processes and `.next` lock artifacts before booting Next.js.
+## Current Verification Status
 
-Visit **http://localhost:3000**
+Latest verified checks:
 
----
+- TypeScript compilation passed.
+- Production Next.js build passed.
+- Local dev server runs on `http://localhost:3000`.
+- `/api/health` returns database connected when Neon is reachable.
+- All five primary demo role logins return success.
 
-## 📖 Usage Guide
+## Documentation
 
-### Phase 1: Lecturer Management (Current Implementation)
+See also:
 
-#### Add a Lecturer
-1. Navigate to **Lecturers** in sidebar
-2. Fill the form with:
-   - Full Name
-   - Email (unique)
-   - Department
-   - Rank/Position
-3. Click "Add Lecturer"
-
-#### View All Lecturers
-- The lecturer list appears on the right side
-- All active lecturers are displayed in a table
-
-#### Edit/Delete (Demo Ready)
-- API routes support PUT and DELETE
-- UI components for edit/delete coming in Phase 2
-
----
-
-### Current Modules
-- **Appraisals Module** - Create performance appraisals
-- **Performance Calculations** - Automatic score computation
-- **Analytics Dashboard** - Trends and insights
-- **Promotion Decisions** - AI-driven recommendations
-- **Reporting** - Export and analytics reports
-
----
-
-## 🔧 API Endpoints
-
-### Lecturers Module
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/lecturers` | Get all lecturers |
-| POST | `/api/lecturers` | Create new lecturer |
-| GET | `/api/lecturers/:id` | Get specific lecturer |
-| PUT | `/api/lecturers/:id` | Update lecturer |
-| DELETE | `/api/lecturers/:id` | Delete lecturer |
-
-### Example Request:
-```bash
-# Get all lecturers
-curl http://localhost:3000/api/lecturers
-
-# Create lecturer
-curl -X POST http://localhost:3000/api/lecturers \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Dr. Jane Doe",
-    "email": "jane.doe@uni.edu",
-    "department": "Computer Science",
-    "rank": "Associate Professor"
-  }'
-```
-
----
-
-## 💡 Performance Calculation Formula
-
-```
-Total Score = (Teaching × 0.50) + (Research × 0.30) + (Service × 0.20)
-
-Categories:
-- Excellent:   80-100
-- Good:        70-79
-- Average:     50-69
-- Poor:        < 50
-
-Promotion Rule:
-- RECOMMENDED if Total Score ≥ 80
-- NOT RECOMMENDED if Total Score < 80
-```
-
----
-
-## 🔑 Key Functions
-
-### Performance Calculations (`lib/calculations.ts`)
-```typescript
-calculateTotalScore()          // Compute weighted average
-determineCategory()            // Get performance category
-isPromotionRecommended()       // Check promotion eligibility
-computeAppraisalMetrics()      // Complete appraisal computation
-generatePerformanceSummary()   // Statistics generation
-```
-
-### Database Operations (`lib/db.ts`)
-```typescript
-query()                        // Execute raw SQL
-getRow()                       // Fetch single record
-getRows()                      // Fetch multiple records
-insert()                       // Insert data
-update()                       // Update data
-deleteRecord()                 // Delete data
-```
-
----
-
-## 🧪 Testing the API
-
-### Using Thunder Client / Postman
-
-1. **Create Lecturer**
-   - POST: `http://localhost:3000/api/lecturers`
-   - Body:
-   ```json
-   {
-     "name": "Dr. Test User",
-     "email": "test@university.edu",
-     "department": "Computer Science",
-     "rank": "Lecturer"
-   }
-   ```
-
-2. **Get All Lecturers**
-   - GET: `http://localhost:3000/api/lecturers`
-
-3. **Get Specific Lecturer**
-   - GET: `http://localhost:3000/api/lecturers/1`
-
----
-
-## 📊 Architecture Highlights
-
-### Clean Separation
-- **Routes & Controllers** in `app/api/`
-- **Business Logic** in `lib/`
-- **UI Components** in `components/`
-- **Type Safety** with TypeScript
-
-### Performance
-- Indexed database queries
-- Efficient pagination-ready design
-- Optimized component rendering
-- Connection pooling for DB
-
-### Scalability
-- Modular component design
-- Reusable utility functions
-- Database views for analytics
-- Ready for future microservices
-
----
-
-## 🎓 Academic Considerations
-
-✅ **Meets Requirements:**
-- Data collection ✓
-- Computation logic ✓
-- Analysis capability ✓
-- Decision support ✓
-- Professional architecture ✓
-
-✅ **Production-Ready:**
-- Error handling ✓
-- Input validation ✓
-- Database constraints ✓
-- Clean code standards ✓
-
----
-
-## 🐛 Troubleshooting
-
-### Database Connection Error
-```
-Error: connect ECONNREFUSED 127.0.0.1:3306
-```
-**Solution:** Ensure MySQL is running and credentials in `.env.local` are correct
-
-### Port Already in Use
-```
-Error: listen EADDRINUSE: address already in use :::3000
-```
-**Solution:** 
-```bash
-# Kill process on port 3000
-npx kill-port 3000
-npm run dev
-```
-
-### Missing Lecturers in List
-- Ensure database is properly initialized
-- Check `.env.local` database name
-- Verify MySQL user has proper permissions
-
----
-
-## 📝 Next Steps (Phase 2)
-
-1. **Appraisal Module**
-   - API routes for appraisal CRUD
-   - Form for score input
-   - Automatic calculation integration
-
-2. **Analytics Module**
-   - Dashboard with charts
-   - Trend analysis views
-   - Export functionality
-
-3. **Promotion Module**
-   - Recommendation engine
-   - Decision workflow
-   - Approval tracking
-
-4. **Testing**
-   - Unit tests for calculations
-   - Integration tests for APIs
-   - E2E tests for workflows
-
----
-
-## 📚 Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [React Documentation](https://react.dev)
-- [MySQL Documentation](https://dev.mysql.com/doc/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-
----
-
-## 👤 Author
-
-**Developed as Final Year Project (FYP)**
-- GCTU Promotion System
-- Submission Date: 2026
-
----
-
-## 📄 License
-
-This project is for educational purposes. All rights reserved.
-
----
-
-## Neon + Prisma Workflow (Production-Ready)
-
-- All environments use Neon Postgres.
-- `.env.local` and `.env.production` must contain your Neon `DATABASE_URL`.
-- To apply migrations:
-  `npm run db:migrate:dev -- --name <migration-name>`
-- To force a reset (drops all data, use with care):
-  `npm run db:reset:dev`
-- All Prisma commands are wrapped with `dotenv-cli` for cross-platform env loading.
-
----
-
-**Status:** ✅ Phase 1 Complete | 🔄 Phase 2-4 In Development
-
-**Last Updated:** April 2026
+- `docs/supervisor-demo-guide.md`
+- `docs/deployment-checklist.md`
+- `docs/01-introduction.md` through `docs/12-license-credits.md`
+- `docs/chapter1-introduction.md` through `docs/chapter5-implementation.md`

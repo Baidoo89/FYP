@@ -8,6 +8,7 @@ export function RegisterForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [verificationUrl, setVerificationUrl] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -50,8 +51,11 @@ export function RegisterForm() {
         return;
       }
 
-      // Auto-redirect to onboarding (middleware will handle it)
-      router.push('/onboarding');
+      if (data.verificationUrl) {
+        setVerificationUrl(data.verificationUrl);
+      }
+
+      router.push('/check-email');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -71,6 +75,19 @@ export function RegisterForm() {
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
           {error}
+        </div>
+      )}
+
+      {verificationUrl && (
+        <div className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          Development verification link:{' '}
+          <button
+            type="button"
+            onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
+            className="font-semibold text-blue-700 underline"
+          >
+            verify account
+          </button>
         </div>
       )}
 
@@ -102,7 +119,7 @@ export function RegisterForm() {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            placeholder="••••••••"
+            placeholder=""
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
@@ -120,7 +137,7 @@ export function RegisterForm() {
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
-            placeholder="••••••••"
+            placeholder=""
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />

@@ -1,11 +1,12 @@
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 export const SESSION_COOKIE_NAME = 'lpads_session';
 const LEGACY_SESSION_COOKIE_VALUE = 'admin-authenticated';
 const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'lpads-fyp-secret';
 
-export type AuthRole = 'LECTURER' | 'HR_ADMIN';
+export type AuthRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 export type AuthSession = {
   userId: number;
@@ -14,6 +15,7 @@ export type AuthSession = {
   role: AuthRole;
   department?: string;
   onboarded?: boolean;
+  emailVerified?: boolean;
   iat: number;
   exp: number;
   legacy?: boolean;
@@ -55,7 +57,23 @@ export function getAdminCredentials() {
 }
 
 export function hashPassword(password: string): string {
+  return bcrypt.hashSync(password, 12);
+}
+
+export function hashLegacyPassword(password: string): string {
   return crypto.createHash('sha256').update(password + 'lpads-salt-2026').digest('hex');
+}
+
+export function verifyPassword(password: string, storedHash?: string | null): boolean {
+  if (!storedHash) {
+    return false;
+  }
+
+  if (storedHash.startsWith('$2a$') || storedHash.startsWith('$2b$') || storedHash.startsWith('$2y$')) {
+    return bcrypt.compareSync(password, storedHash);
+  }
+
+  return hashLegacyPassword(password) === storedHash;
 }
 
 export function createSessionToken(
@@ -66,6 +84,7 @@ export function createSessionToken(
     role: AuthRole;
     department?: string;
     onboarded?: boolean;
+    emailVerified?: boolean;
     legacy?: boolean;
   },
   expiresInSeconds = 60 * 60 * 8
@@ -78,6 +97,7 @@ export function createSessionToken(
     role: input.role,
     department: input.department,
     onboarded: input.onboarded,
+    emailVerified: input.emailVerified,
     iat: now,
     exp: now + expiresInSeconds,
     legacy: input.legacy,

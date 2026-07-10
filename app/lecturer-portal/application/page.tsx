@@ -99,7 +99,7 @@ export default function ApplicationPage() {
             Active Application
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-            {data.currentRank} → {data.targetRank}
+            {data.currentRank}  {data.targetRank}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
             Your promotion application details and final eligibility determination.
@@ -202,7 +202,7 @@ export default function ApplicationPage() {
 
       {/* Back Link */}
       <Link href="/lecturer-portal" className="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-        ← Back to Dashboard
+         Back to Dashboard
       </Link>
     </div>
   );

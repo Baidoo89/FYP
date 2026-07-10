@@ -14,8 +14,23 @@ type PromotionRequest = {
   verifiedAt: string | null;
   totalScore: number | null;
   eligibilityStatus: string;
+  eligibilityReason?: string | null;
   documentCount: number;
 };
+
+const statuses = [
+  'DRAFT',
+  'SUBMITTED',
+  'UNDER_DEPARTMENT_REVIEW',
+  'RETURNED_FOR_CORRECTION',
+  'UNDER_HR_VERIFICATION',
+  'UNDER_COMMITTEE_REVIEW',
+  'REQUIRES_FURTHER_REVIEW',
+  'RECOMMENDED',
+  'NOT_RECOMMENDED',
+  'APPROVED_BY_AUTHORITY',
+  'COMPLETED',
+];
 
 export default function MasterQueuePage() {
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
@@ -23,29 +38,30 @@ export default function MasterQueuePage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const loadRequests = async () => {
-      setLoading(true);
-      setError('');
+  const loadRequests = async () => {
+    setLoading(true);
+    setError('');
 
-      try {
-        const response = await fetch('/api/promotion-requests?scope=hr');
-        const payload = await response.json();
+    try {
+      const response = await fetch('/api/promotion-requests?scope=hr');
+      const payload = await response.json();
 
-        if (!response.ok || !payload.success) {
-          throw new Error(payload.error || 'Failed to load requests');
-        }
-
-        setRequests(payload.data || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load requests');
-      } finally {
-        setLoading(false);
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Failed to load requests');
       }
-    };
 
+      setRequests(payload.data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load requests');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadRequests();
   }, []);
 
@@ -53,160 +69,164 @@ export default function MasterQueuePage() {
     let filtered = requests;
 
     if (statusFilter) {
-      filtered = filtered.filter((r) => r.status === statusFilter);
+      filtered = filtered.filter((request) => request.status === statusFilter);
     }
 
     if (searchTerm) {
+      const query = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (r) =>
-          r.lecturerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          r.lecturerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          r.department.toLowerCase().includes(searchTerm.toLowerCase())
+        (request) =>
+          request.lecturerName.toLowerCase().includes(query) ||
+          request.lecturerEmail.toLowerCase().includes(query) ||
+          request.department.toLowerCase().includes(query)
       );
     }
 
     setFilteredRequests(filtered);
   }, [requests, statusFilter, searchTerm]);
 
-  const statuses = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'];
+  async function updateStatus(requestId: number, status: string, comment: string) {
+    setUpdatingId(requestId);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/promotion-requests/${requestId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, comment }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Failed to update status');
+      }
+      await loadRequests();
+    } catch (statusError) {
+      setError(statusError instanceof Error ? statusError.message : 'Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
 
   if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-        Loading Master Queue...
-      </div>
-    );
+    return <div className="pro-card p-6 text-sm text-slate-600">Loading master queue...</div>;
   }
 
   if (error) {
-    return (
-      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-blue-950 shadow-sm">
-        {error}
-      </div>
-    );
+    return <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">{error}</div>;
   }
+
+  const pendingCount = requests.filter((request) => ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW', 'UNDER_HR_VERIFICATION'].includes(request.status)).length;
+  const committeeCount = requests.filter((request) => request.status === 'UNDER_COMMITTEE_REVIEW').length;
+  const completedCount = requests.filter((request) => ['APPROVED_BY_AUTHORITY', 'COMPLETED'].includes(request.status)).length;
 
   return (
     <div className="space-y-6">
-      {/* Hero Section */}
-      <section className="rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-slate-950 via-blue-900 to-blue-800 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.2)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <section className="pro-hero px-6 py-8">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
-              Queue Management
-            </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Master Queue</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
-              View and manage all promotion requests with advanced filtering and search capabilities.
+            <div className="pro-eyebrow">Queue Management</div>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Master Queue</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+              Search, filter, verify, and advance promotion applications through each review stage from one reliable HR workspace.
             </p>
           </div>
-          <div className="flex gap-2">
-            <a
-              href="/hr/dashboard"
-              className="rounded-xl border border-blue-400 bg-transparent px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+          <a href="/hr/dashboard" className="inline-flex w-fit rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
+            Back to dashboard
+          </a>
+        </div>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <QueueMetric code="ALL" label="All requests" value={requests.length} />
+        <QueueMetric code="ACT" label="Active HR work" value={pendingCount} tone="amber" />
+        <QueueMetric code="COM" label="Committee review" value={committeeCount} />
+        <QueueMetric code="FIN" label="Finalized" value={completedCount} tone="slate" />
+      </section>
+
+      <section className="pro-card p-4 sm:p-5">
+        <div className="grid gap-3 lg:grid-cols-[1fr_18rem_auto] lg:items-center">
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Search</span>
+            <input
+              type="text"
+              placeholder="Name, email, or department"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Status</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
             >
-              ← Back
-            </a>
+              <option value="">All statuses</option>
+              {statuses.map((status) => (
+                <option key={status} value={status}>
+                  {formatLabel(status)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+            Showing {filteredRequests.length} of {requests.length}
           </div>
         </div>
       </section>
 
-      {/* Statistics Badges */}
-      <section className="flex flex-wrap gap-2">
-        <div className="rounded-xl bg-blue-50 px-4 py-2">
-          <span className="text-sm font-semibold text-blue-900">Total: {requests.length}</span>
-        </div>
-        {statuses.map((status) => {
-          const count = requests.filter((r) => r.status === status).length;
-          return (
-            <div key={status} className="rounded-xl bg-yellow-50 px-4 py-2">
-              <span className="text-sm font-semibold text-yellow-900">
-                {status}: {count}
-              </span>
-            </div>
-          );
-        })}
-      </section>
-
-      {/* Filters and Search */}
-      <section className="grid gap-4 lg:grid-cols-3">
-        <input
-          type="text"
-          placeholder="Search by name, email, or department..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="rounded-xl border border-slate-200 px-4 py-3 text-sm placeholder-slate-500 shadow-sm"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm"
-        >
-          <option value="">All Statuses</option>
-          {statuses.map((status) => (
-            <option key={status} value={status}>
-              {status.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
-        <div className="text-right">
-          <span className="text-sm font-semibold text-slate-600">
-            Showing {filteredRequests.length} of {requests.length}
+      <section className="pro-card overflow-hidden">
+        <div className="flex flex-col justify-between gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-end">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-950">Promotion Requests</h2>
+            <p className="mt-1 text-sm text-slate-600">Use the workflow actions only after evidence and eligibility checks are complete.</p>
+          </div>
+          <span className="w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+            {filteredRequests.length} records
           </span>
         </div>
-      </section>
 
-      {/* Requests Table */}
-      <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-600">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
-                <th className="px-6 py-4">Lecturer</th>
-                <th className="px-6 py-4">Department</th>
-                <th className="px-6 py-4">Promotion</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Eligibility</th>
-                <th className="px-6 py-4">Docs</th>
-                <th className="px-6 py-4">Actions</th>
+                <th className="px-5 py-3">Lecturer</th>
+                <th className="px-5 py-3">Department</th>
+                <th className="px-5 py-3">Promotion</th>
+                <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Eligibility</th>
+                <th className="px-5 py-3">Docs</th>
+                <th className="px-5 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-slate-600">
-                    No requests found matching your criteria.
+                  <td colSpan={7} className="px-5 py-10 text-center text-slate-600">
+                    No requests found for the current filters.
                   </td>
                 </tr>
               ) : (
                 filteredRequests.map((request) => (
-                  <tr key={request.id} className="border-t border-slate-100 hover:bg-blue-50/50">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{request.lecturerName}</div>
+                  <tr key={request.id} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-slate-950">{request.lecturerName}</div>
                       <div className="text-xs text-slate-500">{request.lecturerEmail}</div>
                     </td>
-                    <td className="px-6 py-4 text-slate-700">{request.department}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-700">
-                      {request.currentRank} → {request.targetRank}
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={request.status} />
-                    </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4 text-slate-700">{request.department}</td>
+                    <td className="px-5 py-4 font-medium text-slate-700">{request.currentRank} to {request.targetRank}</td>
+                    <td className="px-5 py-4"><StatusBadge status={request.status} /></td>
+                    <td className="px-5 py-4">
                       <StatusBadge status={request.eligibilityStatus} />
+                      {request.eligibilityReason && <p className="mt-2 max-w-xs text-xs leading-5 text-slate-500">{request.eligibilityReason}</p>}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                        {request.documentCount}
-                      </span>
+                    <td className="px-5 py-4">
+                      <span className="pro-code-badge">{request.documentCount}</span>
                     </td>
-                    <td className="px-6 py-4">
-                      <a
-                        href={`/hr/verify?requestId=${request.id}`}
-                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                      >
-                        Review
-                      </a>
+                    <td className="px-5 py-4">
+                      <a href={`/hr/verify?requestId=${request.id}`} className="font-semibold text-teal-700 hover:text-teal-900">Review</a>
+                      <WorkflowActions request={request} updating={updatingId === request.id} onUpdate={updateStatus} />
                     </td>
                   </tr>
                 ))
@@ -214,54 +234,125 @@ export default function MasterQueuePage() {
             </tbody>
           </table>
         </div>
-
-        {filteredRequests.length > 0 && (
-          <div className="mt-4 text-right text-xs text-slate-500">
-            Total records: {filteredRequests.length}
-          </div>
-        )}
       </section>
 
-      {/* Info Cards */}
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-          <h3 className="font-semibold text-slate-900">📋 Quick Tips</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-600">
-            <li>• Use search to quickly find lecturers</li>
-            <li>• Filter by status to focus on specific requests</li>
-            <li>• Click Review to access the verification workspace</li>
-          </ul>
-        </div>
-        <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-6 shadow-sm">
-          <h3 className="font-semibold text-yellow-950">✅ Best Practices</h3>
-          <ul className="mt-3 space-y-2 text-sm text-yellow-900">
-            <li>• Verify documents regularly to stay on schedule</li>
-            <li>• Add comments for rejected documents</li>
-            <li>• Review audit logs for compliance tracking</li>
-          </ul>
-        </div>
+        <GuidanceCard code="QA" title="Queue Discipline" items={["Find lecturers quickly with search", "Filter by status before bulk review sessions", "Open Review before advancing a workflow stage"]} />
+        <GuidanceCard code="HR" title="Verification Standards" items={["Verify documents on a regular schedule", "Record comments for rejected evidence", "Use audit logs for compliance follow-up"]} />
       </section>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-    DRAFT: { bg: 'bg-blue-100', text: 'text-blue-900', label: 'Draft' },
-    SUBMITTED: { bg: 'bg-yellow-100', text: 'text-yellow-900', label: 'Submitted' },
-    UNDER_REVIEW: { bg: 'bg-blue-100', text: 'text-blue-900', label: 'Under Review' },
-    APPROVED: { bg: 'bg-blue-950', text: 'text-white', label: 'Approved' },
-    REJECTED: { bg: 'bg-blue-900', text: 'text-white', label: 'Rejected' },
-    ELIGIBLE: { bg: 'bg-yellow-100', text: 'text-yellow-900', label: 'Eligible' },
-    NOT_ELIGIBLE: { bg: 'bg-blue-100', text: 'text-blue-900', label: 'Not Eligible' },
-    PENDING_REVIEW: { bg: 'bg-yellow-100', text: 'text-yellow-900', label: 'Pending' },
-  };
-
-  const config = statusConfig[status] || { bg: 'bg-slate-100', text: 'text-slate-700', label: status };
+function QueueMetric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'slate' }) {
+  const toneClass = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    : tone === 'slate'
+      ? 'border-slate-200 bg-slate-100 text-slate-700'
+      : 'border-teal-200 bg-teal-50 text-teal-800';
 
   return (
-    <span className={`rounded-full ${config.bg} ${config.text} px-3 py-1 text-xs font-semibold`}>
-      {config.label}
-    </span>
+    <div className="pro-tile p-5">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
+        </div>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
+      </div>
+    </div>
   );
+}
+
+function GuidanceCard({ code, title, items }: { code: string; title: string; items: string[] }) {
+  return (
+    <div className="pro-card p-5">
+      <div className="flex items-center gap-3">
+        <span className="pro-code-badge">{code}</span>
+        <h3 className="font-semibold text-slate-950">{title}</h3>
+      </div>
+      <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
+        {items.map((item) => <li key={item}>{item}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const statusConfig: Record<string, { className: string; label: string }> = {
+    DRAFT: { className: 'bg-slate-100 text-slate-700', label: 'Draft' },
+    SUBMITTED: { className: 'bg-amber-100 text-amber-800', label: 'Submitted' },
+    UNDER_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Under Review' },
+    UNDER_DEPARTMENT_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Department Review' },
+    RETURNED_FOR_CORRECTION: { className: 'bg-amber-100 text-amber-800', label: 'Correction' },
+    UNDER_HR_VERIFICATION: { className: 'bg-teal-100 text-teal-800', label: 'HR Verification' },
+    UNDER_COMMITTEE_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Committee Review' },
+    REQUIRES_FURTHER_REVIEW: { className: 'bg-amber-100 text-amber-800', label: 'Further Review' },
+    RECOMMENDED: { className: 'bg-emerald-100 text-emerald-800', label: 'Recommended' },
+    NOT_RECOMMENDED: { className: 'bg-rose-100 text-rose-800', label: 'Not Recommended' },
+    APPROVED_BY_AUTHORITY: { className: 'bg-emerald-100 text-emerald-800', label: 'Authority Approved' },
+    COMPLETED: { className: 'bg-slate-100 text-slate-700', label: 'Completed' },
+    APPROVED: { className: 'bg-emerald-100 text-emerald-800', label: 'Approved' },
+    REJECTED: { className: 'bg-rose-100 text-rose-800', label: 'Rejected' },
+    ELIGIBLE: { className: 'bg-emerald-100 text-emerald-800', label: 'Eligible' },
+    NOT_ELIGIBLE: { className: 'bg-rose-100 text-rose-800', label: 'Not Eligible' },
+    PENDING_REVIEW: { className: 'bg-amber-100 text-amber-800', label: 'Pending' },
+  };
+
+  const config = statusConfig[status] || { className: 'bg-slate-100 text-slate-700', label: formatLabel(status) };
+  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${config.className}`}>{config.label}</span>;
+}
+
+function WorkflowActions({
+  request,
+  updating,
+  onUpdate,
+}: {
+  request: PromotionRequest;
+  updating: boolean;
+  onUpdate: (requestId: number, status: string, comment: string) => void;
+}) {
+  const actions: Array<{ status: string; label: string; comment: string }> = [];
+
+  if (request.status === 'SUBMITTED') {
+    actions.push({ status: 'UNDER_DEPARTMENT_REVIEW', label: 'Dept review', comment: 'Application moved to department review.' });
+  }
+
+  if (request.status === 'UNDER_DEPARTMENT_REVIEW') {
+    actions.push({ status: 'UNDER_HR_VERIFICATION', label: 'To HR', comment: 'Application forwarded for HR verification.' });
+  }
+
+  if (request.status === 'UNDER_HR_VERIFICATION' && request.eligibilityStatus !== 'INCOMPLETE_APPLICATION') {
+    actions.push({ status: 'UNDER_COMMITTEE_REVIEW', label: 'To committee', comment: 'Application forwarded to committee review after HR verification.' });
+  }
+
+  if (request.status === 'RECOMMENDED') {
+    actions.push({ status: 'APPROVED_BY_AUTHORITY', label: 'Authority approved', comment: 'Final administrative authority approved the recommendation.' });
+  }
+
+  if (request.status === 'APPROVED_BY_AUTHORITY' || request.status === 'NOT_RECOMMENDED') {
+    actions.push({ status: 'COMPLETED', label: 'Complete', comment: 'Application workflow completed.' });
+  }
+
+  if (actions.length === 0) return null;
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {actions.map((action) => (
+        <button
+          key={action.status}
+          type="button"
+          disabled={updating}
+          onClick={() => onUpdate(request.id, action.status, action.comment)}
+          className="rounded-lg border border-teal-200 px-2.5 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50 disabled:border-slate-200 disabled:text-slate-400"
+        >
+          {updating ? 'Updating...' : action.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function formatLabel(value: string) {
+  return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
 }

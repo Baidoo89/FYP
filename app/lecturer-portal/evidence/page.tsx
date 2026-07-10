@@ -33,17 +33,17 @@ interface EvidenceData {
 const CATEGORY_INFO = {
   RESEARCH: {
     title: 'Research Evidence',
-    icon: '📚',
+    icon: '',
     description: 'Refereed journals, books, conference papers, and scholarly publications.',
   },
   TEACHING: {
     title: 'Teaching Evidence',
-    icon: '🎓',
+    icon: '',
     description: 'Student evaluations, course materials, course design innovations.',
   },
   SERVICE: {
     title: 'Service Evidence',
-    icon: '🤝',
+    icon: '',
     description: 'Committee appointments, community service, leadership activities.',
   },
 };
@@ -181,25 +181,25 @@ export default function EvidencePage() {
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
-          <div className="text-3xl">📁</div>
+          <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Total</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.totalDocuments}</div>
         </div>
 
         <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
-          <div className="text-3xl">✓</div>
+          <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Verified</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.verifiedCount}</div>
         </div>
 
         <div className="rounded-2xl border border-yellow-100 bg-gradient-to-br from-yellow-100 to-yellow-50/40 p-6 shadow-sm">
-          <div className="text-3xl">⏳</div>
+          <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Pending</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.pendingCount}</div>
         </div>
 
         <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
-          <div className="text-3xl">✗</div>
+          <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Rejected</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.rejectedCount}</div>
         </div>
@@ -313,23 +313,23 @@ export default function EvidencePage() {
                     <td className="px-6 py-4">
                       {doc.verificationStatus === 'VERIFIED' && (
                         <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
-                          ✓ Verified
+                           Verified
                         </span>
                       )}
                       {doc.verificationStatus === 'PENDING' && (
                         <span className="inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-800">
-                          ⏳ Pending
+                           Pending
                         </span>
                       )}
                       {doc.verificationStatus === 'REJECTED' && (
                         <span className="inline-flex rounded-full border border-blue-200 bg-blue-950 px-3 py-1 text-xs font-semibold text-white">
-                          ✗ Rejected
+                           Rejected
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:text-blue-800">
-                        View →
+                        View 
                       </a>
                     </td>
                   </tr>
@@ -342,7 +342,7 @@ export default function EvidencePage() {
 
       {/* Back Link */}
       <Link href="/lecturer-portal" className="inline-flex rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50">
-        ← Back to Dashboard
+         Back to Dashboard
       </Link>
     </div>
   );

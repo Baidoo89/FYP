@@ -117,7 +117,7 @@ export default function PromotionsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="font-semibold text-slate-900">{candidate.lecturer_name}</h3>
-                      <p className="text-xs text-slate-500">{candidate.department} • {candidate.rank}</p>
+                      <p className="text-xs text-slate-500">{candidate.department}  {candidate.rank}</p>
                     </div>
                     <StatusBadge status={candidate.decision_status} />
                   </div>

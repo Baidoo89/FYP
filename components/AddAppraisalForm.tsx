@@ -248,7 +248,7 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
         <div className="mb-5 rounded-xl border border-amber-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4">
           <h2 className="text-2xl font-bold text-slate-900">Decision Input</h2>
           <p className="mt-1 text-sm text-slate-700">Capture weighted evidence for promotion, development, and support decisions.</p>
-          <p className="mt-2 text-xs font-medium text-blue-800">Weighting policy: Teaching 50% • Research 30% • Service 20%</p>
+          <p className="mt-2 text-xs font-medium text-blue-800">Weighting policy: Teaching 50%  Research 30%  Service 20%</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

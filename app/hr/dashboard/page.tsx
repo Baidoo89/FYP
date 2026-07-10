@@ -30,17 +30,13 @@ export default function HrCommandCenterPage() {
         }
 
         const allRequests = payload.data || [];
-        
-        // Calculate stats
-        const statsData: DashboardStats = {
+        setStats({
           totalRequests: allRequests.length,
-          pendingReview: allRequests.filter((r: any) => r.status === 'UNDER_REVIEW').length,
+          pendingReview: allRequests.filter((r: any) => ['SUBMITTED', 'UNDER_HR_VERIFICATION', 'UNDER_REVIEW'].includes(r.status)).length,
           verified: allRequests.filter((r: any) => r.verifiedAt !== null).length,
-          approved: allRequests.filter((r: any) => r.status === 'APPROVED').length,
-          rejected: allRequests.filter((r: any) => r.status === 'REJECTED').length,
-        };
-
-        setStats(statsData);
+          approved: allRequests.filter((r: any) => ['APPROVED', 'APPROVED_BY_AUTHORITY', 'COMPLETED'].includes(r.status)).length,
+          rejected: allRequests.filter((r: any) => ['REJECTED', 'NOT_RECOMMENDED'].includes(r.status)).length,
+        });
         setRecentRequests(allRequests.slice(0, 5));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -53,102 +49,56 @@ export default function HrCommandCenterPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-        Loading Command Center...
-      </div>
-    );
+    return <div className="pro-card p-6 text-sm text-slate-600">Loading HR dashboard...</div>;
   }
 
   if (error) {
-    return (
-      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-blue-950 shadow-sm">
-        {error}
-      </div>
-    );
+    return <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">{error}</div>;
   }
+
+  const completion = stats && stats.totalRequests > 0 ? Math.round((stats.verified / stats.totalRequests) * 100) : 0;
 
   return (
     <div className="space-y-6">
-      {/* Hero Section */}
-      <section className="rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-slate-950 via-blue-900 to-blue-800 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.2)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <section className="pro-hero px-6 py-8">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
-              HR / Admin Dashboard
-            </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Command Center</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
-              Monitor promotion requests in real-time, track verification progress, and manage the eligibility workflow.
+            <div className="pro-eyebrow">HR Administration</div>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Verification Command Center</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+              Monitor promotion applications, verify evidence, and move qualified submissions through the institutional review workflow.
             </p>
           </div>
-          <div className="flex gap-2">
-            <a
-              href="/hr/requests"
-              className="rounded-xl bg-yellow-400 px-4 py-2 text-sm font-semibold text-blue-950 hover:bg-yellow-300"
-            >
-              View Queue
-            </a>
-          </div>
+          <a href="/hr/requests" className="inline-flex w-fit rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
+            Open master queue
+          </a>
         </div>
       </section>
 
-      {/* Stats Grid */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard
-          label="Total Requests"
-          value={stats?.totalRequests || 0}
-          icon="📊"
-          color="bg-blue-50 text-blue-900"
-          borderColor="border-blue-100"
-        />
-        <StatCard
-          label="Pending Review"
-          value={stats?.pendingReview || 0}
-          icon="⏳"
-          color="bg-amber-50 text-amber-900"
-          borderColor="border-amber-100"
-        />
-        <StatCard
-          label="Verified"
-          value={stats?.verified || 0}
-          icon="✅"
-          color="bg-blue-50 text-blue-900"
-          borderColor="border-blue-100"
-        />
-        <StatCard
-          label="Approved"
-          value={stats?.approved || 0}
-          icon="🎉"
-          color="bg-yellow-50 text-yellow-900"
-          borderColor="border-yellow-100"
-        />
-        <StatCard
-          label="Rejected"
-          value={stats?.rejected || 0}
-          icon="❌"
-          color="bg-blue-50 text-blue-900"
-          borderColor="border-blue-100"
-        />
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <StatTile code="ALL" label="Total requests" value={stats?.totalRequests || 0} />
+        <StatTile code="REV" label="Pending review" value={stats?.pendingReview || 0} tone="amber" />
+        <StatTile code="VER" label="Verified" value={stats?.verified || 0} />
+        <StatTile code="APR" label="Approved" value={stats?.approved || 0} />
+        <StatTile code="RET" label="Rejected" value={stats?.rejected || 0} tone="rose" />
       </section>
 
-      {/* Recent Activity */}
-      <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-3 pb-4">
+      <section className="pro-card p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-3 pb-4 sm:flex-row sm:items-end">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Recent Submissions</h2>
-            <p className="mt-1 text-sm text-slate-600">Latest promotion requests awaiting verification</p>
+            <h2 className="text-xl font-semibold text-slate-950">Recent Submissions</h2>
+            <p className="mt-1 text-sm text-slate-600">Latest promotion requests awaiting HR action.</p>
           </div>
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
-            {recentRequests.length} request(s)
+          <span className="w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+            {recentRequests.length} visible
           </span>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-600">
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
-                <th className="px-4 py-3">Lecturer Name</th>
+                <th className="px-4 py-3">Lecturer</th>
                 <th className="px-4 py-3">Department</th>
                 <th className="px-4 py-3">Promotion</th>
                 <th className="px-4 py-3">Status</th>
@@ -159,32 +109,21 @@ export default function HrCommandCenterPage() {
             <tbody>
               {recentRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-600">
-                    No requests available
-                  </td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-600">No requests available</td>
                 </tr>
               ) : (
                 recentRequests.map((request: any) => (
-                  <tr key={request.id} className="border-t border-slate-100 hover:bg-blue-50/50">
+                  <tr key={request.id} className="border-t border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-4">
-                      <div className="font-semibold text-slate-900">{request.lecturerName}</div>
+                      <div className="font-semibold text-slate-950">{request.lecturerName}</div>
                       <div className="text-xs text-slate-500">{request.lecturerEmail}</div>
                     </td>
                     <td className="px-4 py-4 text-slate-700">{request.department}</td>
-                    <td className="px-4 py-4 text-sm font-medium text-slate-700">
-                      {request.currentRank} → {request.targetRank}
-                    </td>
-                    <td className="px-4 py-4">
-                      <StatusBadge status={request.status} />
-                    </td>
+                    <td className="px-4 py-4 text-slate-700">{request.currentRank} to {request.targetRank}</td>
+                    <td className="px-4 py-4"><StatusBadge status={request.status} /></td>
                     <td className="px-4 py-4 text-slate-700">{request.documentCount} docs</td>
                     <td className="px-4 py-4">
-                      <a
-                        href={`/hr/verify?requestId=${request.id}`}
-                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                      >
-                        Review
-                      </a>
+                      <a href={`/hr/verify?requestId=${request.id}`} className="font-semibold text-teal-700 hover:text-teal-900">Review</a>
                     </td>
                   </tr>
                 ))
@@ -192,67 +131,26 @@ export default function HrCommandCenterPage() {
             </tbody>
           </table>
         </div>
-
-        <div className="mt-4 flex justify-center">
-          <a
-            href="/hr/requests"
-            className="rounded-xl border border-blue-200 bg-blue-50 px-6 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
-          >
-            View All Requests
-          </a>
-        </div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">Verification Progress</h3>
-          <div className="mt-4 flex items-end gap-4">
-            <div className="flex-1">
-              <div className="mb-2 text-sm font-semibold text-slate-600">Overall Completion</div>
-              <div className="h-3 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all"
-                  style={{
-                    width: stats && stats.totalRequests > 0
-                      ? `${Math.round((stats.verified / stats.totalRequests) * 100)}%`
-                      : '0%',
-                  }}
-                />
-              </div>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="pro-card p-5 sm:p-6">
+          <h3 className="text-lg font-semibold text-slate-950">Verification Progress</h3>
+          <p className="mt-1 text-sm text-slate-600">Completion across all visible promotion requests.</p>
+          <div className="mt-5 flex items-center gap-4">
+            <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${completion}%` }} />
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">
-                {stats && stats.totalRequests > 0
-                  ? Math.round((stats.verified / stats.totalRequests) * 100)
-                  : 0}
-                %
-              </div>
-            </div>
+            <div className="w-16 text-right text-2xl font-semibold text-slate-950">{completion}%</div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">Quick Navigation</h3>
-          <div className="mt-4 space-y-2">
-            <a
-              href="/hr/requests"
-              className="block rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              📋 Master Queue - View all requests
-            </a>
-            <a
-              href="/hr/verify"
-              className="block rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              🕵️ Verification Workspace - Review documents
-            </a>
-            <a
-              href="/hr/logs"
-              className="block rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              🧾 Audit Logs - Track activity
-            </a>
+        <div className="pro-card p-5 sm:p-6">
+          <h3 className="text-lg font-semibold text-slate-950">Quick Navigation</h3>
+          <div className="mt-4 grid gap-2">
+            <QuickLink href="/hr/requests" code="RQ" title="Master Queue" description="View and manage all requests" />
+            <QuickLink href="/hr/verify" code="VR" title="Verification Workspace" description="Review submitted evidence" />
+            <QuickLink href="/hr/logs" code="AU" title="Audit Logs" description="Track sensitive actions" />
           </div>
         </div>
       </section>
@@ -260,46 +158,49 @@ export default function HrCommandCenterPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-  borderColor,
-}: {
-  label: string;
-  value: number;
-  icon: string;
-  color: string;
-  borderColor: string;
-}) {
+function StatTile({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'rose' }) {
+  const toneClass = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      : 'border-teal-200 bg-teal-50 text-teal-800';
+
   return (
-    <div className={`rounded-2xl border ${borderColor} ${color} p-4 shadow-sm`}>
-      <div className="flex items-center justify-between gap-2">
+    <div className="pro-tile p-5">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.1em] opacity-75">{label}</div>
-          <div className="mt-2 text-3xl font-bold">{value}</div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
         </div>
-        <div className="text-3xl">{icon}</div>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
       </div>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-    DRAFT: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Draft' },
-    SUBMITTED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Submitted' },
-    UNDER_REVIEW: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Under Review' },
-    APPROVED: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Approved' },
-    REJECTED: { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Rejected' },
-  };
-
-  const config = statusConfig[status] || { bg: 'bg-slate-100', text: 'text-slate-700', label: status };
-
+function QuickLink({ href, code, title, description }: { href: string; code: string; title: string; description: string }) {
   return (
-    <span className={`rounded-full ${config.bg} ${config.text} px-3 py-1 text-xs font-semibold`}>
-      {config.label}
-    </span>
+    <a href={href} className="pro-action flex items-center gap-3 p-3">
+      <span className="pro-code-badge">{code}</span>
+      <span>
+        <span className="block text-sm font-semibold text-slate-950">{title}</span>
+        <span className="block text-xs text-slate-500">{description}</span>
+      </span>
+    </a>
   );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const statusConfig: Record<string, { className: string; label: string }> = {
+    DRAFT: { className: 'bg-slate-100 text-slate-700', label: 'Draft' },
+    SUBMITTED: { className: 'bg-amber-100 text-amber-800', label: 'Submitted' },
+    UNDER_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Under Review' },
+    UNDER_HR_VERIFICATION: { className: 'bg-teal-100 text-teal-800', label: 'HR Verification' },
+    UNDER_COMMITTEE_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Committee Review' },
+    APPROVED: { className: 'bg-emerald-100 text-emerald-800', label: 'Approved' },
+    REJECTED: { className: 'bg-rose-100 text-rose-800', label: 'Rejected' },
+  };
+  const config = statusConfig[status] || { className: 'bg-slate-100 text-slate-700', label: status.replace(/_/g, ' ') };
+
+  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${config.className}`}>{config.label}</span>;
 }

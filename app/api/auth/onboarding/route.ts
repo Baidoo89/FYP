@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         role: updatedUser.role,
         department: updatedUser.department || undefined,
         onboarded: true,
+        emailVerified: updatedUser.emailVerified,
       }),
       httpOnly: true,
       sameSite: 'lax',

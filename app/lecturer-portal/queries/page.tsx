@@ -85,13 +85,13 @@ export default function QueriesPage() {
           <p className="text-sm font-semibold text-blue-900">Attention Required</p>
           <p className="mt-1 text-lg font-bold text-blue-900">{data.count} flagged document(s)</p>
         </div>
-        <div className="text-5xl">🔔</div>
+        <div className="text-5xl"></div>
       </div>
 
       {/* Queries List */}
       {data.count === 0 ? (
         <div className="rounded-2xl border border-blue-200 bg-blue-50 p-8 text-center">
-          <div className="text-5xl mb-4">✓</div>
+          <div className="text-5xl mb-4"></div>
           <p className="font-semibold text-blue-950">All Clear!</p>
           <p className="mt-2 text-sm text-blue-900">No flagged documents. Great job on your submissions!</p>
         </div>
@@ -111,7 +111,7 @@ export default function QueriesPage() {
                     </span>
                   </div>
                 </div>
-                <div className="text-3xl">⚠️</div>
+                <div className="text-3xl"></div>
               </div>
 
               {/* HR Comment */}
@@ -167,7 +167,7 @@ export default function QueriesPage() {
 
       {/* Back Link */}
       <Link href="/lecturer-portal" className="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-        ← Back to Dashboard
+         Back to Dashboard
       </Link>
     </div>
   );

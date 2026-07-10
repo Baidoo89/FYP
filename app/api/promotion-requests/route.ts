@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import { Prisma, NotificationType, RequestStatus } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
 import { getAuthSession } from '../../../lib/auth';
 import { promotionRequestSchema } from '../../../lib/validation/promotion-request.schema';
 import { writePromotionAudit } from '../../../lib/promotion-audit';
+import { writeStatusHistory } from '../../../lib/audit-logger';
+import { assertStatusTransition } from '../../../lib/workflow';
+import { notifyRole } from '../../../lib/notifications';
 import type { ApiResponse } from '../../../types';
 
 function buildRequestSummary(requestRecord: any) {
@@ -23,11 +26,15 @@ function buildRequestSummary(requestRecord: any) {
     verifiedAt: requestRecord.verifiedAt,
     totalScore: requestRecord.totalScore ? Number(requestRecord.totalScore) : null,
     eligibilityStatus: requestRecord.eligibilityStatus,
+    eligibilityReason: requestRecord.eligibilityReason,
+    yearsInCurrentRank: requestRecord.yearsInCurrentRank,
     adminComment: requestRecord.adminComment,
     documentCount: requestRecord.documents.length,
     verifiedDocumentCount: verifiedDocuments,
     requiredDocumentCount: requiredDocuments,
     documents: requestRecord.documents,
+    reviewComments: requestRecord.reviewComments || [],
+    statusHistory: requestRecord.statusHistory || [],
   };
 }
 
@@ -41,7 +48,7 @@ export async function GET(request: NextRequest) {
   const statusFilter = request.nextUrl.searchParams.get('status');
   const scope = request.nextUrl.searchParams.get('scope') || (session.role === 'LECTURER' ? 'lecturer' : 'hr');
 
-  if (scope === 'hr' && session.role !== 'HR_ADMIN') {
+  if (scope === 'hr' && !['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(session.role)) {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
@@ -67,6 +74,36 @@ export async function GET(request: NextRequest) {
         orderBy: {
           uploadedAt: 'desc',
         },
+      },
+      reviewComments: {
+        include: {
+          reviewer: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 5,
+      },
+      statusHistory: {
+        include: {
+          changedBy: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 8,
       },
     },
     orderBy: {
@@ -113,29 +150,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Promotion request not found' } as ApiResponse<null>, { status: 404 });
     }
 
-    const updatedRequest = await prisma.promotionRequest.update({
-      where: {
-        id: requestId,
-      },
-      data: {
-        status: 'SUBMITTED',
-        submittedAt: new Date(),
-      },
-      include: {
-        lecturer: true,
-        documents: true,
-      },
-    });
+    assertStatusTransition(requestRecord.status, RequestStatus.SUBMITTED, session.role);
 
-    await prisma.$transaction(async (tx) => {
+    const updatedRequest = await prisma.$transaction(async (tx) => {
+      const updated = await tx.promotionRequest.update({
+        where: {
+          id: requestId,
+        },
+        data: {
+          status: RequestStatus.SUBMITTED,
+          submittedAt: new Date(),
+        },
+        include: {
+          lecturer: true,
+          documents: true,
+        },
+      });
+
+      await writeStatusHistory(tx, {
+        promotionRequestId: updated.id,
+        changedById: session.userId,
+        oldStatus: requestRecord.status,
+        newStatus: RequestStatus.SUBMITTED,
+        comment: 'Lecturer submitted promotion application.',
+      });
+
       await writePromotionAudit(tx, {
-        requestId: updatedRequest.id,
+        requestId: updated.id,
         actorId: session.userId,
         action: 'promotion_request.submit',
         metadata: {
-          status: updatedRequest.status,
+          status: updated.status,
         },
       });
+
+      return updated;
+    });
+
+    await notifyRole({
+      roles: ['HOD_DEAN', 'HR_ADMIN', 'SYSTEM_ADMIN'],
+      title: 'Promotion application submitted',
+      message: `${updatedRequest.lecturer.name} submitted a promotion application for review.`,
+      type: NotificationType.INFO,
+      promotionRequestId: updatedRequest.id,
     });
 
     return NextResponse.json({
@@ -149,6 +206,7 @@ export async function POST(request: NextRequest) {
     lecturerId: Number(body.lecturerId),
     currentRank: body.currentRank,
     targetRank: body.targetRank,
+    yearsInCurrentRank: Number(body.yearsInCurrentRank ?? 0),
     adminComment: body.adminComment,
   });
 
@@ -175,13 +233,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const activeRequest = await prisma.promotionRequest.findFirst({
+    where: {
+      lecturerId: session.userId,
+      status: {
+        notIn: [RequestStatus.COMPLETED, RequestStatus.REJECTED, RequestStatus.NOT_RECOMMENDED],
+      },
+    },
+  });
+
+  if (activeRequest) {
+    return NextResponse.json(
+      { success: false, error: 'You already have an active promotion request. Complete or resolve it before creating another.' } as ApiResponse<null>,
+      { status: 409 }
+    );
+  }
+
   const requestRecord = await prisma.promotionRequest.create({
     data: {
       lecturerId: parsed.data.lecturerId,
+      applicantId: parsed.data.lecturerId,
       requestedById: session.userId,
-      status: 'DRAFT',
+      status: RequestStatus.DRAFT,
       currentRank: parsed.data.currentRank,
       targetRank: parsed.data.targetRank,
+      yearsInCurrentRank: parsed.data.yearsInCurrentRank || 0,
       adminComment: parsed.data.adminComment || null,
     },
     include: {

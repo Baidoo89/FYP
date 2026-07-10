@@ -96,11 +96,11 @@ export default function ProfilePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               {profile.onboarded ? (
                 <div className="inline-flex rounded-full border border-blue-300 bg-blue-500/20 px-4 py-2">
-                  <span className="text-sm font-semibold text-blue-100">✓ Active Profile</span>
+                  <span className="text-sm font-semibold text-blue-100"> Active Profile</span>
                 </div>
               ) : (
                 <div className="inline-flex rounded-full border border-yellow-300 bg-yellow-500/20 px-4 py-2">
-                  <span className="text-sm font-semibold text-yellow-100">⏳ Pending Verification</span>
+                  <span className="text-sm font-semibold text-yellow-100"> Pending Verification</span>
                 </div>
               )}
               <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2">
@@ -120,7 +120,7 @@ export default function ProfilePage() {
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-100/70">Staff ID</p>
-                <p className="mt-3 text-base font-semibold font-mono text-white">{profile.staffId || '—'}</p>
+                <p className="mt-3 text-base font-semibold font-mono text-white">{profile.staffId || ''}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-100/70">Current Rank</p>
@@ -138,7 +138,7 @@ export default function ProfilePage() {
       {/* Read-Only Info Banner */}
       <div className="rounded-2xl border border-yellow-200 bg-gradient-to-br from-yellow-50 to-yellow-100/50 p-6">
         <div className="flex gap-4">
-          <div className="mt-0.5 text-2xl flex-shrink-0">🔒</div>
+          <div className="mt-0.5 text-2xl flex-shrink-0"></div>
           <div>
             <p className="font-semibold text-blue-950">Profile is Read-Only</p>
             <p className="mt-1 text-sm text-blue-900">Your academic profile is managed by the University HR system. Any changes must be requested through official HR channels.</p>
@@ -149,7 +149,7 @@ export default function ProfilePage() {
       {/* Primary Contact Information */}
       <div className="rounded-2xl border border-blue-100 bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3 border-b border-slate-200 pb-4">
-          <span className="text-2xl">📧</span>
+          <span className="text-2xl"></span>
           <h2 className="text-xl font-bold text-slate-900">Official Contact Information</h2>
         </div>
 
@@ -163,7 +163,7 @@ export default function ProfilePage() {
                 <span className="inline-block rounded-full border border-blue-300 bg-blue-100 px-2 py-0.5">Verified</span>
               </p>
             </div>
-            <div className="text-3xl flex-shrink-0">✓</div>
+            <div className="text-3xl flex-shrink-0"></div>
           </div>
         </div>
       </div>
@@ -171,7 +171,7 @@ export default function ProfilePage() {
       {/* Academic Information */}
       <div className="rounded-2xl border border-blue-100 bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3 border-b border-slate-200 pb-4">
-          <span className="text-2xl">🏛️</span>
+          <span className="text-2xl"></span>
           <h2 className="text-xl font-bold text-slate-900">Academic Information</h2>
         </div>
 
@@ -179,7 +179,7 @@ export default function ProfilePage() {
           {/* Department - Enhanced */}
           <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/50 p-6 hover:border-slate-300 transition">
             <div className="flex items-start gap-3">
-              <span className="mt-1 text-2xl">🏢</span>
+              <span className="mt-1 text-2xl"></span>
               <div className="flex-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Department</p>
                 <p className="mt-3 text-lg font-bold text-slate-900">{profile.department}</p>
@@ -191,12 +191,12 @@ export default function ProfilePage() {
           {/* Role - Enhanced */}
           <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/50 p-6 hover:border-slate-300 transition">
             <div className="flex items-start gap-3">
-              <span className="mt-1 text-2xl">👨‍💼</span>
+              <span className="mt-1 text-2xl"></span>
               <div className="flex-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">System Role</p>
                 <p className="mt-3">
                   <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700">
-                    {profile.role === 'LECTURER' ? '👤 Lecturer' : '⚙️ Administrator'}
+                    {profile.role === 'LECTURER' ? ' Lecturer' : ' Administrator'}
                   </span>
                 </p>
                 <p className="mt-2 text-xs text-slate-600">Portal access level</p>
@@ -208,24 +208,24 @@ export default function ProfilePage() {
           <div className="rounded-xl border-2 bg-gradient-to-br from-blue-50 to-blue-100/50 p-6 border-blue-200 hover:border-blue-300 transition md:col-span-2">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
-                <span className="mt-1 text-2xl">🔐</span>
+                <span className="mt-1 text-2xl"></span>
                 <div className="flex-1">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Account Status</p>
                   <p className="mt-3">
                     {profile.onboarded ? (
                       <span className="inline-flex items-center gap-2 rounded-full border border-blue-300 bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800">
-                        ✓ Active & Verified
+                         Active & Verified
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-2 rounded-full border border-yellow-300 bg-yellow-100 px-4 py-2 text-sm font-semibold text-yellow-800">
-                        ⏳ Onboarding in Progress
+                         Onboarding in Progress
                       </span>
                     )}
                   </p>
                   <p className="mt-2 text-xs text-blue-700">Your account is {profile.onboarded ? 'fully activated' : 'completing setup'}</p>
                 </div>
               </div>
-              <div className="text-4xl flex-shrink-0">{profile.onboarded ? '✓' : '⚠️'}</div>
+              <div className="text-4xl flex-shrink-0">{profile.onboarded ? '' : ''}</div>
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function ProfilePage() {
       {/* Account Timeline */}
       <div className="rounded-2xl border border-blue-100 bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3 border-b border-slate-200 pb-4">
-          <span className="text-2xl">📅</span>
+          <span className="text-2xl"></span>
           <h2 className="text-xl font-bold text-slate-900">Account Timeline</h2>
         </div>
 
@@ -246,7 +246,7 @@ export default function ProfilePage() {
           <div className="space-y-6 pl-20">
             <div className="group relative">
               <div className="absolute left-0 top-2 h-12 w-12 rounded-full border-4 border-white bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold group-hover:shadow-lg transition">
-                📅
+                
               </div>
               <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 group-hover:border-blue-200 transition">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Account Created</p>
@@ -273,7 +273,7 @@ export default function ProfilePage() {
       {/* Contact Support */}
       <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-slate-50 to-white p-8">
         <div className="flex gap-4">
-          <div className="text-3xl flex-shrink-0">🤝</div>
+          <div className="text-3xl flex-shrink-0"></div>
           <div>
             <h3 className="font-bold text-slate-900">Need Profile Changes?</h3>
             <p className="mt-2 text-sm text-slate-700 leading-relaxed">
@@ -281,15 +281,15 @@ export default function ProfilePage() {
             </p>
             <div className="mt-4 flex flex-col gap-2 text-sm font-semibold text-slate-800">
               <div className="flex items-center gap-2">
-                <span className="text-lg">📧</span>
+                <span className="text-lg"></span>
                 <span>hr@gctu.edu.gh</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-lg">📍</span>
+                <span className="text-lg"></span>
                 <span>HR Office, Administration Building (Room 201)</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-lg">⏰</span>
+                <span className="text-lg"></span>
                 <span>Monday - Friday, 9:00 AM - 4:00 PM</span>
               </div>
             </div>
@@ -299,7 +299,7 @@ export default function ProfilePage() {
 
       {/* Back Link */}
       <Link href="/lecturer-portal" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
-        ← Back to Dashboard
+         Back to Dashboard
       </Link>
     </div>
   );

@@ -143,7 +143,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold text-slate-900">{lecturer.name}</h3>
-                    <p className="text-xs text-slate-500">#{lecturer.id} • {lecturer.rank}</p>
+                    <p className="text-xs text-slate-500">#{lecturer.id}  {lecturer.rank}</p>
                   </div>
                   <span
                     className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
