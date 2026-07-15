@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onboardingSchema } from '../../lib/validation/auth.schema';
+import GctuBrandMark from '../GctuBrandMark';
 
 const ACADEMIC_RANKS = [
   { value: 'ASSISTANT_LECTURER', label: 'Assistant Lecturer' },
@@ -82,13 +83,14 @@ export function OnboardingForm() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-md border border-slate-200">
-      <h1 className="text-3xl font-bold text-center mb-2 text-slate-900">
-        Complete Your Staff Profile
-      </h1>
-      <p className="text-center text-gray-600 mb-8">
-        Add your department, staff ID, and current rank to finish onboarding
-      </p>
+    <div className="w-full max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-lg shadow-slate-200/70 border border-slate-200">
+      <GctuBrandMark
+        align="center"
+        size="lg"
+        title="Complete Your Staff Profile"
+        subtitle="Add your department, staff ID, and current rank to finish your GCTU promotion system onboarding."
+        className="mb-8"
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded">
@@ -182,3 +184,5 @@ export function OnboardingForm() {
     </div>
   );
 }
+
+

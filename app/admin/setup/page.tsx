@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import GctuBrandMark from '../../../components/GctuBrandMark';
 
 export default function AdminSetup() {
   const router = useRouter();
@@ -68,10 +69,15 @@ export default function AdminSetup() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.14),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(29,78,216,0.2),_transparent_28%),linear-gradient(135deg,_#0f172a_0%,_#102a56_42%,_#0f172a_100%)] px-4 py-8 sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-8 text-center">
-          <p className="inline-block rounded-full border border-yellow-300/40 bg-yellow-400/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100 sm:text-xs">Initial Configuration</p>
-          <h1 className="mt-4 text-3xl font-bold text-white sm:text-4xl">Admin Setup</h1>
-          <p className="mt-2 text-sm text-slate-600 sm:text-base">Create the first school management account to access the system.</p>
+        <div className="mb-8 flex justify-center">
+          <GctuBrandMark
+            align="center"
+            tone="dark"
+            size="lg"
+            eyebrow="Initial Configuration"
+            title="GCTU Admin Setup"
+            subtitle="Create the first system administrator account for the Digital Staff Promotion Support System."
+          />
         </div>
 
         <div className="rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.35)] sm:p-8">
@@ -161,3 +167,5 @@ export default function AdminSetup() {
     </div>
   );
 }
+
+

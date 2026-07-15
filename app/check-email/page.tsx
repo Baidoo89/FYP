@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import GctuBrandMark from '../../components/GctuBrandMark';
 
 export default function CheckEmailPage() {
   const router = useRouter();
@@ -36,9 +37,15 @@ export default function CheckEmailPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
-      <section className="mx-auto max-w-xl rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Account Verification</p>
-        <h1 className="mt-3 text-2xl font-bold text-slate-950">Check your email</h1>
+      <section className="mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/70">
+        <GctuBrandMark
+          align="center"
+          size="md"
+          eyebrow="Account Verification"
+          title="Check your email"
+          subtitle="GCTU Digital Staff Promotion Support System"
+          className="mb-5"
+        />
         <p className="mt-3 text-sm leading-6 text-slate-700">
           We sent a verification link to your registered email address. Verify your email before completing your staff profile and submitting any promotion request.
         </p>
@@ -80,3 +87,5 @@ export default function CheckEmailPage() {
     </main>
   );
 }
+
+

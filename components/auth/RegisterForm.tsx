@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { registerSchema } from '../../lib/validation/auth.schema';
+import GctuBrandMark from '../GctuBrandMark';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -64,13 +65,14 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md border border-slate-200">
-      <h1 className="text-2xl font-bold text-center mb-2 text-slate-900">
-        GCTU Staff Sign Up
-      </h1>
-      <p className="text-center text-sm text-gray-600 mb-6">
-        Use your official GCTU email to create your account
-      </p>
+    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg shadow-slate-200/70 border border-slate-200">
+      <GctuBrandMark
+        align="center"
+        size="lg"
+        title="GCTU Staff Sign Up"
+        subtitle="Create your official staff promotion account using your university email address."
+        className="mb-6"
+      />
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
@@ -164,3 +166,5 @@ export function RegisterForm() {
     </div>
   );
 }
+
+

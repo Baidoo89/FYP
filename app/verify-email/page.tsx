@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import GctuBrandMark from '../../components/GctuBrandMark';
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -44,9 +45,16 @@ function VerifyEmailContent() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-      <section className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Email Verification</p>
-        <h1 className="mt-3 text-2xl font-bold text-slate-950">
+      <section className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-200/70">
+        <GctuBrandMark
+          align="center"
+          size="md"
+          eyebrow="Email Verification"
+          title="GCTU Account Verification"
+          subtitle="Digital Staff Promotion Support System"
+          className="mb-5"
+        />
+        <h1 className="text-2xl font-bold text-slate-950">
           {status === 'success' ? 'Verified' : status === 'error' ? 'Verification issue' : 'Please wait'}
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-700">{message}</p>
@@ -79,8 +87,14 @@ export default function VerifyEmailPage() {
     <Suspense
       fallback={
         <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-          <section className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-            <p className="text-sm text-slate-700">Preparing verification...</p>
+          <section className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-200/70">
+            <GctuBrandMark
+              align="center"
+              size="md"
+              eyebrow="Email Verification"
+              title="GCTU Account Verification"
+              subtitle="Preparing verification..."
+            />
           </section>
         </main>
       }
@@ -89,3 +103,5 @@ export default function VerifyEmailPage() {
     </Suspense>
   );
 }
+
+
