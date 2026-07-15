@@ -78,53 +78,82 @@ export default function LecturerDashboardOverview() {
   if (error || !data) {
     return (
       <div className="space-y-6">
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-8 text-center font-medium text-blue-900 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center font-medium text-slate-900 shadow-sm">
           {error || 'Failed to load dashboard'}
         </div>
       </div>
     );
   }
 
-  const currentStep = data.activeRequest
-    ? data.activeRequest.status === 'APPROVED'
-      ? 5
-      : data.activeRequest.status === 'REJECTED'
-        ? 0
-        : data.activeRequest.status === 'UNDER_REVIEW'
-          ? 3
-          : 2
-    : 0;
+  const workflowStepByStatus: Record<string, number> = {
+    DRAFT: 1,
+    SUBMITTED: 2,
+    UNDER_DEPARTMENT_REVIEW: 3,
+    RETURNED_FOR_CORRECTION: 3,
+    UNDER_HR_VERIFICATION: 4,
+    UNDER_REVIEW: 4,
+    UNDER_COMMITTEE_REVIEW: 5,
+    REQUIRES_FURTHER_REVIEW: 5,
+    RECOMMENDED: 6,
+    NOT_RECOMMENDED: 6,
+    APPROVED: 7,
+    APPROVED_BY_AUTHORITY: 7,
+    COMPLETED: 7,
+    REJECTED: 6,
+  };
+  const currentStep = data.activeRequest ? workflowStepByStatus[data.activeRequest.status] || 1 : 1;
+  const initials = data.user.name
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  const eligibilityLabel = data.activeRequest?.status === 'REJECTED'
+    ? 'Requires Review'
+    : data.activeRequest?.status === 'APPROVED'
+      ? 'Approved'
+      : data.activeRequest
+        ? 'In Progress'
+        : 'Not Started';
+  const eligibilityTone = data.activeRequest?.status === 'REJECTED'
+    ? 'border-amber-300/30 bg-amber-400/12 text-amber-50'
+    : 'border-teal-200/25 bg-white/[0.08] text-teal-50';
 
   return (
     <div className="space-y-6">
-      <section id="home" className="pro-hero px-6 py-8">
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr] xl:items-end">
-          <div>
-            <div className="pro-eyebrow">
-              Overview Dashboard
+      <section id="home" className="overflow-hidden rounded-xl border border-emerald-900/15 bg-[linear-gradient(135deg,#06483f_0%,#03362f_54%,#012923_100%)] px-5 py-6 text-white shadow-[0_18px_45px_rgba(6,72,63,0.18)] sm:px-6 sm:py-7">
+        <div className="grid gap-5 lg:grid-cols-[1.25fr_0.8fr] lg:items-center">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white/80 bg-teal-50 text-xl font-black text-teal-900 shadow-xl">
+              {initials || 'GP'}
+              <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-emerald-900 bg-teal-100 text-[10px] font-black text-teal-800">
+                OK
+              </span>
             </div>
-            <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-              Welcome back,
-              <span className="mt-1 block break-words text-teal-700"> {data.user.name}</span>
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Track your promotion readiness, manage evidence submissions, and stay updated with all HR decisions in one secure workspace.
-            </p>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-teal-50/80">Welcome back,</p>
+              <h1 className="mt-1 break-words text-3xl font-semibold tracking-tight sm:text-4xl">{data.user.name}</h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-teal-50/80">
+                <span>{data.user.currentRank || 'Lecturer'}</span>
+                <span className="h-1 w-1 rounded-full bg-teal-200/70" />
+                <span>{data.user.department || 'Not Assigned'}</span>
+                <span className="rounded-full border border-white/15 bg-white/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-teal-50">Lecturer</span>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 backdrop-blur-sm sm:p-5">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Full Name</p>
-                <p className="mt-2 break-words text-sm font-bold leading-snug text-slate-950 sm:text-base">{data.user.name}</p>
+          <div className={`rounded-xl border p-4 shadow-inner ${eligibilityTone}`}>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-50/70">Eligibility Status</p>
+                <p className="mt-2 text-2xl font-semibold">{eligibilityLabel}</p>
+                <p className="mt-1 text-xs text-teal-50/65">
+                  {data.activeRequest?.submittedAt ? `Submitted ${new Date(data.activeRequest.submittedAt).toLocaleDateString()}` : 'Create an application to begin tracking.'}
+                </p>
               </div>
-              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Current Rank</p>
-                <p className="mt-2 break-words text-sm font-bold leading-snug text-slate-950 sm:text-base">{data.user.currentRank || 'Lecturer'}</p>
-              </div>
-              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:col-span-2 lg:col-span-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Department</p>
-                <p className="mt-2 break-words text-sm font-bold leading-snug text-slate-950 sm:text-base">{data.user.department || 'Not Assigned'}</p>
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/[0.10] text-lg font-black text-teal-50 ring-1 ring-white/15">
+                {data.activeRequest?.progressPercentage ?? 0}%
               </div>
             </div>
           </div>
@@ -142,13 +171,14 @@ export default function LecturerDashboardOverview() {
 
       {/* Career Stepper */}
       {data.activeRequest && (
-        <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-bold text-slate-900">Your Promotion Journey</h3>
           <p className="mt-1 text-sm text-slate-600">Current stage: {data.activeRequest.status}</p>
           <div className="mt-6">
             <ProgressStepper
               currentStep={currentStep}
-              steps={['Application Created', 'Documents Uploaded', 'HR Review', 'Eligibility Assessment', 'Final Decision']}
+              steps={['Draft', 'Submitted', 'Department Review', 'HR Verification', 'Committee Review', 'Recommendation', 'Completed']}
+              status={data.activeRequest.status}
             />
           </div>
         </div>

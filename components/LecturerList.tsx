@@ -41,7 +41,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
 
   if (loading) {
     return (
-      <div className="brand-surface-soft p-6">
+      <div className="pro-card p-6">
         <div className="text-center text-slate-600">Loading lecturers...</div>
       </div>
     );
@@ -49,11 +49,11 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
 
   if (error) {
     return (
-      <div className="brand-surface-soft p-6">
+      <div className="pro-card p-6">
         <div className="text-red-600 mb-4">{error}</div>
         <button
           onClick={fetchLecturers}
-          className="rounded-xl bg-blue-700 px-4 py-2 text-white hover:bg-blue-800"
+          className="rounded-xl bg-teal-700 px-4 py-2 text-white hover:bg-teal-800"
         >
           Retry
         </button>
@@ -63,7 +63,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
 
   if (lecturers.length === 0) {
     return (
-      <div className="brand-surface-soft p-6">
+      <div className="pro-card p-6">
         <div className="text-center text-slate-600">No lecturers found. Add one to get started!</div>
       </div>
     );
@@ -95,7 +95,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
   });
 
   return (
-    <div className="brand-surface-soft overflow-hidden">
+    <div className="pro-card overflow-hidden">
       <div className="border-b border-slate-200 p-6">
         <h2 className="text-2xl font-bold text-slate-900">Lecturers Directory</h2>
         <p className="mt-1 text-sm text-slate-600">Total records: {lecturers.length}</p>
@@ -184,7 +184,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
                 {filteredLecturers.map((lecturer, index) => (
                   <tr
                     key={lecturer.id}
-                    className={`border-b border-slate-100 transition hover:bg-blue-50/30 ${
+                    className={`border-b border-slate-100 transition hover:bg-slate-50 ${
                       index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
                     }`}
                   >

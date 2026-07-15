@@ -142,8 +142,8 @@ export default function CriteriaManagementPage() {
 
   return (
     <section className="mx-auto max-w-7xl space-y-6">
-      <div className="rounded-lg border border-blue-100 bg-white p-6 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">System Administration</p>
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">System Administration</p>
         <div className="mt-3 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
             <h1 className="text-3xl font-bold text-slate-950">Promotion Criteria Management</h1>
@@ -211,7 +211,7 @@ export default function CriteriaManagementPage() {
             <textarea value={form.optionalReviewerNotes} onChange={(event) => setForm({ ...form, optionalReviewerNotes: event.target.value })} className="brand-input min-h-20" placeholder="Reviewer notes" />
           </div>
 
-          <button type="submit" disabled={saving} className="mt-5 rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:bg-slate-400">
+          <button type="submit" disabled={saving} className="mt-5 rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400">
             {saving ? 'Saving...' : 'Save criteria'}
           </button>
         </form>
@@ -228,7 +228,7 @@ export default function CriteriaManagementPage() {
           ) : (
             <div className="divide-y divide-slate-100">
               {criteria.map((item) => (
-                <button key={item.id} type="button" onClick={() => loadIntoForm(item)} className="block w-full p-5 text-left hover:bg-blue-50/60">
+                <button key={item.id} type="button" onClick={() => loadIntoForm(item)} className="block w-full p-5 text-left hover:bg-slate-50/60">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                     <div>
                       <p className="font-semibold text-slate-950">{label(item.currentRank)} to {label(item.targetRank)}</p>

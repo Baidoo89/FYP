@@ -52,7 +52,7 @@ export default function NotificationsPage() {
     <section className="mx-auto max-w-5xl">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Notification Centre</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Notification Centre</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950">System Notifications</h1>
           <p className="mt-2 text-sm text-slate-600">
             Review account, workflow, evidence verification, eligibility, and status-change updates.
@@ -62,7 +62,7 @@ export default function NotificationsPage() {
           type="button"
           onClick={() => markRead()}
           disabled={unreadCount === 0}
-          className="rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:bg-slate-400"
+          className="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
         >
           Mark all read
         </button>
@@ -82,7 +82,7 @@ export default function NotificationsPage() {
           <article
             key={notification.id}
             className={`rounded-lg border bg-white p-4 shadow-sm ${
-              notification.isRead ? 'border-slate-200' : 'border-blue-200 ring-1 ring-blue-100'
+              notification.isRead ? 'border-slate-200' : 'border-slate-200 ring-1 ring-blue-100'
             }`}
           >
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -90,7 +90,7 @@ export default function NotificationsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-semibold text-slate-950">{notification.title}</h2>
                   {!notification.isRead && (
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">New</span>
+                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-slate-700">New</span>
                   )}
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
                     {notification.type.toLowerCase()}

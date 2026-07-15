@@ -80,26 +80,34 @@ export default function LecturerDashboardOverview() {
     );
   }
 
-  const currentStep = data.activeRequest
-    ? data.activeRequest.status === 'APPROVED'
-      ? 5
-      : data.activeRequest.status === 'REJECTED'
-        ? 0
-        : data.activeRequest.status === 'UNDER_REVIEW'
-          ? 3
-          : 2
-    : 0;
+  const workflowStepByStatus: Record<string, number> = {
+    DRAFT: 1,
+    SUBMITTED: 2,
+    UNDER_DEPARTMENT_REVIEW: 3,
+    RETURNED_FOR_CORRECTION: 3,
+    UNDER_HR_VERIFICATION: 4,
+    UNDER_REVIEW: 4,
+    UNDER_COMMITTEE_REVIEW: 5,
+    REQUIRES_FURTHER_REVIEW: 5,
+    RECOMMENDED: 6,
+    NOT_RECOMMENDED: 6,
+    APPROVED: 7,
+    APPROVED_BY_AUTHORITY: 7,
+    COMPLETED: 7,
+    REJECTED: 6,
+  };
+  const currentStep = data.activeRequest ? workflowStepByStatus[data.activeRequest.status] || 1 : 1;
 
   return (
     <div className="space-y-6">
-      <section id="home" className="rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-950 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
+      <section id="home" className="pro-hero px-6 py-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
+            <div className="pro-eyebrow">
               Lecturer Dashboard
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Welcome back, {data.user.name}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
               Here's your promotion readiness snapshot. Track your application progress, upload evidence, and stay updated on all HR decisions.
             </p>
           </div>
@@ -125,13 +133,14 @@ export default function LecturerDashboardOverview() {
 
       {/* Career Stepper */}
       {data.activeRequest && (
-        <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-bold text-slate-900">Your Promotion Journey</h3>
           <p className="mt-1 text-sm text-slate-600">Current stage: {data.activeRequest.status}</p>
           <div className="mt-6">
             <ProgressStepper
               currentStep={currentStep}
-              steps={['Application Created', 'Documents Uploaded', 'HR Review', 'Eligibility Assessment', 'Final Decision']}
+              steps={['Draft', 'Submitted', 'Department Review', 'HR Verification', 'Committee Review', 'Recommendation', 'Completed']}
+              status={data.activeRequest.status}
             />
           </div>
         </div>
@@ -139,10 +148,10 @@ export default function LecturerDashboardOverview() {
 
       {/* Quick Action Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/lecturer-portal/evidence" className="group rounded-2xl border border-blue-300 bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">Upload</div>
-          <div className="mt-2 text-lg font-bold text-white">Evidence</div>
-          <div className="mt-2 text-sm leading-6 text-blue-50/95">Submit research, teaching, and service documents.</div>
+        <Link href="/lecturer-portal/evidence" className="group rounded-2xl border border-teal-200 bg-gradient-to-br from-white via-slate-50 to-teal-50 p-5 text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">Upload</div>
+          <div className="mt-2 text-lg font-bold text-slate-950">Evidence</div>
+          <div className="mt-2 text-sm leading-6 text-slate-600">Submit research, teaching, and service documents.</div>
         </Link>
 
         <Link href="/lecturer-portal/application" className="group rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-500 via-yellow-400 to-yellow-300 p-5 text-yellow-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
@@ -151,15 +160,15 @@ export default function LecturerDashboardOverview() {
           <div className="mt-2 text-sm leading-6 text-yellow-950/85">Check your promotion status and scores.</div>
         </Link>
 
-        <Link href="/lecturer-portal/queries" className="group rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-400 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+        <Link href="/lecturer-portal/queries" className="group rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-400 p-5 text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
           <div className="text-sm font-semibold uppercase tracking-[0.18em] text-yellow-100">Inbox</div>
-          <div className="mt-2 text-lg font-bold text-white">HR Feedback</div>
+          <div className="mt-2 text-lg font-bold text-slate-950">HR Feedback</div>
           <div className="mt-2 text-sm leading-6 text-yellow-50/95">Review flagged documents and HR comments.</div>
         </Link>
 
-        <Link href="/lecturer-portal/profile" className="group rounded-2xl border border-slate-300 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+        <Link href="/lecturer-portal/profile" className="group rounded-2xl border border-slate-300 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 p-5 text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
           <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">Profile</div>
-          <div className="mt-2 text-lg font-bold text-white">Account Settings</div>
+          <div className="mt-2 text-lg font-bold text-slate-950">Account Settings</div>
           <div className="mt-2 text-sm leading-6 text-slate-50/95">View your official academic profile.</div>
         </Link>
       </div>
@@ -169,13 +178,13 @@ export default function LecturerDashboardOverview() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm">
           <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Total Documents</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.recentDocuments.length}</div>
         </div>
 
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm">
           <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Verified</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">

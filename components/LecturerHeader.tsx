@@ -16,16 +16,14 @@ export default function LecturerHeader() {
   const currentPage = BREADCRUMB_MAP[pathname] || { label: 'Overview', code: 'OV' };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
       <nav className="flex min-w-0 items-center gap-2 text-sm">
-        <Link
-          href="/lecturer-portal"
-          className="inline-flex items-center gap-2 rounded-md text-slate-600 transition hover:text-teal-700"
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-teal-50 text-[10px] font-bold text-teal-700">
-            LP
+        <Link href="/lecturer-portal" className="inline-flex items-center gap-2 rounded-md text-slate-600 transition hover:text-teal-700">
+          <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-teal-100 bg-white p-0.5">
+            <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
           </span>
-          <span className="font-medium">Lecturer Portal</span>
+          <span className="hidden font-semibold sm:inline">GCTU Promotion System</span>
+          <span className="font-semibold sm:hidden">Portal</span>
         </Link>
         {pathname !== '/lecturer-portal' && (
           <>
@@ -40,9 +38,14 @@ export default function LecturerHeader() {
         )}
       </nav>
 
-      <div className="hidden shrink-0 text-right sm:block">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-teal-700">Current section</p>
-        <p className="mt-0.5 text-sm font-semibold text-slate-800">{currentPage.label}</p>
+      <div className="hidden shrink-0 items-center gap-3 md:flex">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm">
+          AM
+        </span>
+        <div className="text-right">
+          <p className="text-sm font-semibold leading-tight text-slate-950">Lecturer Portal</p>
+          <p className="text-xs text-slate-500">{currentPage.label}</p>
+        </div>
       </div>
     </div>
   );

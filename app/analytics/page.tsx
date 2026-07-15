@@ -75,22 +75,22 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="brand-hero px-6 py-7 lg:px-8 lg:py-8">
+      <div className="pro-hero px-6 py-7 lg:px-8 lg:py-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Analytics & Insights</h1>
-            <p className="mt-2 max-w-3xl text-sm text-blue-100/95">Department-level performance analysis for strategic decision support.</p>
+            <p className="mt-2 max-w-3xl text-sm text-slate-600">Department-level performance analysis for strategic decision support.</p>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
             <a
               href={`/api/reports/export?type=analytics&format=csv&department=${encodeURIComponent(departmentFilter)}&startDate=${encodeURIComponent(startDateFilter)}&endDate=${encodeURIComponent(endDateFilter)}`}
-              className="inline-flex w-full items-center justify-center rounded-xl border border-yellow-200/40 bg-yellow-300/20 px-4 py-2 text-sm font-semibold text-yellow-100 hover:bg-yellow-300/30 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-yellow-200/40 bg-yellow-300/20 px-4 py-2 text-sm font-semibold text-yellow-800 hover:bg-yellow-300/30 sm:w-auto"
             >
               Export CSV
             </a>
             <a
               href={`/api/reports/export?type=analytics&format=pdf&department=${encodeURIComponent(departmentFilter)}&startDate=${encodeURIComponent(startDateFilter)}&endDate=${encodeURIComponent(endDateFilter)}`}
-              className="inline-flex w-full items-center justify-center rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-50 sm:w-auto"
             >
               Export PDF
             </a>
@@ -98,7 +98,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="brand-surface-soft grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="pro-card grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Department</label>
           <input
@@ -149,7 +149,7 @@ export default function AnalyticsPage() {
         <KpiCard label="Promotion Candidates" value={summary.kpis.promotion_candidates} />
       </div>
 
-      <div className="brand-surface-soft overflow-hidden">
+      <div className="pro-card overflow-hidden">
         <div className="border-b border-slate-200 p-6">
           <h2 className="text-xl font-bold text-slate-900">Department Comparison</h2>
         </div>
@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
               </thead>
               <tbody>
                 {summary.departments.map((department) => (
-                  <tr key={department.department} className="border-b border-slate-100 hover:bg-blue-50/25">
+                  <tr key={department.department} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3 font-semibold text-slate-900">{department.department}</td>
                     <td className="px-4 py-3 text-slate-700">{department.lecturers}</td>
                     <td className="px-4 py-3 text-slate-700">{department.appraisals}</td>
@@ -184,7 +184,7 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      <div className="brand-surface-soft overflow-hidden">
+      <div className="pro-card overflow-hidden">
         <div className="border-b border-slate-200 p-6">
           <h2 className="text-xl font-bold text-slate-900">Performance Trend by Appraisal Date</h2>
           <p className="mt-1 text-sm text-slate-600">Average total scores over time</p>
@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
                 <div className="text-sm font-medium text-slate-700">{trend.appraisal_date}</div>
                 <div className="h-6 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="flex h-full items-center justify-center bg-gradient-to-r from-blue-700 to-yellow-500 text-xs font-semibold text-white"
+                    className="flex h-full items-center justify-center bg-gradient-to-r from-teal-700 to-amber-500 text-xs font-semibold text-white"
                     style={{ width: `${Math.max((trend.avg_total_score / 100) * 100, 4)}%` }}
                   >
                     {trend.avg_total_score}
@@ -248,7 +248,7 @@ type KpiCardProps = {
 
 function KpiCard({ label, value, suffix = '' }: KpiCardProps) {
   return (
-    <div className="brand-surface-medium p-5">
+    <div className="pro-tile p-5">
       <p className="text-sm font-medium text-slate-600">{label}</p>
       <p className="mt-2 text-2xl font-bold text-slate-900">
         {value}

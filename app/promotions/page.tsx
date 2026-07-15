@@ -59,7 +59,7 @@ export default function PromotionsPage() {
   }
 
   if (error) {
-    return <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-blue-900 shadow-sm">{error}</div>;
+    return <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-900 shadow-sm">{error}</div>;
   }
 
   const summary = {
@@ -71,22 +71,22 @@ export default function PromotionsPage() {
 
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
-      <div className="brand-hero px-6 py-7 lg:px-8 lg:py-8">
+      <div className="pro-hero px-6 py-7 lg:px-8 lg:py-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
           <div className="min-w-0 lg:flex-1">
             <h1 className="text-3xl font-bold">Promotion Decisions</h1>
-            <p className="mt-2 max-w-3xl text-sm text-blue-100/95">Decision support using score trends, confidence, and risk indicators.</p>
+            <p className="mt-2 max-w-3xl text-sm text-slate-600">Decision support using score trends, confidence, and risk indicators.</p>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:shrink-0 lg:justify-end">
             <a
               href="/api/reports/export?type=promotions&format=csv"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-yellow-200/40 bg-yellow-300/20 px-4 py-2 text-sm font-semibold text-yellow-100 hover:bg-yellow-300/30 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-yellow-200/40 bg-yellow-300/20 px-4 py-2 text-sm font-semibold text-yellow-800 hover:bg-yellow-300/30 sm:w-auto"
             >
               Export CSV
             </a>
             <a
               href="/api/reports/export?type=promotions&format=pdf"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-50 sm:w-auto"
             >
               Export PDF
             </a>
@@ -95,13 +95,13 @@ export default function PromotionsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="Approved" value={summary.approved} className="border-blue-200 bg-blue-50 text-blue-900" />
-        <SummaryCard title="Reviewed" value={summary.reviewed} className="border-blue-200 bg-blue-50 text-blue-900" />
+        <SummaryCard title="Approved" value={summary.approved} className="border-slate-200 bg-slate-50 text-slate-900" />
+        <SummaryCard title="Reviewed" value={summary.reviewed} className="border-slate-200 bg-slate-50 text-slate-900" />
         <SummaryCard title="Draft" value={summary.draft} className="border-slate-200 bg-slate-50 text-slate-900" />
         <SummaryCard title="High Risk" value={summary.highRisk} className="border-yellow-200 bg-yellow-50 text-yellow-900" />
       </div>
 
-      <div className="brand-surface-soft overflow-hidden">
+      <div className="pro-card overflow-hidden">
         <div className="border-b border-slate-200 p-6">
           <h2 className="text-xl font-bold text-slate-900">Promotion Recommendation Board</h2>
           <p className="mt-1 text-sm text-slate-600">Total lecturers reviewed: {candidates.length}</p>
@@ -134,7 +134,7 @@ export default function PromotionsPage() {
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         candidate.recommendation === 'Recommended for Promotion'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-teal-50 text-slate-700'
                           : 'bg-yellow-100 text-yellow-900'
                       }`}
                     >
@@ -144,7 +144,7 @@ export default function PromotionsPage() {
 
                   <div className="mt-2">
                     {candidate.risk_flags.length === 0 ? (
-                      <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">Low Risk</span>
+                      <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-slate-700">Low Risk</span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {candidate.risk_flags.slice(0, 2).map((flag) => (
@@ -153,7 +153,7 @@ export default function PromotionsPage() {
                           </span>
                         ))}
                         {candidate.risk_flags.length > 2 && (
-                          <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">+{candidate.risk_flags.length - 2}</span>
+                          <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-slate-700">+{candidate.risk_flags.length - 2}</span>
                         )}
                       </div>
                     )}
@@ -183,7 +183,7 @@ export default function PromotionsPage() {
                 </thead>
                 <tbody>
                   {candidates.map((candidate) => (
-                    <tr key={candidate.lecturer_id} className="border-b border-slate-100 hover:bg-blue-50/30">
+                    <tr key={candidate.lecturer_id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="px-4 py-3">
                         <div className="font-semibold text-slate-900">{candidate.lecturer_name}</div>
                         <div className="text-xs text-slate-500">{candidate.rank}</div>
@@ -197,13 +197,13 @@ export default function PromotionsPage() {
                         <TrendBadge delta={candidate.trend_delta} hasPrevious={candidate.previous_score !== null} />
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                        <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-slate-700">
                           {candidate.confidence_score}%
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         {candidate.risk_flags.length === 0 ? (
-                          <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">Low Risk</span>
+                          <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-slate-700">Low Risk</span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {candidate.risk_flags.slice(0, 2).map((flag) => (
@@ -212,7 +212,7 @@ export default function PromotionsPage() {
                               </span>
                             ))}
                             {candidate.risk_flags.length > 2 && (
-                              <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">+{candidate.risk_flags.length - 2}</span>
+                              <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-slate-700">+{candidate.risk_flags.length - 2}</span>
                             )}
                           </div>
                         )}
@@ -227,7 +227,7 @@ export default function PromotionsPage() {
                         <span
                           className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                             candidate.recommendation === 'Recommended for Promotion'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? 'bg-teal-50 text-slate-700'
                               : 'bg-yellow-100 text-yellow-900'
                           }`}
                         >
@@ -256,7 +256,7 @@ type SummaryCardProps = {
 
 function SummaryCard({ title, value, className }: SummaryCardProps) {
   return (
-    <div className={`rounded-2xl border bg-gradient-to-b from-white to-blue-50/35 px-4 py-4 shadow-sm ${className}`}>
+    <div className={`rounded-2xl border bg-gradient-to-b from-white to-slate-50 px-4 py-4 shadow-sm ${className}`}>
       <div className="text-[11px] font-semibold uppercase tracking-[0.16em]">{title}</div>
       <div className="mt-2 text-2xl font-bold">{value}</div>
     </div>
@@ -270,11 +270,11 @@ type TrendBadgeProps = {
 
 function TrendBadge({ delta, hasPrevious }: TrendBadgeProps) {
   if (!hasPrevious) {
-    return <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">Baseline</span>;
+    return <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-slate-700">Baseline</span>;
   }
 
   if (delta >= 0) {
-    return <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">+{delta}</span>;
+    return <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-slate-700">+{delta}</span>;
   }
 
   return <span className="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">{delta}</span>;
@@ -287,10 +287,10 @@ type StatusBadgeProps = {
 function StatusBadge({ status }: StatusBadgeProps) {
   const className =
     status === 'Approved'
-      ? 'bg-blue-100 text-blue-800'
+      ? 'bg-teal-50 text-slate-700'
       : status === 'Reviewed'
       ? 'bg-yellow-100 text-yellow-900'
-      : 'bg-blue-50 text-blue-900';
+      : 'bg-slate-50 text-slate-900';
 
   return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${className}`}>{status}</span>;
 }
@@ -302,11 +302,11 @@ type CategoryBadgeProps = {
 function CategoryBadge({ category }: CategoryBadgeProps) {
   const className =
     category === 'Excellent'
-      ? 'bg-blue-100 text-blue-800'
+      ? 'bg-teal-50 text-slate-700'
       : category === 'Good'
       ? 'bg-yellow-100 text-yellow-900'
       : category === 'Average'
-      ? 'bg-blue-50 text-blue-900'
+      ? 'bg-slate-50 text-slate-900'
       : 'bg-yellow-50 text-yellow-900';
 
   return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${className}`}>{category}</span>;

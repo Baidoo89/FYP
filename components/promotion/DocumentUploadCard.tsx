@@ -60,14 +60,14 @@ export default function DocumentUploadCard({ requestId, category, title, descrip
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">{category}</div>
+          <div className="text-sm font-semibold uppercase tracking-[0.16em] text-teal-700">{category}</div>
           <h3 className="mt-1 text-lg font-bold text-slate-900">{title}</h3>
           <p className="mt-1 text-sm text-slate-600">{description}</p>
         </div>
-        <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">PDF only</div>
+        <div className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">PDF only</div>
       </div>
 
       <div className="mt-4 space-y-3">
@@ -76,7 +76,7 @@ export default function DocumentUploadCard({ requestId, category, title, descrip
           <input
             value={documentTitle}
             onChange={(event) => setDocumentTitle(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-teal-300 focus:bg-white"
             required
           />
         </div>
@@ -87,7 +87,7 @@ export default function DocumentUploadCard({ requestId, category, title, descrip
             type="file"
             accept="application/pdf"
             onChange={(event) => setFile(event.target.files?.[0] || null)}
-            className="block w-full rounded-xl border border-dashed border-blue-200 bg-blue-50/50 px-4 py-3 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+            className="block w-full rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
             required
           />
         </div>
@@ -104,7 +104,7 @@ export default function DocumentUploadCard({ requestId, category, title, descrip
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-3 text-sm font-semibold text-white hover:from-blue-800 hover:to-blue-700 disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-teal-700 to-teal-600 px-4 py-3 text-sm font-semibold text-white hover:from-teal-800 hover:to-teal-700 disabled:opacity-60"
         >
           {loading ? 'Uploading...' : 'Upload PDF'}
         </button>

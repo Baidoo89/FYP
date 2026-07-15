@@ -64,8 +64,8 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md border border-blue-100">
-      <h1 className="text-2xl font-bold text-center mb-2 text-blue-900">
+    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md border border-slate-200">
+      <h1 className="text-2xl font-bold text-center mb-2 text-slate-900">
         GCTU Staff Sign Up
       </h1>
       <p className="text-center text-sm text-gray-600 mb-6">
@@ -84,7 +84,7 @@ export function RegisterForm() {
           <button
             type="button"
             onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-            className="font-semibold text-blue-700 underline"
+            className="font-semibold text-teal-700 underline"
           >
             verify account
           </button>
@@ -102,7 +102,7 @@ export function RegisterForm() {
             value={formData.email}
             onChange={handleChange}
             placeholder="john.smith@gctu.edu.gh"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -120,7 +120,7 @@ export function RegisterForm() {
             value={formData.password}
             onChange={handleChange}
             placeholder=""
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -138,7 +138,7 @@ export function RegisterForm() {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder=""
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             required
           />
         </div>
@@ -146,7 +146,7 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+          className="w-full py-2 px-4 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors"
         >
           {loading ? 'Creating Account...' : 'Create Account'}
         </button>
@@ -156,7 +156,7 @@ export function RegisterForm() {
         Already have an account?{' '}
         <button
           onClick={() => router.push('/login')}
-          className="text-blue-600 hover:text-blue-700 font-medium"
+          className="text-teal-700 hover:text-teal-700 font-medium"
         >
           Sign in
         </button>

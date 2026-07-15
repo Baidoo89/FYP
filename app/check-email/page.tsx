@@ -36,8 +36,8 @@ export default function CheckEmailPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
-      <section className="mx-auto max-w-xl rounded-lg border border-blue-100 bg-white p-6 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Account Verification</p>
+      <section className="mx-auto max-w-xl rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Account Verification</p>
         <h1 className="mt-3 text-2xl font-bold text-slate-950">Check your email</h1>
         <p className="mt-3 text-sm leading-6 text-slate-700">
           We sent a verification link to your registered email address. Verify your email before completing your staff profile and submitting any promotion request.
@@ -52,7 +52,7 @@ export default function CheckEmailPage() {
             <button
               type="button"
               onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-              className="font-semibold text-blue-700 underline"
+              className="font-semibold text-teal-700 underline"
             >
               verify account
             </button>
@@ -64,7 +64,7 @@ export default function CheckEmailPage() {
             type="button"
             onClick={resendVerification}
             disabled={loading}
-            className="rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:bg-slate-400"
+            className="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
           >
             {loading ? 'Sending...' : 'Resend verification email'}
           </button>

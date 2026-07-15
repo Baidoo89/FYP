@@ -102,7 +102,7 @@ export default function AuditLogsPage() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-blue-950 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-950 shadow-sm">
         {error}
       </div>
     );
@@ -111,21 +111,21 @@ export default function AuditLogsPage() {
   return (
     <div className="space-y-6">
       {/* Hero Section */}
-      <section className="rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-slate-950 via-blue-900 to-blue-800 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.2)]">
+      <section className="pro-hero px-6 py-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
+            <div className="pro-eyebrow">
               Activity Tracking
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Audit Logs</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
               Complete activity trail for all promotion system actions. Monitor verification activities, document changes, and administrative actions.
             </p>
           </div>
           <div className="flex gap-2">
             <a
               href="/hr/dashboard"
-              className="rounded-xl border border-blue-400 bg-transparent px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-50"
             >
                Back
             </a>
@@ -173,13 +173,13 @@ export default function AuditLogsPage() {
       </section>
 
       {/* Activity Timeline */}
-      <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3 pb-6 border-b border-slate-200">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Activity Timeline</h2>
             <p className="mt-1 text-sm text-slate-600">Complete audit trail of all system actions</p>
           </div>
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+          <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
             {filteredLogs.length} events
           </span>
         </div>
@@ -191,7 +191,7 @@ export default function AuditLogsPage() {
             </div>
           ) : (
             filteredLogs.map((log) => (
-              <div key={log.id} className="rounded-xl border border-slate-200 p-4 hover:border-blue-300 hover:bg-blue-50/50">
+              <div key={log.id} className="rounded-xl border border-slate-200 p-4 hover:border-teal-200 hover:bg-slate-50">
                 <div className="flex items-start gap-4">
                   <div className="text-2xl">{getActionIcon(log.action)}</div>
                   <div className="flex-1">
@@ -236,9 +236,9 @@ export default function AuditLogsPage() {
       </section>
 
       {/* Info Card */}
-      <section className="rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
-          <h3 className="font-semibold text-blue-950"> About Audit Logs</h3>
-        <ul className="mt-3 space-y-2 text-sm text-blue-800">
+      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+          <h3 className="font-semibold text-slate-950"> About Audit Logs</h3>
+        <ul className="mt-3 space-y-2 text-sm text-slate-700">
           <li> All system actions are logged automatically for compliance and transparency</li>
           <li> Logs include document verification, rejections, and status changes</li>
           <li> Each entry shows the timestamp, actor ID, and detailed metadata</li>
@@ -260,7 +260,7 @@ function StatCard({
   icon: string;
 }) {
   return (
-    <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-600">{label}</div>

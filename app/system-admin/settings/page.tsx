@@ -84,10 +84,10 @@ export default function SystemSettingsPage() {
 
   return (
     <section className="mx-auto max-w-7xl space-y-6">
-      <div className="brand-hero px-6 py-7">
+      <div className="pro-hero px-6 py-7">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-100">System Administration</p>
         <h1 className="mt-3 text-3xl font-bold">System Settings</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-blue-100">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
           Maintain configuration values used by the promotion support platform. Every change is recorded in the audit log.
         </p>
       </div>
@@ -96,7 +96,7 @@ export default function SystemSettingsPage() {
       {message && <div className="rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>}
 
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-        <form onSubmit={saveSetting} className="brand-surface-soft p-5">
+        <form onSubmit={saveSetting} className="pro-card p-5">
           <h2 className="text-lg font-bold text-slate-950">Setting Form</h2>
           <div className="mt-4 space-y-4">
             <label className="block text-sm font-semibold text-slate-800">
@@ -129,13 +129,13 @@ export default function SystemSettingsPage() {
               />
             </label>
           </div>
-          <button type="submit" disabled={saving} className="mt-5 rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:bg-slate-400">
+          <button type="submit" disabled={saving} className="mt-5 rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400">
             {saving ? 'Saving...' : 'Save setting'}
           </button>
         </form>
 
-        <div className="brand-surface-soft overflow-hidden">
-          <div className="border-b border-blue-100 p-5">
+        <div className="pro-card overflow-hidden">
+          <div className="border-b border-slate-200 p-5">
             <h2 className="text-lg font-bold text-slate-950">Configured Settings</h2>
             <p className="mt-1 text-sm text-slate-600">Click a setting to edit it.</p>
           </div>
@@ -146,7 +146,7 @@ export default function SystemSettingsPage() {
           ) : (
             <div className="divide-y divide-blue-100">
               {settings.map((setting) => (
-                <button key={setting.id} type="button" onClick={() => editSetting(setting)} className="block w-full p-5 text-left hover:bg-blue-50/70">
+                <button key={setting.id} type="button" onClick={() => editSetting(setting)} className="block w-full p-5 text-left hover:bg-slate-50">
                   <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
                     <div>
                       <p className="font-semibold text-slate-950">{setting.key}</p>

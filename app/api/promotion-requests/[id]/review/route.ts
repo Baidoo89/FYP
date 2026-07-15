@@ -1,24 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { NotificationType, RequestStatus, ReviewRecommendation } from '@prisma/client';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { ReviewRecommendation } from '@prisma/client';
 import { getAuthSession } from '../../../../../lib/auth';
 import { prisma } from '../../../../../lib/prisma';
-import { writeAuditLog, writeStatusHistory } from '../../../../../lib/audit-logger';
-import { assertStatusTransition } from '../../../../../lib/workflow';
+import {
+  recordCommitteeReview,
+  recordDepartmentReview,
+  type DepartmentReviewDecision,
+  WorkflowError,
+} from '../../../../../lib/promotion-workflow';
 import type { ApiResponse } from '../../../../../types';
 
-const RECOMMENDATION_STATUS: Record<ReviewRecommendation, RequestStatus> = {
-  RECOMMENDED: RequestStatus.RECOMMENDED,
-  NOT_RECOMMENDED: RequestStatus.NOT_RECOMMENDED,
-  REQUIRES_FURTHER_REVIEW: RequestStatus.REQUIRES_FURTHER_REVIEW,
-};
+const DEPARTMENT_DECISIONS: DepartmentReviewDecision[] = [
+  'FORWARD_TO_HR',
+  'RETURN_FOR_CORRECTION',
+  'REQUIRES_FURTHER_REVIEW',
+  'COMMENT_ONLY',
+];
+
+function workflowErrorResponse(error: unknown, fallback: string) {
+  const status = error instanceof WorkflowError ? error.statusCode : 500;
+  const message = error instanceof Error ? error.message : fallback;
+  return NextResponse.json({ success: false, error: message } as ApiResponse<null>, { status });
+}
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = getAuthSession(request);
   const { id } = await context.params;
   const requestId = Number(id);
 
-  if (!session || !['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(session.role) || session.legacy) {
-    return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
+  if (!session || session.legacy) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' } as ApiResponse<null>, { status: 401 });
   }
 
   if (!Number.isInteger(requestId) || requestId <= 0) {
@@ -28,6 +39,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const body = await request.json();
   const comment = String(body.comment || '').trim();
   const recommendation = body.recommendation ? String(body.recommendation) as ReviewRecommendation : null;
+  const decision = String(body.decision || body.action || '').trim().toUpperCase() as DepartmentReviewDecision;
 
   if (comment.length < 5) {
     return NextResponse.json({ success: false, error: 'Review comment must be at least 5 characters' } as ApiResponse<null>, { status: 400 });
@@ -37,76 +49,50 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ success: false, error: 'Invalid recommendation' } as ApiResponse<null>, { status: 400 });
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const current = await tx.promotionRequest.findUnique({
-      where: { id: requestId },
-      include: { lecturer: true },
-    });
+  try {
+    const actor = {
+      id: session.userId,
+      role: session.role,
+      name: session.name,
+    };
 
-    if (!current) {
-      throw new Error('Promotion request not found');
+    if (decision || session.role === 'HOD_DEAN') {
+      const departmentDecision = decision || 'COMMENT_ONLY';
+      if (!DEPARTMENT_DECISIONS.includes(departmentDecision)) {
+        return NextResponse.json({ success: false, error: 'Invalid department review decision' } as ApiResponse<null>, { status: 400 });
+      }
+
+      const result = await prisma.$transaction((tx) =>
+        recordDepartmentReview(tx, {
+          actor,
+          requestId,
+          decision: departmentDecision,
+          comment,
+        })
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'Department review saved',
+        data: result,
+      } as ApiResponse<typeof result>);
     }
 
-    const review = await tx.reviewComment.create({
-      data: {
-        promotionRequestId: requestId,
-        reviewerId: session.userId,
+    const result = await prisma.$transaction((tx) =>
+      recordCommitteeReview(tx, {
+        actor,
+        requestId,
         comment,
         recommendation,
-      },
-    });
+      })
+    );
 
-    let updatedRequest = current;
-    if (recommendation) {
-      const newStatus = RECOMMENDATION_STATUS[recommendation];
-      assertStatusTransition(current.status, newStatus, session.role);
-
-      updatedRequest = await tx.promotionRequest.update({
-        where: { id: requestId },
-        data: {
-          status: newStatus,
-          reviewedAt: new Date(),
-          reviewedById: session.userId,
-          adminComment: comment,
-        },
-        include: { lecturer: true },
-      });
-
-      await writeStatusHistory(tx, {
-        promotionRequestId: requestId,
-        changedById: session.userId,
-        oldStatus: current.status,
-        newStatus,
-        comment,
-      });
-    }
-
-    await writeAuditLog(tx, {
-      actorId: session.userId,
-      requestId,
-      action: 'REVIEW_COMMENT_ADDED',
-      entityType: 'ReviewComment',
-      entityId: review.id,
-      description: 'Committee review comment was added.',
-      metadata: { recommendation, comment },
-    });
-
-    await tx.notification.create({
-      data: {
-        userId: current.lecturerId,
-        promotionRequestId: requestId,
-        title: 'Committee review update',
-        message: recommendation ? `Committee recommendation: ${recommendation.toLowerCase().replace(/_/g, ' ')}.` : 'A committee review comment was added.',
-        type: recommendation === ReviewRecommendation.RECOMMENDED ? NotificationType.SUCCESS : NotificationType.INFO,
-      },
-    });
-
-    return { review, request: updatedRequest };
-  });
-
-  return NextResponse.json({
-    success: true,
-    message: 'Review saved',
-    data: result,
-  } as ApiResponse<typeof result>);
+    return NextResponse.json({
+      success: true,
+      message: 'Committee review saved',
+      data: result,
+    } as ApiResponse<typeof result>);
+  } catch (error) {
+    return workflowErrorResponse(error, 'Review failed');
+  }
 }

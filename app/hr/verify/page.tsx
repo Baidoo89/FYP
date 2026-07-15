@@ -144,21 +144,21 @@ export default function VerificationWorkspacePage() {
   return (
     <div className="space-y-6">
       {/* Hero Section */}
-      <section className="rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-slate-950 via-blue-900 to-blue-800 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.2)]">
+      <section className="pro-hero px-6 py-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
+            <div className="pro-eyebrow">
               Document Verification
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Verification Workspace</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
               Review promotion documents, verify eligibility, and provide feedback to lecturers.
             </p>
           </div>
           <div className="flex gap-2">
             <a
               href="/hr/requests"
-              className="rounded-xl border border-blue-400 bg-transparent px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-50"
             >
                Back
             </a>
@@ -167,7 +167,7 @@ export default function VerificationWorkspacePage() {
       </section>
 
       {message && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-950">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-950">
           {message}
         </div>
       )}
@@ -181,7 +181,7 @@ export default function VerificationWorkspacePage() {
       {/* Main Layout: Requests List + Verification Panel */}
       <section className="grid gap-6 lg:grid-cols-[1fr_2fr]">
         {/* Left: Requests List */}
-        <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900">Pending Requests</h2>
           <p className="mt-1 text-sm text-slate-600">Select a request to begin verification</p>
 
@@ -204,8 +204,8 @@ export default function VerificationWorkspacePage() {
                   }}
                   className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
                     selectedRequestId === request.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-slate-200 bg-white hover:border-blue-300'
+                      ? 'border-teal-600 bg-slate-50'
+                      : 'border-slate-200 bg-white hover:border-teal-200'
                   }`}
                 >
                   <div className="font-semibold text-slate-900">{request.lecturerName}</div>
@@ -214,7 +214,7 @@ export default function VerificationWorkspacePage() {
                     <span className="text-xs font-medium text-slate-600">
                       {request.currentRank}  {request.targetRank}
                     </span>
-                    <span className="text-xs font-semibold text-blue-700">
+                    <span className="text-xs font-semibold text-teal-700">
                       {request.documents.length} docs
                     </span>
                   </div>
@@ -229,7 +229,7 @@ export default function VerificationWorkspacePage() {
           {selectedRequest ? (
             <>
               {/* Request Info */}
-              <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900">{selectedRequest.lecturerName}</h2>
@@ -248,7 +248,7 @@ export default function VerificationWorkspacePage() {
               </div>
 
               {/* Documents List */}
-              <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900">Documents</h3>
                 <div className="mt-4 space-y-2">
                   {selectedRequest.documents.map((doc) => (
@@ -262,8 +262,8 @@ export default function VerificationWorkspacePage() {
                       }}
                       className={`w-full rounded-xl border p-3 text-left transition-all ${
                         selectedDocumentId === doc.id
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-slate-200 bg-white hover:border-blue-300'
+                          ? 'border-teal-600 bg-slate-50'
+                          : 'border-slate-200 bg-white hover:border-teal-200'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -301,7 +301,7 @@ export default function VerificationWorkspacePage() {
                       type="button"
                       onClick={() => handleVerifyDocument('VERIFIED')}
                       disabled={verifying}
-                      className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                      className="rounded-xl bg-teal-700 px-6 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
                     >
                       {verifying ? 'Processing...' : ' Verify Document'}
                     </button>
@@ -309,7 +309,7 @@ export default function VerificationWorkspacePage() {
                       type="button"
                       onClick={() => handleVerifyDocument('REJECTED')}
                       disabled={verifying}
-                      className="rounded-xl bg-yellow-500 px-6 py-3 font-semibold text-blue-950 hover:bg-yellow-400 disabled:opacity-50"
+                      className="rounded-xl bg-yellow-500 px-6 py-3 font-semibold text-slate-950 hover:bg-yellow-400 disabled:opacity-50"
                     >
                       {verifying ? 'Processing...' : ' Reject Document'}
                     </button>
@@ -330,7 +330,7 @@ export default function VerificationWorkspacePage() {
 
       {/* PDF Preview Section */}
       {selectedFileUrl && (
-        <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-bold text-slate-900"> Document Preview</h2>
           <iframe
             title="Document preview"
@@ -345,10 +345,10 @@ export default function VerificationWorkspacePage() {
 
 function StatusBadge({ status }: { status: string }) {
   const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-    DRAFT: { bg: 'bg-blue-100', text: 'text-blue-900', label: 'Draft' },
+    DRAFT: { bg: 'bg-teal-50', text: 'text-slate-900', label: 'Draft' },
     SUBMITTED: { bg: 'bg-yellow-100', text: 'text-yellow-900', label: 'Submitted' },
-    UNDER_REVIEW: { bg: 'bg-blue-100', text: 'text-blue-900', label: 'Under Review' },
-    APPROVED: { bg: 'bg-blue-950', text: 'text-white', label: 'Approved' },
+    UNDER_REVIEW: { bg: 'bg-teal-50', text: 'text-slate-900', label: 'Under Review' },
+    APPROVED: { bg: 'bg-slate-950', text: 'text-white', label: 'Approved' },
     REJECTED: { bg: 'bg-yellow-100', text: 'text-yellow-900', label: 'Rejected' },
   };
 
@@ -363,9 +363,9 @@ function StatusBadge({ status }: { status: string }) {
 
 function VerificationStatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; text: string; icon: string }> = {
-    PENDING: { bg: 'bg-blue-100', text: 'text-blue-900', icon: '' },
+    PENDING: { bg: 'bg-teal-50', text: 'text-slate-900', icon: '' },
     VERIFIED: { bg: 'bg-yellow-100', text: 'text-yellow-900', icon: '' },
-    REJECTED: { bg: 'bg-blue-950', text: 'text-white', icon: '' },
+    REJECTED: { bg: 'bg-slate-950', text: 'text-white', icon: '' },
   };
 
   const c = config[status] || config.PENDING;

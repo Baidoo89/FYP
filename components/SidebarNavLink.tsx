@@ -24,15 +24,15 @@ export default function SidebarNavLink({ href, icon, children, subtitle, onNavig
         aria-current={isActive ? 'page' : undefined}
         onClick={onNavigate}
         className={[
-          'group flex items-center gap-3 rounded-lg px-3 py-3 transition',
-          'text-slate-300 hover:bg-white/[0.06] hover:text-white',
-          isActive ? 'bg-teal-500/16 text-white ring-1 ring-teal-300/20' : '',
+          'group flex items-center gap-3 rounded-lg px-3 py-2.5 transition',
+          'text-emerald-50/78 hover:bg-white/[0.08] hover:text-white',
+          isActive ? 'bg-white/[0.13] text-white shadow-[inset_3px_0_0_rgba(45,212,191,0.85)]' : '',
         ].join(' ')}
       >
         <span
           className={[
-            'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-[11px] font-bold tracking-wide',
-            isActive ? 'bg-teal-400 text-slate-950' : 'bg-white/8 text-teal-100 group-hover:bg-white/12',
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-[10px] font-bold tracking-wide',
+            isActive ? 'bg-teal-200 text-emerald-950' : 'bg-white/[0.08] text-teal-100 group-hover:bg-white/[0.14]',
           ].join(' ')}
           aria-hidden="true"
         >
@@ -40,7 +40,7 @@ export default function SidebarNavLink({ href, icon, children, subtitle, onNavig
         </span>
         <div className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold leading-tight">{children}</span>
-          {subtitle && <span className="mt-0.5 block truncate text-xs text-slate-400 group-hover:text-slate-300">{subtitle}</span>}
+          {subtitle && <span className="mt-0.5 block truncate text-[11px] text-emerald-100/55 group-hover:text-emerald-50/80">{subtitle}</span>}
         </div>
       </Link>
     </li>

@@ -73,42 +73,63 @@ export default function AppShell({ children }: AppShellProps) {
 
   const navItems: NavItem[] = isLecturerPortal
     ? [
-        { href: '/lecturer-portal', icon: 'OV', label: 'Overview', subtitle: 'Career progress' },
-        { href: '/lecturer-portal/application', icon: 'RQ', label: 'Application', subtitle: 'Promotion status' },
-        { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence', subtitle: 'Documents' },
-        { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback', subtitle: 'HR comments' },
+        { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview' },
+        { href: '/lecturer-portal/application', icon: 'PR', label: 'Promotion Requests', subtitle: 'Track application' },
+        { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence Portfolio', subtitle: 'Documents' },
+        { href: '/lecturer-portal/application', icon: 'AP', label: 'My Applications', subtitle: 'Status history' },
+        { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback & Remarks', subtitle: 'HR comments' },
+        { href: '/lecturer-portal/application', icon: 'EL', label: 'Eligibility Status', subtitle: 'Criteria outcome' },
         { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
         { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Academic record' },
+        { href: '/lecturer-portal/profile', icon: 'HC', label: 'Help Center', subtitle: 'Support' },
+        { href: '/lecturer-portal/profile', icon: 'SE', label: 'Settings', subtitle: 'Account' },
       ]
     : isHrPortal
       ? [
           { href: '/hr/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Workload overview' },
-          { href: '/hr/requests', icon: 'RQ', label: 'Requests', subtitle: 'Application queue' },
-          { href: '/hr/verify', icon: 'VR', label: 'Verification', subtitle: 'Evidence review' },
-          { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
+          { href: '/hr/requests', icon: 'AA', label: 'All Applications', subtitle: 'Master queue' },
+          { href: '/hr/verify', icon: 'VQ', label: 'Verification Queue', subtitle: 'Evidence review' },
+          { href: '/lecturers', icon: 'SR', label: 'Staff Records', subtitle: 'Lecturer profiles' },
+          { href: '/hr/requests', icon: 'ER', label: 'Eligibility Review', subtitle: 'Criteria outcome' },
+          { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Analytics' },
           { href: '/hr/logs', icon: 'AU', label: 'Audit Logs', subtitle: 'Activity trail' },
+          { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
+          { href: '/hr/dashboard', icon: 'SE', label: 'Settings', subtitle: 'Preferences' },
         ]
       : isSystemAdminPortal
         ? [
             { href: '/system-admin/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'System overview' },
-            { href: '/system-admin/criteria', icon: 'CR', label: 'Criteria', subtitle: 'Eligibility rules' },
-            { href: '/system-admin/structure', icon: 'ST', label: 'Structure', subtitle: 'Faculties and departments' },
-            { href: '/system-admin/users', icon: 'UR', label: 'Users and Roles', subtitle: 'Access control' },
-            { href: '/system-admin/settings', icon: 'SE', label: 'Settings', subtitle: 'Configuration' },
+            { href: '/system-admin/users', icon: 'US', label: 'Users', subtitle: 'Account control' },
+            { href: '/system-admin/users', icon: 'RL', label: 'Roles', subtitle: 'Access levels' },
+            { href: '/system-admin/structure', icon: 'DP', label: 'Departments', subtitle: 'Academic units' },
+            { href: '/system-admin/structure', icon: 'FC', label: 'Faculties', subtitle: 'School structure' },
+            { href: '/system-admin/criteria', icon: 'RK', label: 'Rank Levels', subtitle: 'Promotion ranks' },
+            { href: '/system-admin/criteria', icon: 'CR', label: 'Promotion Criteria', subtitle: 'Eligibility rules' },
+            { href: '/system-admin/settings', icon: 'DC', label: 'Document Categories', subtitle: 'Evidence types' },
             { href: '/audit', icon: 'AU', label: 'Audit Logs', subtitle: 'System activity' },
-            { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
+            { href: '/system-admin/settings', icon: 'SE', label: 'System Settings', subtitle: 'Configuration' },
           ]
         : isCommitteePortal
           ? [
               { href: '/committee/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Assigned work' },
-              { href: '/committee/review', icon: 'RV', label: 'Review Board', subtitle: 'Recommendations' },
+              { href: '/committee/review', icon: 'AS', label: 'Assigned Applications', subtitle: 'Review queue' },
+              { href: '/committee/review', icon: 'RC', label: 'Review Cases', subtitle: 'Evidence review' },
+              { href: '/committee/review', icon: 'RM', label: 'Recommendations', subtitle: 'Decisions' },
+              { href: '/analytics', icon: 'ER', label: 'Eligibility Reports', subtitle: 'Outcomes' },
+              { href: '/audit', icon: 'RH', label: 'Review History', subtitle: 'Audit trail' },
               { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
+              { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
             ]
           : isHodPortal
             ? [
                 { href: '/hod/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Department overview' },
-                { href: '/hod/applications', icon: 'AP', label: 'Applications', subtitle: 'Department queue' },
+                { href: '/hod/applications', icon: 'DA', label: 'Department Applications', subtitle: 'Department queue' },
+                { href: '/hod/applications', icon: 'RR', label: 'Review Requests', subtitle: 'Pending decisions' },
+                { href: '/hod/applications', icon: 'RC', label: 'Recommendations', subtitle: 'Comments' },
+                { href: '/hod/applications', icon: 'FW', label: 'Forwarded Applications', subtitle: 'Sent to HR' },
+                { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Department reports' },
                 { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
+                { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
               ]
             : baseNavItems;
 
@@ -133,17 +154,24 @@ export default function AppShell({ children }: AppShellProps) {
 
       <nav
         className={[
-          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-slate-800 bg-[#172033] text-white shadow-xl transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-emerald-950 bg-[linear-gradient(180deg,#063f36_0%,#02362f_46%,#012821_100%)] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
       >
         <div className="border-b border-white/10 px-5 py-6">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-teal-500 text-sm font-bold text-white shadow-lg shadow-teal-950/20">
-            GP
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-teal-200/25 bg-white p-1 shadow-lg shadow-emerald-950/30">
+              <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold tracking-tight">GCTU</h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-teal-100/80">Promotion System</p>
+            </div>
           </div>
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-teal-200">{portalTitle}</p>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight">GCTU Promotion System</h1>
-          <p className="mt-1 text-sm text-slate-300">{portalSubtitle}</p>
+          <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-100">{portalTitle}</p>
+            <p className="mt-1 text-sm text-emerald-50/75">{portalSubtitle}</p>
+          </div>
         </div>
 
         <ul className="space-y-1 px-3 py-4">
@@ -154,19 +182,19 @@ export default function AppShell({ children }: AppShellProps) {
           ))}
         </ul>
 
-        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.04] p-4 text-xs text-slate-300">
-          <p className="font-semibold text-white">Secure workspace</p>
-          <p className="mt-1 leading-5">Role-based access, audit trails, and verified promotion evidence.</p>
+        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-emerald-50/75">
+          <p className="font-semibold text-white">Need help?</p>
+          <p className="mt-1 leading-5">Contact support for account, evidence, and workflow assistance.</p>
         </div>
 
-        <div className="mt-4 border-t border-white/10 p-4 text-xs text-slate-400">
-          <p>GCTU Promotion System</p>
-          <p>Final Year Project</p>
+        <div className="mt-4 border-t border-white/10 p-4 text-xs text-emerald-100/45">
+          <p>GCTU Promotion System v1.0</p>
+          <p>2026 GCTU. All rights reserved.</p>
         </div>
       </nav>
 
       <div className="flex min-w-0 flex-1 flex-col lg:ml-72">
-        <header className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-3 py-3 shadow-sm backdrop-blur sm:px-4 md:px-8 lg:left-72 lg:py-4">
+        <header className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-3 py-3 shadow-sm backdrop-blur sm:px-4 md:px-8 lg:left-72 lg:py-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
@@ -186,8 +214,15 @@ export default function AppShell({ children }: AppShellProps) {
             )}
           </div>
           <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+            <div className="hidden w-64 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 xl:flex">
+              Search anything...
+            </div>
+            <a href="/notifications" className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex">
+              NT
+              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-rose-500 ring-2 ring-white" />
+            </a>
             {!isLecturerPortal && (
-              <div className="hidden rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 sm:block">
+              <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:block">
                 {isHrPortal ? 'HR Panel' : 'Control Panel'}
               </div>
             )}
@@ -195,7 +230,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-6 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-28">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-6 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-24">{children}</main>
 
         <footer className="border-t border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500 md:px-8">
           <p>GCTU Promotion System v1.0 | University Promotion Management Platform</p>

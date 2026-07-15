@@ -244,11 +244,11 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
         onClose={() => setToast((previous) => ({ ...previous, open: false }))}
       />
 
-      <div className="brand-surface-medium p-6">
-        <div className="mb-5 rounded-xl border border-amber-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4">
+      <div className="pro-tile p-6">
+        <div className="mb-5 rounded-xl border border-amber-200 bg-gradient-to-r from-slate-50 to-amber-50 p-4">
           <h2 className="text-2xl font-bold text-slate-900">Decision Input</h2>
           <p className="mt-1 text-sm text-slate-700">Capture weighted evidence for promotion, development, and support decisions.</p>
-          <p className="mt-2 text-xs font-medium text-blue-800">Weighting policy: Teaching 50%  Research 30%  Service 20%</p>
+          <p className="mt-2 text-xs font-medium text-slate-700">Weighting policy: Teaching 50%  Research 30%  Service 20%</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -270,7 +270,7 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
               ))}
             </select>
             {editingAppraisalId && (
-              <p className="mt-2 text-xs font-medium text-blue-800">
+              <p className="mt-2 text-xs font-medium text-slate-700">
                 Existing appraisal loaded. Update the values below to edit the same lecturer record.
               </p>
             )}
@@ -322,12 +322,12 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
           </div>
 
           {computedPreview && (
-            <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-sm text-blue-950">
+            <div className="rounded-xl border border-slate-200 bg-teal-50 p-4 text-sm text-slate-950">
               <p><strong>Total Score:</strong> {computedPreview.total}</p>
               <p><strong>Category:</strong> {computedPreview.category}</p>
               <p><strong>Recommendation:</strong> {computedPreview.recommendation}</p>
               <p><strong>Decision Band:</strong> {computedPreview.decisionBand}</p>
-              <p className="mt-2 text-blue-800"><strong>Priority Action:</strong> {computedPreview.priorityAction}</p>
+              <p className="mt-2 text-slate-700"><strong>Priority Action:</strong> {computedPreview.priorityAction}</p>
             </div>
           )}
 
@@ -335,7 +335,7 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
             <button
               type="submit"
               disabled={submitting || loadingLecturers || loadingExistingAppraisal}
-              className="w-full rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-blue-800 hover:to-blue-700 disabled:opacity-60"
+              className="w-full rounded-xl bg-gradient-to-r from-teal-700 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-teal-800 hover:to-teal-700 disabled:opacity-60"
             >
               {submitting ? 'Saving Appraisal...' : editingAppraisalId ? 'Update Appraisal' : 'Save Appraisal'}
             </button>
@@ -346,7 +346,7 @@ export default function AddAppraisalForm({ onSuccess }: AddAppraisalFormProps) {
                 setToast((previous) => ({ ...previous, open: false }));
                 resetForm();
               }}
-              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 disabled:opacity-60"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             >
               Clear
             </button>

@@ -91,8 +91,8 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
         onClose={() => setToast((previous) => ({ ...previous, open: false }))}
       />
 
-      <div className="brand-surface-soft p-6">
-        <div className="mb-5 rounded-xl border border-amber-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4">
+      <div className="pro-card p-6">
+        <div className="mb-5 rounded-xl border border-amber-200 bg-gradient-to-r from-slate-50 to-amber-50 p-4">
           <h2 className="text-2xl font-bold text-slate-900">Add New Lecturer</h2>
           <p className="mt-1 text-sm text-slate-700">Create a lecturer profile to include them in appraisal and analytics workflows.</p>
         </div>
@@ -182,7 +182,7 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
           <button
             type="submit"
             disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-blue-800 hover:to-blue-700 disabled:opacity-60"
+              className="w-full rounded-xl bg-gradient-to-r from-teal-700 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-teal-800 hover:to-teal-700 disabled:opacity-60"
           >
             {loading ? 'Adding Lecturer...' : 'Add Lecturer'}
           </button>
@@ -198,7 +198,7 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
                   rank: '',
                 });
               }}
-                className="w-full rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-blue-50 disabled:opacity-60"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
             >
               Clear
             </button>

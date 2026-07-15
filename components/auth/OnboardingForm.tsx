@@ -82,8 +82,8 @@ export function OnboardingForm() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-md border border-blue-100">
-      <h1 className="text-3xl font-bold text-center mb-2 text-blue-900">
+    <div className="w-full max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-md border border-slate-200">
+      <h1 className="text-3xl font-bold text-center mb-2 text-slate-900">
         Complete Your Staff Profile
       </h1>
       <p className="text-center text-gray-600 mb-8">
@@ -105,7 +105,7 @@ export function OnboardingForm() {
             name="department"
             value={formData.department}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             required
           >
             <option value="">Select your department</option>
@@ -130,7 +130,7 @@ export function OnboardingForm() {
             value={formData.staffId}
             onChange={handleChange}
             placeholder="GCTU/CS/2026/001"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -146,7 +146,7 @@ export function OnboardingForm() {
             name="currentRank"
             value={formData.currentRank}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             required
           >
             <option value="">Select your academic rank</option>
@@ -161,8 +161,8 @@ export function OnboardingForm() {
           </p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-8">
-          <p className="text-sm text-blue-800">
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-8">
+          <p className="text-sm text-slate-700">
             <span className="font-semibold">Note:</span> This information will be used to evaluate your eligibility for promotion based on university standards and policies.
           </p>
         </div>
@@ -170,7 +170,7 @@ export function OnboardingForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-lg mt-8"
+          className="w-full py-3 px-4 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors text-lg mt-8"
         >
           {loading ? 'Completing Profile...' : 'Complete Profile & Continue'}
         </button>

@@ -8,6 +8,10 @@ type DashboardStats = {
   verified: number;
   approved: number;
   rejected: number;
+  returned: number;
+  committeeReview: number;
+  eligible: number;
+  notEligible: number;
 };
 
 export default function HrCommandCenterPage() {
@@ -36,6 +40,10 @@ export default function HrCommandCenterPage() {
           verified: allRequests.filter((r: any) => r.verifiedAt !== null).length,
           approved: allRequests.filter((r: any) => ['APPROVED', 'APPROVED_BY_AUTHORITY', 'COMPLETED'].includes(r.status)).length,
           rejected: allRequests.filter((r: any) => ['REJECTED', 'NOT_RECOMMENDED'].includes(r.status)).length,
+          returned: allRequests.filter((r: any) => r.status === 'RETURNED_FOR_CORRECTION').length,
+          committeeReview: allRequests.filter((r: any) => r.status === 'UNDER_COMMITTEE_REVIEW').length,
+          eligible: allRequests.filter((r: any) => r.eligibilityStatus === 'ELIGIBLE').length,
+          notEligible: allRequests.filter((r: any) => ['NOT_ELIGIBLE', 'INCOMPLETE_APPLICATION'].includes(r.eligibilityStatus)).length,
         });
         setRecentRequests(allRequests.slice(0, 5));
       } catch (err) {
@@ -75,12 +83,15 @@ export default function HrCommandCenterPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatTile code="ALL" label="Total requests" value={stats?.totalRequests || 0} />
-        <StatTile code="REV" label="Pending review" value={stats?.pendingReview || 0} tone="amber" />
-        <StatTile code="VER" label="Verified" value={stats?.verified || 0} />
-        <StatTile code="APR" label="Approved" value={stats?.approved || 0} />
-        <StatTile code="RET" label="Rejected" value={stats?.rejected || 0} tone="rose" />
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile code="ALL" label="Total applications" value={stats?.totalRequests || 0} />
+        <StatTile code="PEN" label="Pending verification" value={stats?.pendingReview || 0} tone="amber" />
+        <StatTile code="COR" label="Returned correction" value={stats?.returned || 0} tone="rose" />
+        <StatTile code="COM" label="Committee review" value={stats?.committeeReview || 0} />
+        <StatTile code="ELG" label="Eligible applicants" value={stats?.eligible || 0} />
+        <StatTile code="NEL" label="Not eligible" value={stats?.notEligible || 0} tone="rose" />
+        <StatTile code="VER" label="Verified documents" value={stats?.verified || 0} />
+        <StatTile code="APR" label="Finalized" value={stats?.approved || 0} />
       </section>
 
       <section className="pro-card p-5 sm:p-6">
@@ -133,7 +144,7 @@ export default function HrCommandCenterPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr_0.9fr]">
         <div className="pro-card p-5 sm:p-6">
           <h3 className="text-lg font-semibold text-slate-950">Verification Progress</h3>
           <p className="mt-1 text-sm text-slate-600">Completion across all visible promotion requests.</p>
@@ -142,6 +153,15 @@ export default function HrCommandCenterPage() {
               <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${completion}%` }} />
             </div>
             <div className="w-16 text-right text-2xl font-semibold text-slate-950">{completion}%</div>
+          </div>
+        </div>
+
+        <div className="pro-card p-5 sm:p-6">
+          <h3 className="text-lg font-semibold text-slate-950">Reports and Analytics</h3>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <MiniMetric label="Eligible" value={stats?.eligible || 0} tone="teal" />
+            <MiniMetric label="Not eligible" value={stats?.notEligible || 0} tone="rose" />
+            <MiniMetric label="Committee" value={stats?.committeeReview || 0} tone="amber" />
           </div>
         </div>
 
@@ -178,6 +198,21 @@ function StatTile({ code, label, value, tone = 'teal' }: { code: string; label: 
   );
 }
 
+
+function MiniMetric({ label, value, tone }: { label: string; value: number; tone: 'teal' | 'amber' | 'rose' }) {
+  const toneClass = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      : 'border-teal-200 bg-teal-50 text-teal-800';
+
+  return (
+    <div className={`rounded-lg border p-3 ${toneClass}`}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] opacity-75">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
+    </div>
+  );
+}
 function QuickLink({ href, code, title, description }: { href: string; code: string; title: string; description: string }) {
   return (
     <a href={href} className="pro-action flex items-center gap-3 p-3">

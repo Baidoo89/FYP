@@ -1,10 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { getAuthSession } from '../../../../../lib/auth';
 import { createSecureFileName, MAX_PROMOTION_PDF_SIZE, saveMockPdfFile } from '../../../../../lib/upload';
 import { documentUploadSchema } from '../../../../../lib/validation/promotion-request.schema';
-import { writePromotionAudit } from '../../../../../lib/promotion-audit';
+import { savePromotionDocumentRecord, WorkflowError } from '../../../../../lib/promotion-workflow';
 import type { ApiResponse } from '../../../../../types';
+
+function workflowErrorResponse(error: unknown, fallback: string) {
+  const status = error instanceof WorkflowError ? error.statusCode : 500;
+  const message = error instanceof Error ? error.message : fallback;
+  return NextResponse.json({ success: false, error: message } as ApiResponse<null>, { status });
+}
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = getAuthSession(request);
@@ -13,10 +19,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
   if (!session || session.legacy) {
     return NextResponse.json({ success: false, error: 'Unauthorized' } as ApiResponse<null>, { status: 401 });
-  }
-
-  if (session.role !== 'LECTURER') {
-    return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
   if (!Number.isInteger(requestId) || requestId <= 0) {
@@ -57,79 +59,38 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ success: false, error: 'File size exceeds 10MB limit' } as ApiResponse<null>, { status: 400 });
   }
 
-  const requestRecord = await prisma.promotionRequest.findUnique({
-    where: { id: requestId },
-  });
-
-  if (!requestRecord) {
-    return NextResponse.json({ success: false, error: 'Promotion request not found' } as ApiResponse<null>, { status: 404 });
-  }
-
-  if (session.role === 'LECTURER' && requestRecord.lecturerId !== session.userId) {
-    return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
-  }
-
   const fileName = createSecureFileName(file.name || `${title}.pdf`);
   const buffer = Buffer.from(await file.arrayBuffer());
   await saveMockPdfFile(fileName, buffer);
 
-  const documentRecord = await prisma.document.upsert({
-    where: {
-      requestId_category: {
+  try {
+    const documentRecord = await prisma.$transaction((tx) =>
+      savePromotionDocumentRecord(tx, {
+        actor: {
+          id: session.userId,
+          role: session.role,
+          name: session.name,
+        },
         requestId,
         category: parsed.data.category,
-      },
-    },
-    update: {
-      title: parsed.data.title,
-      fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
-      fileName,
-      mimeType: file.type,
-      fileType: file.type,
-      fileSize: file.size,
-      status: 'PENDING',
-      verificationStatus: 'PENDING',
-      verifiedById: null,
-      verificationComment: null,
-      uploadedById: session.userId,
-    },
-    create: {
-      requestId,
-      promotionRequestId: requestId,
-      uploadedById: session.userId,
-      category: parsed.data.category,
-      title: parsed.data.title,
-      fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
-      fileName,
-      mimeType: file.type,
-      fileType: file.type,
-      fileSize: file.size,
-    },
-    include: {
-      verifiedBy: true,
-    },
-  });
+        title: parsed.data.title,
+        fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
+        fileName,
+        mimeType: file.type,
+        fileType: file.type,
+        fileSize: file.size,
+      })
+    );
 
-  await prisma.$transaction(async (tx) => {
-    await writePromotionAudit(tx, {
-      requestId,
-      actorId: session.userId,
-      action: 'promotion_document.upload',
-      metadata: {
-        documentId: documentRecord.id,
-        category: documentRecord.category,
-        title: documentRecord.title,
-        fileName: documentRecord.fileName,
-      },
-    });
-  });
-
-  return NextResponse.json(
-    {
-      success: true,
-      message: 'Document uploaded successfully',
-      data: documentRecord,
-    } as ApiResponse<typeof documentRecord>,
-    { status: 201 }
-  );
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Document uploaded successfully',
+        data: documentRecord,
+      } as ApiResponse<typeof documentRecord>,
+      { status: 201 }
+    );
+  } catch (error) {
+    return workflowErrorResponse(error, 'Document upload failed');
+  }
 }

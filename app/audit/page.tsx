@@ -99,11 +99,11 @@ export default function AuditPage() {
 
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
-      <div className="brand-hero px-6 py-7 lg:px-8 lg:py-8">
+      <div className="pro-hero px-6 py-7 lg:px-8 lg:py-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
           <div className="min-w-0 lg:flex-1">
             <h1 className="text-3xl font-bold">Audit Logs</h1>
-            <p className="mt-2 max-w-3xl text-sm text-blue-100/95">
+            <p className="mt-2 max-w-3xl text-sm text-slate-600">
               Track key system actions including authentication, appraisal submissions, and report exports.
             </p>
           </div>
@@ -116,7 +116,7 @@ export default function AuditPage() {
             </a>
             <a
               href={`/api/reports/export?${exportQueryString}&format=pdf`}
-              className="inline-flex w-full items-center justify-center rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-50 sm:w-auto"
             >
               Export Audit PDF
             </a>
@@ -124,7 +124,7 @@ export default function AuditPage() {
         </div>
       </div>
 
-      <div className="brand-surface-soft grid grid-cols-1 gap-3 p-4 md:grid-cols-3 xl:grid-cols-6">
+      <div className="pro-card grid grid-cols-1 gap-3 p-4 md:grid-cols-3 xl:grid-cols-6">
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Action</label>
           <input
@@ -196,7 +196,7 @@ export default function AuditPage() {
         </div>
       </div>
 
-      <div className="brand-surface-soft overflow-hidden">
+      <div className="pro-card overflow-hidden">
         <div className="flex flex-col gap-2 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-bold text-slate-900">Recent Entries</h2>
           <p className="text-sm text-slate-600">
@@ -225,10 +225,10 @@ export default function AuditPage() {
               </thead>
               <tbody>
                 {logs.map((entry, index) => (
-                  <tr key={`${entry.timestamp}-${entry.action}-${index}`} className="align-top border-b border-slate-100 hover:bg-blue-50/25">
+                  <tr key={`${entry.timestamp}-${entry.action}-${index}`} className="align-top border-b border-slate-100 hover:bg-slate-50">
                     <td className="whitespace-nowrap px-4 py-3 text-slate-700">{formatDateTime(entry.timestamp)}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                      <span className="inline-flex rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-teal-700">
                         {entry.action}
                       </span>
                     </td>

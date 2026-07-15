@@ -1,20 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { NotificationType, RequestStatus, VerificationStatus } from '@prisma/client';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { VerificationStatus } from '@prisma/client';
 import { prisma } from '../../../../../lib/prisma';
 import { getAuthSession } from '../../../../../lib/auth';
 import { verificationSchema } from '../../../../../lib/validation/promotion-request.schema';
-import { calculateEligibility } from '../../../../../lib/promotion-engine';
-import { writePromotionAudit } from '../../../../../lib/promotion-audit';
-import { writeStatusHistory } from '../../../../../lib/audit-logger';
+import { verifyPromotionDocument, WorkflowError } from '../../../../../lib/promotion-workflow';
 import type { ApiResponse } from '../../../../../types';
+
+function workflowErrorResponse(error: unknown, fallback: string) {
+  const status = error instanceof WorkflowError ? error.statusCode : 500;
+  const message = error instanceof Error ? error.message : fallback;
+  return NextResponse.json({ success: false, error: message } as ApiResponse<null>, { status });
+}
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = getAuthSession(request);
   const { id } = await context.params;
   const requestId = Number(id);
 
-  if (!session || !['HR_ADMIN', 'HOD_DEAN', 'SYSTEM_ADMIN'].includes(session.role) || session.legacy) {
-    return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
+  if (!session || session.legacy) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' } as ApiResponse<null>, { status: 401 });
   }
 
   if (!Number.isInteger(requestId) || requestId <= 0) {
@@ -39,123 +43,34 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     );
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const documentRecord = await tx.document.findUnique({
-      where: { id: parsed.data.documentId },
-      include: {
-        request: true,
-      },
-    });
-
-    if (!documentRecord || documentRecord.requestId !== requestId) {
-      throw new Error('Document not found for this request');
-    }
-
-    const updatedDocument = await tx.document.update({
-      where: { id: parsed.data.documentId },
-      data: {
-        status: parsed.data.verificationStatus as VerificationStatus,
+  try {
+    const result = await prisma.$transaction((tx) =>
+      verifyPromotionDocument(tx, {
+        actor: {
+          id: session.userId,
+          role: session.role,
+          name: session.name,
+        },
+        requestId,
+        documentId: parsed.data.documentId,
         verificationStatus: parsed.data.verificationStatus as VerificationStatus,
-        verifiedById: session.userId,
-        verificationComment: parsed.data.comment || null,
-        verifiedAt: new Date(),
-      },
-    });
-
-    await tx.verification.create({
-      data: {
-        documentId: updatedDocument.id,
-        verifierId: session.userId,
-        decision: parsed.data.verificationStatus as VerificationStatus,
         comment: parsed.data.comment || null,
-      },
-    });
+      })
+    );
 
-    await writePromotionAudit(tx, {
-      requestId,
-      actorId: session.userId,
-      action: `promotion_document.${parsed.data.verificationStatus.toLowerCase()}`,
-      metadata: {
-        documentId: updatedDocument.id,
-        category: updatedDocument.category,
-        verificationComment: updatedDocument.verificationComment,
-      },
-    });
-
-    const nextStatus =
-      parsed.data.verificationStatus === VerificationStatus.REJECTED ||
-      parsed.data.verificationStatus === VerificationStatus.REQUIRES_CORRECTION
-        ? RequestStatus.RETURNED_FOR_CORRECTION
-        : RequestStatus.UNDER_HR_VERIFICATION;
-
-    const updatedRequest = await tx.promotionRequest.update({
-      where: { id: requestId },
+    return NextResponse.json({
+      success: true,
+      message: 'Verification saved',
       data: {
-        status: nextStatus,
-        verifiedAt: parsed.data.verificationStatus === VerificationStatus.VERIFIED ? new Date() : null,
-        adminComment:
-          parsed.data.comment ||
-          (nextStatus === RequestStatus.RETURNED_FOR_CORRECTION
-            ? 'Document requires correction before eligibility can be calculated.'
-            : 'Document verification saved. Application remains under HR verification.'),
+        requestId,
+        status: result.requestStatus,
+        eligibilityStatus: result.eligibility?.eligibilityStatus || null,
+        eligibilityReason: result.eligibility?.eligibilityReason || null,
+        totalScore: result.eligibility?.totalScore ?? null,
+        document: result.document,
       },
-      include: {
-        lecturer: true,
-        documents: true,
-      },
-    });
-
-    if (documentRecord.request.status !== nextStatus) {
-      await writeStatusHistory(tx, {
-        promotionRequestId: requestId,
-        changedById: session.userId,
-        oldStatus: documentRecord.request.status,
-        newStatus: nextStatus,
-        comment: updatedRequest.adminComment,
-      });
-    }
-
-    await writePromotionAudit(tx, {
-      requestId,
-      actorId: session.userId,
-      action: 'promotion_request.status_updated',
-      metadata: {
-        status: updatedRequest.status,
-      },
-    });
-
-    await tx.notification.create({
-      data: {
-        userId: updatedRequest.lecturerId,
-        promotionRequestId: requestId,
-        title: parsed.data.verificationStatus === VerificationStatus.VERIFIED ? 'Document verified' : 'Document requires attention',
-        message: parsed.data.comment || `Your ${updatedDocument.category.toLowerCase().replace(/_/g, ' ')} document was ${parsed.data.verificationStatus.toLowerCase().replace(/_/g, ' ')}.`,
-        type: parsed.data.verificationStatus === VerificationStatus.VERIFIED ? NotificationType.SUCCESS : NotificationType.WARNING,
-      },
-    });
-
-    const eligibility =
-      parsed.data.verificationStatus === VerificationStatus.VERIFIED
-        ? await calculateEligibility(tx, requestId, session.userId)
-        : null;
-
-    return {
-      request: updatedRequest,
-      document: updatedDocument,
-      eligibility,
-    };
-  });
-
-  return NextResponse.json({
-    success: true,
-    message: 'Verification saved',
-    data: {
-      requestId: result.request.id,
-      status: result.request.status,
-      eligibilityStatus: result.eligibility?.eligibilityStatus || result.request.eligibilityStatus,
-      eligibilityReason: result.eligibility?.eligibilityReason || result.request.eligibilityReason,
-      totalScore: result.eligibility?.totalScore ?? (result.request.totalScore ? Number(result.request.totalScore) : null),
-      document: result.document,
-    },
-  } as ApiResponse<Record<string, unknown>>);
+    } as ApiResponse<Record<string, unknown>>);
+  } catch (error) {
+    return workflowErrorResponse(error, 'Verification failed');
+  }
 }

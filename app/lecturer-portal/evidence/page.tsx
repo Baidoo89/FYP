@@ -154,7 +154,7 @@ export default function EvidencePage() {
   if (error || !data) {
     return (
       <div className="space-y-6">
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-8 text-center font-medium text-blue-900 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center font-medium text-slate-900 shadow-sm">
           {error || 'Failed to load evidence portfolio'}
         </div>
       </div>
@@ -166,13 +166,13 @@ export default function EvidencePage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[1.75rem] border border-blue-100 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-950 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
+      <section className="pro-hero px-6 py-8">
         <div>
-          <div className="inline-flex rounded-full border border-yellow-300/25 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
+          <div className="pro-eyebrow">
             Evidence Portfolio
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Categorized Document Upload</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/90">
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
             Organize your evidence into three categories and track verification status for each document.
           </p>
         </div>
@@ -180,13 +180,13 @@ export default function EvidencePage() {
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm">
           <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Total</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.totalDocuments}</div>
         </div>
 
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm">
           <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Verified</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.verifiedCount}</div>
@@ -198,7 +198,7 @@ export default function EvidencePage() {
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.pendingCount}</div>
         </div>
 
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-100 to-blue-50/40 p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm">
           <div className="text-3xl"></div>
           <div className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Rejected</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{data.stats.rejectedCount}</div>
@@ -226,15 +226,15 @@ export default function EvidencePage() {
       </div>
 
       {/* Category Description */}
-      <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
-          <p className="text-sm text-blue-900">{categoryInfo.description}</p>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+          <p className="text-sm text-slate-900">{categoryInfo.description}</p>
         </div>
 
       {/* Upload Zone */}
-      <div className="rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 p-8 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-teal-200 bg-slate-50 p-8 text-center">
         <div className="text-4xl mb-3">{categoryInfo.icon}</div>
-        <p className="font-semibold text-blue-950">Upload {categoryInfo.title}</p>
-        <p className="mt-2 text-sm text-blue-800">Upload one document per category. A new upload replaces the previous file in the same category.</p>
+        <p className="font-semibold text-slate-950">Upload {categoryInfo.title}</p>
+        <p className="mt-2 text-sm text-slate-700">Upload one document per category. A new upload replaces the previous file in the same category.</p>
 
         <div className="mx-auto mt-5 grid max-w-2xl gap-3 text-left">
           <div>
@@ -244,7 +244,7 @@ export default function EvidencePage() {
             <input
               value={uploadTitle}
               onChange={(event) => setUploadTitle(event.target.value)}
-              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-yellow-400"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-yellow-400"
               placeholder={`Enter ${categoryInfo.title.toLowerCase()} title`}
             />
           </div>
@@ -257,7 +257,7 @@ export default function EvidencePage() {
               type="file"
               accept="application/pdf"
               onChange={(event) => setUploadFile(event.target.files?.[0] || null)}
-              className="block w-full rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm text-blue-900 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+              className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
             />
           </div>
         </div>
@@ -265,13 +265,13 @@ export default function EvidencePage() {
         <button
           onClick={handleUpload}
           disabled={uploading}
-          className="mt-4 rounded-xl bg-blue-700 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-4 rounded-xl bg-teal-700 px-6 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {uploading ? 'Uploading...' : `Upload ${selectedCategory} Evidence`}
         </button>
 
         {uploadMessage && (
-          <p className={`mt-3 text-sm ${uploadMessage.includes('successfully') ? 'text-blue-700' : 'text-yellow-800'}`}>
+          <p className={`mt-3 text-sm ${uploadMessage.includes('successfully') ? 'text-teal-700' : 'text-yellow-800'}`}>
             {uploadMessage}
           </p>
         )}
@@ -280,10 +280,10 @@ export default function EvidencePage() {
       </div>
 
       {/* Documents List */}
-      <div className="rounded-2xl border border-blue-100 bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-blue-200 bg-blue-50 px-6 py-4">
-          <h2 className="text-lg font-bold text-blue-950">Uploaded Documents</h2>
-          <p className="mt-1 text-sm text-blue-800">{docs.length} file(s) in this category</p>
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
+          <h2 className="text-lg font-bold text-slate-950">Uploaded Documents</h2>
+          <p className="mt-1 text-sm text-slate-700">{docs.length} file(s) in this category</p>
         </div>
 
         {docs.length === 0 ? (
@@ -293,7 +293,7 @@ export default function EvidencePage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-blue-50 text-left text-xs uppercase tracking-[0.14em] text-blue-700 border-b border-blue-200">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-teal-700 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-3">Document Name</th>
                   <th className="px-6 py-3">Upload Date</th>
@@ -303,16 +303,16 @@ export default function EvidencePage() {
               </thead>
               <tbody>
                 {docs.map((doc, idx) => (
-                  <tr key={idx} className="border-t border-blue-200 hover:bg-blue-50">
+                  <tr key={idx} className="border-t border-slate-200 hover:bg-slate-50">
                     <td className="px-6 py-4">
-                      <p className="font-medium text-blue-950 truncate">{doc.title}</p>
+                      <p className="font-medium text-slate-950 truncate">{doc.title}</p>
                     </td>
-                    <td className="px-6 py-4 text-blue-800">
+                    <td className="px-6 py-4 text-slate-700">
                       {new Date(doc.uploadedAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       {doc.verificationStatus === 'VERIFIED' && (
-                        <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
                            Verified
                         </span>
                       )}
@@ -322,13 +322,13 @@ export default function EvidencePage() {
                         </span>
                       )}
                       {doc.verificationStatus === 'REJECTED' && (
-                        <span className="inline-flex rounded-full border border-blue-200 bg-blue-950 px-3 py-1 text-xs font-semibold text-white">
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
                            Rejected
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:text-blue-800">
+                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-teal-700 hover:text-slate-700">
                         View 
                       </a>
                     </td>
@@ -341,7 +341,7 @@ export default function EvidencePage() {
       </div>
 
       {/* Back Link */}
-      <Link href="/lecturer-portal" className="inline-flex rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50">
+      <Link href="/lecturer-portal" className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50">
          Back to Dashboard
       </Link>
     </div>

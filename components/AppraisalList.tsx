@@ -59,7 +59,7 @@ export default function AppraisalList({ refreshToken }: AppraisalListProps) {
   }, [refreshToken]);
 
   if (loading) {
-    return <div className="brand-surface-soft p-6 text-slate-600">Loading appraisals...</div>;
+    return <div className="pro-card p-6 text-slate-600">Loading appraisals...</div>;
   }
 
   if (error) {
@@ -67,7 +67,7 @@ export default function AppraisalList({ refreshToken }: AppraisalListProps) {
   }
 
   if (appraisals.length === 0) {
-    return <div className="brand-surface-soft p-6 text-slate-600">No appraisals found yet.</div>;
+    return <div className="pro-card p-6 text-slate-600">No appraisals found yet.</div>;
   }
 
   const normalizedSearch = search.trim().toLowerCase();
@@ -104,14 +104,14 @@ export default function AppraisalList({ refreshToken }: AppraisalListProps) {
   };
 
   return (
-    <div className="brand-surface-soft overflow-hidden">
+    <div className="pro-card overflow-hidden">
       <div className="border-b border-slate-200 p-6">
         <h2 className="text-2xl font-bold text-slate-900">Decision Records</h2>
         <p className="mt-1 text-sm text-slate-600">Total appraisal entries: {appraisals.length}</p>
 
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
           <DecisionStat label="Advance" value={decisionSummary.advance} className="border-emerald-200 bg-emerald-50 text-emerald-800" />
-          <DecisionStat label="Observe" value={decisionSummary.observe} className="border-blue-200 bg-blue-50 text-blue-800" />
+          <DecisionStat label="Observe" value={decisionSummary.observe} className="border-slate-200 bg-slate-50 text-slate-700" />
           <DecisionStat label="Develop" value={decisionSummary.develop} className="border-amber-200 bg-amber-50 text-amber-800" />
           <DecisionStat label="Intervene" value={decisionSummary.intervene} className="border-rose-200 bg-rose-50 text-rose-800" />
         </div>
@@ -221,7 +221,7 @@ export default function AppraisalList({ refreshToken }: AppraisalListProps) {
               </thead>
               <tbody>
                 {filteredAppraisals.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-100 hover:bg-blue-50/40">
+                  <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="truncate font-semibold text-slate-900" title={item.lecturer_name}>{item.lecturer_name}</div>
                       <div className="truncate text-xs text-slate-500" title={`${item.department}  ${item.rank}`}>{item.department}  {item.rank}</div>
@@ -268,7 +268,7 @@ function CategoryBadge({ category }: CategoryBadgeProps) {
     category === 'Excellent'
       ? 'bg-green-100 text-green-800'
       : category === 'Good'
-      ? 'bg-blue-100 text-blue-800'
+      ? 'bg-teal-50 text-slate-700'
       : category === 'Average'
       ? 'bg-yellow-100 text-yellow-800'
       : 'bg-red-100 text-red-800';
@@ -300,7 +300,7 @@ function DecisionBandBadge({ totalScore }: DecisionBandBadgeProps) {
     totalScore >= 80
       ? { label: 'Advance', className: 'bg-emerald-100 text-emerald-800' }
       : totalScore >= 70
-      ? { label: 'Observe', className: 'bg-blue-100 text-blue-800' }
+      ? { label: 'Observe', className: 'bg-teal-50 text-slate-700' }
       : totalScore >= 50
       ? { label: 'Develop', className: 'bg-amber-100 text-amber-800' }
       : { label: 'Intervene', className: 'bg-rose-100 text-rose-800' };

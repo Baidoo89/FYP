@@ -105,10 +105,10 @@ export default function InstitutionStructurePage() {
 
   return (
     <section className="mx-auto max-w-7xl space-y-6">
-      <div className="brand-hero px-6 py-7">
+      <div className="pro-hero px-6 py-7">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-100">System Administration</p>
         <h1 className="mt-3 text-3xl font-bold">Faculties and Departments</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-blue-100">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
           Maintain the institutional structure used for staff profiles, HOD/Dean scoping, reporting, and promotion workflow routing.
         </p>
       </div>
@@ -117,7 +117,7 @@ export default function InstitutionStructurePage() {
       {message && <div className="rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>}
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <form onSubmit={saveStructure} className="brand-surface-soft p-5">
+        <form onSubmit={saveStructure} className="pro-card p-5">
           <h2 className="text-lg font-bold text-slate-950">Structure Form</h2>
           <div className="mt-4 space-y-4">
             <label className="block text-sm font-semibold text-slate-800">
@@ -170,14 +170,14 @@ export default function InstitutionStructurePage() {
             </label>
           </div>
 
-          <button type="submit" disabled={saving} className="mt-5 rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:bg-slate-400">
+          <button type="submit" disabled={saving} className="mt-5 rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400">
             {saving ? 'Saving...' : 'Save structure'}
           </button>
         </form>
 
         <div className="space-y-6">
-          <div className="brand-surface-soft overflow-hidden">
-            <div className="border-b border-blue-100 p-5">
+          <div className="pro-card overflow-hidden">
+            <div className="border-b border-slate-200 p-5">
               <h2 className="text-lg font-bold text-slate-950">Faculties</h2>
               <p className="mt-1 text-sm text-slate-600">Click a faculty to edit it.</p>
             </div>
@@ -188,14 +188,14 @@ export default function InstitutionStructurePage() {
             ) : (
               <div className="divide-y divide-blue-100">
                 {faculties.map((faculty) => (
-                  <button key={faculty.id} type="button" onClick={() => editFaculty(faculty)} className="block w-full p-5 text-left hover:bg-blue-50/70">
+                  <button key={faculty.id} type="button" onClick={() => editFaculty(faculty)} className="block w-full p-5 text-left hover:bg-slate-50">
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                       <div>
                         <p className="font-semibold text-slate-950">{faculty.name}</p>
                         <p className="mt-1 text-sm text-slate-600">{faculty.description || 'No description provided.'}</p>
                       </div>
                       <div className="flex gap-2 text-xs font-semibold">
-                        <span className="rounded-full bg-blue-100 px-2 py-1 text-blue-800">{faculty._count.departments} departments</span>
+                        <span className="rounded-full bg-teal-50 px-2 py-1 text-slate-700">{faculty._count.departments} departments</span>
                         <span className="rounded-full bg-green-100 px-2 py-1 text-green-800">{faculty._count.users} users</span>
                       </div>
                     </div>
@@ -205,8 +205,8 @@ export default function InstitutionStructurePage() {
             )}
           </div>
 
-          <div className="brand-surface-soft overflow-hidden">
-            <div className="border-b border-blue-100 p-5">
+          <div className="pro-card overflow-hidden">
+            <div className="border-b border-slate-200 p-5">
               <h2 className="text-lg font-bold text-slate-950">Departments</h2>
               <p className="mt-1 text-sm text-slate-600">Click a department to edit its faculty assignment.</p>
             </div>
@@ -217,7 +217,7 @@ export default function InstitutionStructurePage() {
             ) : (
               <div className="divide-y divide-blue-100">
                 {departments.map((department) => (
-                  <button key={department.id} type="button" onClick={() => editDepartment(department)} className="block w-full p-5 text-left hover:bg-blue-50/70">
+                  <button key={department.id} type="button" onClick={() => editDepartment(department)} className="block w-full p-5 text-left hover:bg-slate-50">
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                       <div>
                         <p className="font-semibold text-slate-950">{department.name}</p>

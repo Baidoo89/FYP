@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { NotificationType, RequestStatus } from '@prisma/client';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { RequestStatus } from '@prisma/client';
 import { getAuthSession } from '../../../../../lib/auth';
 import { prisma } from '../../../../../lib/prisma';
-import { writeAuditLog, writeStatusHistory } from '../../../../../lib/audit-logger';
-import { assertStatusTransition } from '../../../../../lib/workflow';
+import { transitionPromotionRequest, WorkflowError } from '../../../../../lib/promotion-workflow';
 import type { ApiResponse } from '../../../../../types';
+
+function workflowErrorResponse(error: unknown, fallback: string) {
+  const status = error instanceof WorkflowError ? error.statusCode : 500;
+  const message = error instanceof Error ? error.message : fallback;
+  return NextResponse.json({ success: false, error: message } as ApiResponse<null>, { status });
+}
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = getAuthSession(request);
@@ -27,63 +32,27 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ success: false, error: 'Invalid status value' } as ApiResponse<null>, { status: 400 });
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const current = await tx.promotionRequest.findUnique({
-      where: { id: requestId },
-      include: { lecturer: true },
-    });
+  try {
+    const result = await prisma.$transaction((tx) =>
+      transitionPromotionRequest(tx, {
+        actor: {
+          id: session.userId,
+          role: session.role,
+          name: session.name,
+        },
+        requestId,
+        newStatus,
+        comment,
+        action: 'promotion_request.status_changed',
+      })
+    );
 
-    if (!current) {
-      throw new Error('Promotion request not found');
-    }
-
-    assertStatusTransition(current.status, newStatus, session.role);
-
-    const updated = await tx.promotionRequest.update({
-      where: { id: requestId },
-      data: {
-        status: newStatus,
-        reviewedAt: ['RECOMMENDED', 'NOT_RECOMMENDED'].includes(newStatus) ? new Date() : undefined,
-        completedAt: newStatus === RequestStatus.COMPLETED ? new Date() : undefined,
-        adminComment: comment || current.adminComment,
-      },
-      include: { lecturer: true },
-    });
-
-    await writeStatusHistory(tx, {
-      promotionRequestId: requestId,
-      changedById: session.userId,
-      oldStatus: current.status,
-      newStatus,
-      comment,
-    });
-
-    await writeAuditLog(tx, {
-      actorId: session.userId,
-      requestId,
-      action: 'STATUS_CHANGED',
-      entityType: 'PromotionRequest',
-      entityId: requestId,
-      description: `Application status changed from ${current.status} to ${newStatus}.`,
-      metadata: { oldStatus: current.status, newStatus, comment },
-    });
-
-    await tx.notification.create({
-      data: {
-        userId: current.lecturerId,
-        promotionRequestId: requestId,
-        title: 'Application status updated',
-        message: comment || `Your promotion application status is now ${newStatus.toLowerCase().replace(/_/g, ' ')}.`,
-        type: NotificationType.INFO,
-      },
-    });
-
-    return updated;
-  });
-
-  return NextResponse.json({
-    success: true,
-    message: 'Status updated',
-    data: result,
-  } as ApiResponse<typeof result>);
+    return NextResponse.json({
+      success: true,
+      message: 'Status updated',
+      data: result,
+    } as ApiResponse<typeof result>);
+  } catch (error) {
+    return workflowErrorResponse(error, 'Status update failed');
+  }
 }

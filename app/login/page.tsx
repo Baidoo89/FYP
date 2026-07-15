@@ -58,8 +58,8 @@ export default function LoginPage() {
       <div className="mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/70 lg:grid-cols-[0.92fr_1.08fr]">
         <section className="relative hidden bg-[#172033] px-10 py-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500 text-sm font-bold shadow-lg shadow-teal-950/20">
-              GP
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-lg shadow-teal-950/20">
+              <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
             </div>
             <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-teal-200">GCTU Promotion System</p>
             <h1 className="mt-4 max-w-md text-4xl font-semibold leading-tight tracking-tight">
@@ -85,8 +85,8 @@ export default function LoginPage() {
         <section className="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
           <div className="w-full max-w-md">
             <div className="lg:hidden">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-600 text-sm font-bold text-white">
-                GP
+              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-teal-100 bg-white p-1">
+                <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
               </div>
             </div>
             <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-teal-700 lg:mt-0">Secure access</p>
