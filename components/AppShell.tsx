@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -161,7 +161,7 @@ export default function AppShell({ children }: AppShellProps) {
         <div className="border-b border-white/10 px-5 py-6">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-teal-200/25 bg-white p-1 shadow-lg shadow-emerald-950/30">
-              <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
+              <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight">GCTU</h1>

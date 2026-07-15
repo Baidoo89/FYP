@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -59,7 +59,7 @@ export default function LoginPage() {
         <section className="relative hidden bg-[#172033] px-10 py-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div>
             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-lg shadow-teal-950/20">
-              <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
+              <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
             </div>
             <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-teal-200">GCTU Promotion System</p>
             <h1 className="mt-4 max-w-md text-4xl font-semibold leading-tight tracking-tight">
@@ -86,7 +86,7 @@ export default function LoginPage() {
           <div className="w-full max-w-md">
             <div className="lg:hidden">
               <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-teal-100 bg-white p-1">
-                <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
+                <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
               </div>
             </div>
             <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-teal-700 lg:mt-0">Secure access</p>

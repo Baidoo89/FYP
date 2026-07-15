@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getEdgeAuthSession } from './lib/auth-edge';
 import { canAccessPath, getDashboardForRole } from './lib/rbac';
 
 const publicRoutes = ['/login', '/register', '/verify-email', '/check-email', '/onboarding'];
 const publicApiRoutes = ['/api/health', '/api/auth/login', '/api/auth/register', '/api/auth/verify-email', '/api/auth/resend-verification'];
+const PUBLIC_FILE_PATTERN = /\.(?:png|jpg|jpeg|jfif|gif|webp|svg|ico|txt|xml|pdf|css|js|map)$/i;
 
 // Admin setup is a public route for initial account creation
 const adminSetupRoute = '/admin/setup';
@@ -21,6 +22,10 @@ function isPublicApiRoute(pathname: string) {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (!pathname.startsWith('/api') && PUBLIC_FILE_PATTERN.test(pathname)) {
+    return NextResponse.next();
+  }
 
   if (
     pathname.startsWith('/_next') ||
@@ -147,4 +152,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
+
 

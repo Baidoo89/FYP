@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,7 +20,7 @@ export default function LecturerHeader() {
       <nav className="flex min-w-0 items-center gap-2 text-sm">
         <Link href="/lecturer-portal" className="inline-flex items-center gap-2 rounded-md text-slate-600 transition hover:text-teal-700">
           <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-teal-100 bg-white p-0.5">
-            <img src="/gctu-logo.jfif" alt="GCTU logo" className="h-full w-full object-contain" />
+            <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
           </span>
           <span className="hidden font-semibold sm:inline">GCTU Promotion System</span>
           <span className="font-semibold sm:hidden">Portal</span>
