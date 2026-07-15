@@ -3,14 +3,14 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { Prisma } from '@prisma/client';
 import {
   applyReportingFilters,
-  computeAnalyticsSummary,
   computeDashboardMetrics,
   computePromotionCandidates,
   loadReportingData,
 } from '../../../../lib/reporting';
-import { getAuthSession } from '../../../../lib/auth';
+import { getAuthSession, type AuthSession } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { writeAuditLog } from '../../../../lib/audit-logger';
+import { loadPromotionAnalytics, promotionAnalyticsToCsv } from '../../../../lib/promotion-analytics';
 
 type ExportType = 'dashboard' | 'promotions' | 'analytics' | 'audit';
 type ExportFormat = 'csv' | 'pdf';
@@ -129,24 +129,16 @@ function buildPromotionsCsv(filters: { department?: string; startDate?: string; 
   };
 }
 
-function buildAnalyticsCsv(filters: { department?: string; startDate?: string; endDate?: string }) {
+function buildAnalyticsCsv(filters: { department?: string; startDate?: string; endDate?: string }, session: AuthSession) {
   return async () => {
-    const reportingData = applyReportingFilters(await loadReportingData(), filters);
-    const analytics = computeAnalyticsSummary(reportingData);
+    const analytics = await loadPromotionAnalytics(filters, {
+      role: session.role,
+      department: session.department,
+    });
 
-    const headers = ['Department', 'Lecturers', 'Appraisals', 'Avg Total Score', 'Promotion Candidates'];
-    const rows = analytics.departments.map((department) => [
-      department.department,
-      department.lecturers,
-      department.appraisals,
-      department.avg_total_score,
-      department.promotion_candidates,
-    ]);
-
-    return toCsv(headers, rows);
+    return promotionAnalyticsToCsv(analytics);
   };
 }
-
 function buildAuditCsv(filters: {
   actor?: string;
   action?: string;
@@ -225,13 +217,21 @@ function buildAuditCsv(filters: {
 
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
+  const type = (request.nextUrl.searchParams.get('type') || 'dashboard') as ExportType;
+  const format = (request.nextUrl.searchParams.get('format') || 'csv') as ExportFormat;
 
-  if (!session || session.legacy || !['HR_ADMIN', 'SYSTEM_ADMIN'].includes(session.role)) {
+  if (!session || session.legacy) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const type = (request.nextUrl.searchParams.get('type') || 'dashboard') as ExportType;
-  const format = (request.nextUrl.searchParams.get('format') || 'csv') as ExportFormat;
+  const allowedRoles = type === 'analytics'
+    ? ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN']
+    : ['HR_ADMIN', 'SYSTEM_ADMIN'];
+
+  if (!allowedRoles.includes(session.role)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
+
   const department = request.nextUrl.searchParams.get('department') || '';
   const actor = request.nextUrl.searchParams.get('actor') || '';
   const action = request.nextUrl.searchParams.get('action') || '';
@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
   const builders: Record<ExportType, () => Promise<string>> = {
     dashboard: buildDashboardCsv(filters),
     promotions: buildPromotionsCsv(filters),
-    analytics: buildAnalyticsCsv(filters),
+    analytics: buildAnalyticsCsv(filters, session),
     audit: buildAuditCsv(filters),
   };
 

@@ -15,7 +15,7 @@ export const ROUTE_ROLE_RULES: Array<{ prefix: string; roles: AuthRole[] }> = [
   { prefix: '/committee', roles: ['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
   { prefix: '/system-admin', roles: ['SYSTEM_ADMIN'] },
   { prefix: '/dashboard', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
-  { prefix: '/analytics', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
+  { prefix: '/analytics', roles: ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
   { prefix: '/audit', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
   { prefix: '/lecturers', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
   { prefix: '/appraisals', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },

@@ -12,12 +12,16 @@ type AppShellProps = {
   children: ReactNode;
 };
 
+type AuthRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
+
 type NavItem = {
   href: string;
   icon: string;
   label: string;
   subtitle?: string;
 };
+
+const PORTAL_ROLE_STORAGE_KEY = 'gctu-portal-role';
 
 const baseNavItems: NavItem[] = [
   { href: '/dashboard', icon: 'DB', label: 'Dashboard' },
@@ -29,9 +33,29 @@ const baseNavItems: NavItem[] = [
   { href: '/notifications', icon: 'NT', label: 'Notifications' },
 ];
 
+function isAuthRole(value: string | null): value is AuthRole {
+  return Boolean(value && ['LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(value));
+}
+
+function getExplicitPortalRole(pathname: string): AuthRole | null {
+  if (pathname.startsWith('/lecturer-portal')) return 'LECTURER';
+  if (pathname.startsWith('/hr')) return 'HR_ADMIN';
+  if (pathname.startsWith('/system-admin')) return 'SYSTEM_ADMIN';
+  if (pathname.startsWith('/committee')) return 'COMMITTEE_REVIEWER';
+  if (pathname.startsWith('/hod')) return 'HOD_DEAN';
+  return null;
+}
+
+function getStoredPortalRole() {
+  if (typeof window === 'undefined') return null;
+  const stored = window.localStorage.getItem(PORTAL_ROLE_STORAGE_KEY);
+  return isAuthRole(stored) ? stored : null;
+}
+
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sessionRole, setSessionRole] = useState<AuthRole | null>(getStoredPortalRole);
   const isAuthPage =
     pathname === '/login' ||
     pathname.startsWith('/login/') ||
@@ -43,36 +67,39 @@ export default function AppShell({ children }: AppShellProps) {
     pathname.startsWith('/verify-email/') ||
     pathname === '/onboarding' ||
     pathname.startsWith('/onboarding/');
-  const isLecturerPortal = pathname.startsWith('/lecturer-portal');
-  const isHrPortal = pathname.startsWith('/hr');
-  const isSystemAdminPortal = pathname.startsWith('/system-admin');
-  const isCommitteePortal = pathname.startsWith('/committee');
-  const isHodPortal = pathname.startsWith('/hod');
 
-  const portalTitle = isLecturerPortal
+  const explicitPortalRole = getExplicitPortalRole(pathname);
+  const effectivePortalRole = explicitPortalRole || sessionRole;
+  const isLecturerNav = effectivePortalRole === 'LECTURER';
+  const isHrNav = effectivePortalRole === 'HR_ADMIN';
+  const isSystemAdminNav = effectivePortalRole === 'SYSTEM_ADMIN';
+  const isCommitteeNav = effectivePortalRole === 'COMMITTEE_REVIEWER';
+  const isHodNav = effectivePortalRole === 'HOD_DEAN';
+
+  const portalTitle = isLecturerNav
     ? 'Lecturer Portal'
-    : isHrPortal
+    : isHrNav
       ? 'HR Admin Portal'
-      : isSystemAdminPortal
+      : isSystemAdminNav
         ? 'System Admin'
-        : isCommitteePortal
+        : isCommitteeNav
           ? 'Committee Portal'
-          : isHodPortal
+          : isHodNav
             ? 'HOD / Dean Portal'
             : 'Admin Console';
-  const portalSubtitle = isLecturerPortal
+  const portalSubtitle = isLecturerNav
     ? 'Promotion workspace'
-    : isHrPortal
+    : isHrNav
       ? 'Verification and audit'
-      : isSystemAdminPortal
+      : isSystemAdminNav
         ? 'Configuration and governance'
-        : isCommitteePortal
+        : isCommitteeNav
           ? 'Committee review workspace'
-          : isHodPortal
+          : isHodNav
             ? 'Department review workspace'
             : 'Promotion administration';
 
-  const navItems: NavItem[] = isLecturerPortal
+  const navItems: NavItem[] = isLecturerNav
     ? [
         { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview' },
         { href: '/lecturer-portal/application', icon: 'PR', label: 'Promotion Requests', subtitle: 'Track application' },
@@ -85,7 +112,7 @@ export default function AppShell({ children }: AppShellProps) {
         { href: '/lecturer-portal/profile', icon: 'HC', label: 'Help Center', subtitle: 'Support' },
         { href: '/lecturer-portal/profile', icon: 'SE', label: 'Settings', subtitle: 'Account' },
       ]
-    : isHrPortal
+    : isHrNav
       ? [
           { href: '/hr/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Workload overview' },
           { href: '/hr/requests', icon: 'AA', label: 'All Applications', subtitle: 'Master queue' },
@@ -97,7 +124,7 @@ export default function AppShell({ children }: AppShellProps) {
           { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
           { href: '/hr/dashboard', icon: 'SE', label: 'Settings', subtitle: 'Preferences' },
         ]
-      : isSystemAdminPortal
+      : isSystemAdminNav
         ? [
             { href: '/system-admin/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'System overview' },
             { href: '/system-admin/users', icon: 'US', label: 'Users', subtitle: 'Account control' },
@@ -110,18 +137,18 @@ export default function AppShell({ children }: AppShellProps) {
             { href: '/audit', icon: 'AU', label: 'Audit Logs', subtitle: 'System activity' },
             { href: '/system-admin/settings', icon: 'SE', label: 'System Settings', subtitle: 'Configuration' },
           ]
-        : isCommitteePortal
+        : isCommitteeNav
           ? [
               { href: '/committee/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Assigned work' },
               { href: '/committee/review', icon: 'AS', label: 'Assigned Applications', subtitle: 'Review queue' },
               { href: '/committee/review', icon: 'RC', label: 'Review Cases', subtitle: 'Evidence review' },
               { href: '/committee/review', icon: 'RM', label: 'Recommendations', subtitle: 'Decisions' },
               { href: '/analytics', icon: 'ER', label: 'Eligibility Reports', subtitle: 'Outcomes' },
-              { href: '/audit', icon: 'RH', label: 'Review History', subtitle: 'Audit trail' },
+              { href: '/committee/review', icon: 'RH', label: 'Review History', subtitle: 'Audit trail' },
               { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-              { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
+              { href: '/committee/dashboard', icon: 'PF', label: 'Profile', subtitle: 'Account' },
             ]
-          : isHodPortal
+          : isHodNav
             ? [
                 { href: '/hod/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Department overview' },
                 { href: '/hod/applications', icon: 'DA', label: 'Department Applications', subtitle: 'Department queue' },
@@ -130,13 +157,49 @@ export default function AppShell({ children }: AppShellProps) {
                 { href: '/hod/applications', icon: 'FW', label: 'Forwarded Applications', subtitle: 'Sent to HR' },
                 { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Department reports' },
                 { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-                { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
+                { href: '/hod/dashboard', icon: 'PF', label: 'Profile', subtitle: 'Account' },
               ]
             : baseNavItems;
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (explicitPortalRole && typeof window !== 'undefined') {
+      window.localStorage.setItem(PORTAL_ROLE_STORAGE_KEY, explicitPortalRole);
+      setSessionRole(explicitPortalRole);
+    }
+  }, [explicitPortalRole]);
+
+  useEffect(() => {
+    if (isAuthPage) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadSessionRole() {
+      try {
+        const response = await fetch('/api/auth/me', { cache: 'no-store' });
+        const payload = await response.json();
+        const role = payload?.role;
+
+        if (!cancelled && isAuthRole(role)) {
+          setSessionRole(role);
+          window.localStorage.setItem(PORTAL_ROLE_STORAGE_KEY, role);
+        }
+      } catch {
+        // Keep the stored portal role as a fallback for shared pages.
+      }
+    }
+
+    loadSessionRole();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthPage]);
 
   if (isAuthPage) {
     return (
@@ -184,7 +247,7 @@ export default function AppShell({ children }: AppShellProps) {
 
         <ul className="space-y-1 px-3 py-4">
           {navItems.map((item) => (
-            <SidebarNavLink key={item.href} href={item.href} icon={item.icon} subtitle={item.subtitle} onNavigate={() => setMobileOpen(false)}>
+            <SidebarNavLink key={`${item.href}-${item.label}`} href={item.href} icon={item.icon} subtitle={item.subtitle} onNavigate={() => setMobileOpen(false)}>
               {item.label}
             </SidebarNavLink>
           ))}
@@ -212,7 +275,7 @@ export default function AppShell({ children }: AppShellProps) {
             >
               <span className="h-0.5 w-5 bg-current shadow-[0_6px_0_currentColor,0_-6px_0_currentColor]" />
             </button>
-            {isLecturerPortal ? (
+            {isLecturerNav ? (
               <LecturerHeader />
             ) : (
               <div className="min-w-0">
@@ -230,9 +293,9 @@ export default function AppShell({ children }: AppShellProps) {
               NT
               <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-rose-500 ring-2 ring-white" />
             </a>
-            {!isLecturerPortal && (
+            {!isLecturerNav && (
               <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:block">
-                {isHrPortal ? 'HR Panel' : 'Control Panel'}
+                {isHrNav ? 'HR Panel' : rolePanelLabel(effectivePortalRole)}
               </div>
             )}
             <LogoutButton />
@@ -247,4 +310,11 @@ export default function AppShell({ children }: AppShellProps) {
       </div>
     </div>
   );
+}
+
+function rolePanelLabel(role: AuthRole | null) {
+  if (role === 'SYSTEM_ADMIN') return 'System Panel';
+  if (role === 'COMMITTEE_REVIEWER') return 'Review Panel';
+  if (role === 'HOD_DEAN') return 'Department Panel';
+  return 'Control Panel';
 }
