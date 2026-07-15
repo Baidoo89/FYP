@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import LogoutButton from './LogoutButton';
 import SidebarNavLink from './SidebarNavLink';
 import LecturerHeader from './LecturerHeader';
+import ThemeToggle from './ThemeToggle';
 
 type AppShellProps = {
   children: ReactNode;
@@ -138,7 +139,14 @@ export default function AppShell({ children }: AppShellProps) {
   }, [pathname]);
 
   if (isAuthPage) {
-    return <div className="min-h-screen bg-slate-50 lpads-fade-in">{children}</div>;
+    return (
+      <div className="relative min-h-screen bg-slate-50 lpads-fade-in">
+        <div className="fixed right-4 top-4 z-50">
+          <ThemeToggle compact />
+        </div>
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -217,6 +225,7 @@ export default function AppShell({ children }: AppShellProps) {
             <div className="hidden w-64 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 xl:flex">
               Search anything...
             </div>
+            <ThemeToggle compact />
             <a href="/notifications" className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex">
               NT
               <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-rose-500 ring-2 ring-white" />

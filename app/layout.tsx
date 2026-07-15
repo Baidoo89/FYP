@@ -10,8 +10,23 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('gctu-theme');
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  var theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
+                  document.documentElement.classList.toggle('dark', theme === 'dark');
+                  document.documentElement.style.colorScheme = theme;
+                } catch (error) {}
+              })();
+            `,
+          }}
+        />
         <title>GCTU Promotion System</title>
         <meta name="description" content="Promotion analysis and decision support system" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
