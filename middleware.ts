@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getEdgeAuthSession } from './lib/auth-edge';
 import { canAccessPath, getDashboardForRole } from './lib/rbac';
 
@@ -96,7 +96,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
       }
 
-      if (pathname.startsWith('/api/promotion-requests') && pathname.includes('/verify') && !['HOD_DEAN', 'HR_ADMIN', 'SYSTEM_ADMIN'].includes(role || '')) {
+      if (pathname.startsWith('/api/promotion-requests') && pathname.includes('/verify') && !['HR_ADMIN', 'SYSTEM_ADMIN'].includes(role || '')) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
       }
 
@@ -152,5 +152,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
-
-
