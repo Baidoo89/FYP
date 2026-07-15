@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { DocumentCategory, RequestStatus } from '@prisma/client';
 import { prisma } from '../../../../lib/prisma';
 import { getAuthSession } from '../../../../lib/auth';
 import { createSecureFileName, MAX_PROMOTION_PDF_SIZE, saveMockPdfFile } from '../../../../lib/upload';
 import { documentUploadSchema } from '../../../../lib/validation/promotion-request.schema';
-import { writePromotionAudit } from '../../../../lib/promotion-audit';
+import { createPromotionRequestWithWorkflow, savePromotionDocumentRecord, WorkflowError } from '../../../../lib/promotion-workflow';
 
 function inferTargetRank(currentRank?: string | null) {
   const rank = String(currentRank || 'LECTURER').toUpperCase();
@@ -12,6 +13,12 @@ function inferTargetRank(currentRank?: string | null) {
   if (rank === 'LECTURER') return 'SENIOR_LECTURER';
   if (rank === 'SENIOR_LECTURER') return 'ASSOCIATE_PROFESSOR';
   return 'ASSOCIATE_PROFESSOR';
+}
+
+function workflowErrorResponse(error: unknown, fallback: string) {
+  const status = error instanceof WorkflowError ? error.statusCode : 500;
+  const message = error instanceof Error ? error.message : fallback;
+  return NextResponse.json({ success: false, error: message }, { status });
 }
 
 export async function GET(request: NextRequest) {
@@ -37,6 +44,7 @@ export async function GET(request: NextRequest) {
         title: true,
         fileUrl: true,
         verificationStatus: true,
+        verificationComment: true,
         uploadedAt: true,
         fileSize: true,
       },
@@ -48,11 +56,10 @@ export async function GET(request: NextRequest) {
       size: doc.fileSize,
     }));
 
-    // Group by category
     const grouped = {
-      RESEARCH: formattedDocuments.filter(d => d.category === 'RESEARCH'),
-      TEACHING: formattedDocuments.filter(d => d.category === 'TEACHING'),
-      SERVICE: formattedDocuments.filter(d => d.category === 'SERVICE'),
+      RESEARCH: formattedDocuments.filter((document) => document.category === 'RESEARCH'),
+      TEACHING: formattedDocuments.filter((document) => document.category === 'TEACHING'),
+      SERVICE: formattedDocuments.filter((document) => document.category === 'SERVICE'),
     };
 
     return NextResponse.json(
@@ -63,9 +70,9 @@ export async function GET(request: NextRequest) {
           grouped,
           stats: {
             totalDocuments: formattedDocuments.length,
-            verifiedCount: formattedDocuments.filter(d => d.verificationStatus === 'VERIFIED').length,
-            pendingCount: formattedDocuments.filter(d => d.verificationStatus === 'PENDING').length,
-            rejectedCount: formattedDocuments.filter(d => d.verificationStatus === 'REJECTED').length,
+            verifiedCount: formattedDocuments.filter((document) => document.verificationStatus === 'VERIFIED').length,
+            pendingCount: formattedDocuments.filter((document) => document.verificationStatus === 'PENDING').length,
+            rejectedCount: formattedDocuments.filter((document) => ['REJECTED', 'REQUIRES_CORRECTION'].includes(document.verificationStatus)).length,
           },
         },
       },
@@ -149,71 +156,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let draftRequest = await prisma.promotionRequest.findFirst({
-      where: {
-        lecturerId: session.userId,
-        status: 'DRAFT',
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
-
-    if (!draftRequest) {
-      const currentRank = String(user.currentRank || 'LECTURER');
-      draftRequest = await prisma.promotionRequest.create({
-        data: {
-          lecturerId: session.userId,
-          requestedById: session.userId,
-          status: 'DRAFT',
-          currentRank,
-          targetRank: inferTargetRank(user.currentRank),
-        },
-      });
-    }
-
     const fileName = createSecureFileName(file.name || `${title}.pdf`);
     const buffer = Buffer.from(await file.arrayBuffer());
     await saveMockPdfFile(fileName, buffer);
 
-    const documentRecord = await prisma.document.upsert({
-      where: {
-        requestId_category: {
-          requestId: draftRequest.id,
-          category: parsed.data.category,
+    const result = await prisma.$transaction(async (tx) => {
+      const activeRequest = await tx.promotionRequest.findFirst({
+        where: {
+          lecturerId: session.userId,
+          status: {
+            notIn: [RequestStatus.COMPLETED, RequestStatus.REJECTED, RequestStatus.NOT_RECOMMENDED],
+          },
         },
-      },
-      update: {
-        title: parsed.data.title,
-        fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
-        fileName,
-        mimeType: file.type,
-        fileSize: file.size,
-        verificationStatus: 'PENDING',
-        verifiedById: null,
-        verificationComment: null,
-      },
-      create: {
-        requestId: draftRequest.id,
-        category: parsed.data.category,
-        title: parsed.data.title,
-        fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
-        fileName,
-        mimeType: file.type,
-        fileSize: file.size,
-      },
-    });
-
-    await prisma.$transaction(async (tx) => {
-      await writePromotionAudit(tx, {
-        requestId: draftRequest.id,
-        actorId: session.userId,
-        action: 'promotion_document.upload',
-        metadata: {
-          documentId: documentRecord.id,
-          category: documentRecord.category,
-          title: documentRecord.title,
-          fileName: documentRecord.fileName,
-        },
+        orderBy: { updatedAt: 'desc' },
       });
+
+      const requestRecord = activeRequest || await createPromotionRequestWithWorkflow(tx, {
+        actor: {
+          id: session.userId,
+          role: session.role,
+          name: session.name,
+        },
+        lecturerId: session.userId,
+        currentRank: String(user.currentRank || 'LECTURER'),
+        targetRank: inferTargetRank(user.currentRank),
+        yearsInCurrentRank: 0,
+      });
+
+      const documentRecord = await savePromotionDocumentRecord(tx, {
+        actor: {
+          id: session.userId,
+          role: session.role,
+          name: session.name,
+        },
+        requestId: requestRecord.id,
+        category: parsed.data.category as DocumentCategory,
+        title: parsed.data.title,
+        fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
+        fileName,
+        fileType: file.type,
+        mimeType: file.type,
+        fileSize: file.size,
+      });
+
+      return {
+        request: requestRecord,
+        document: documentRecord,
+      };
     });
 
     return NextResponse.json(
@@ -221,15 +210,15 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Evidence uploaded successfully',
         data: {
-          requestId: draftRequest.id,
+          requestId: result.request.id,
           document: {
-            id: documentRecord.id,
-            category: documentRecord.category,
-            title: documentRecord.title,
-            fileUrl: documentRecord.fileUrl,
-            verificationStatus: documentRecord.verificationStatus,
-            uploadedAt: documentRecord.uploadedAt,
-            size: documentRecord.fileSize,
+            id: result.document.id,
+            category: result.document.category,
+            title: result.document.title,
+            fileUrl: result.document.fileUrl,
+            verificationStatus: result.document.verificationStatus,
+            uploadedAt: result.document.uploadedAt,
+            size: result.document.fileSize,
           },
         },
       },
@@ -237,9 +226,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Evidence upload error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to upload evidence' },
-      { status: 500 }
-    );
+    return workflowErrorResponse(error, 'Failed to upload evidence');
   }
 }

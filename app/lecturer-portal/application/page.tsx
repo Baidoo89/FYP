@@ -1,209 +1,335 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
+import StatusBadge from '../../../components/promotion/StatusBadge';
+import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
 
-interface ApplicationData {
-  requestId: number | null;
-  currentRank: string;
-  targetRank: string;
-  submittedAt: string | null;
-  verifiedAt: string | null;
-  status: string;
-  scores: {
-    researchScore: number | null;
-    teachingScore: number | null;
-    serviceScore: number | null;
-    totalScore: number | null;
+type PromotionRequest = PromotionApplicationDetailRecord & {
+  submittedAt?: string | null;
+  verifiedAt?: string | null;
+};
+
+const activeStatuses = new Set([
+  'DRAFT',
+  'SUBMITTED',
+  'UNDER_DEPARTMENT_REVIEW',
+  'RETURNED_FOR_CORRECTION',
+  'UNDER_HR_VERIFICATION',
+  'UNDER_COMMITTEE_REVIEW',
+  'ELIGIBLE',
+  'NOT_ELIGIBLE',
+  'REQUIRES_FURTHER_REVIEW',
+  'RECOMMENDED',
+  'NOT_RECOMMENDED',
+  'APPROVED_BY_AUTHORITY',
+  'APPROVED',
+]);
+
+function label(value?: string | null) {
+  if (!value) return 'Not available';
+  return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function nextActionFor(request: PromotionRequest) {
+  const docs = request.documents || [];
+  const pending = docs.filter((document) => document.verificationStatus === 'PENDING').length;
+  const returned = docs.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length;
+
+  if (request.status === 'DRAFT') {
+    if (docs.length < 3) {
+      return {
+        title: 'Upload required evidence',
+        detail: 'Add teaching, research, and service evidence before submitting your application.',
+        action: 'Upload Evidence',
+        href: '/lecturer-portal/evidence',
+      };
+    }
+
+    return {
+      title: 'Submit your application',
+      detail: 'Your evidence is uploaded. Submit the application to begin department review.',
+      action: 'Submit Application',
+      href: null,
+    };
+  }
+
+  if (request.status === 'RETURNED_FOR_CORRECTION' || returned > 0) {
+    return {
+      title: 'Correct returned evidence',
+      detail: 'Review HR or department comments and replace the returned document before resubmission.',
+      action: 'Open Evidence Portfolio',
+      href: '/lecturer-portal/evidence',
+    };
+  }
+
+  if (pending > 0 || request.status === 'UNDER_HR_VERIFICATION') {
+    return {
+      title: 'Await HR verification',
+      detail: `${pending} document(s) are still pending verification. You will be notified after HR review.`,
+      action: 'View Evidence',
+      href: '/lecturer-portal/evidence',
+    };
+  }
+
+  if (request.status === 'UNDER_COMMITTEE_REVIEW') {
+    return {
+      title: 'Await committee review',
+      detail: 'Your verified application is with the promotion review committee.',
+      action: 'View Feedback',
+      href: '/lecturer-portal/queries',
+    };
+  }
+
+  if (request.status === 'RECOMMENDED' || request.status === 'APPROVED_BY_AUTHORITY') {
+    return {
+      title: 'Recommendation recorded',
+      detail: 'Your application has a recommendation and is awaiting final administrative completion.',
+      action: 'Print Summary',
+      href: null,
+    };
+  }
+
+  return {
+    title: 'Track application updates',
+    detail: 'Monitor status history, feedback, and notifications as your application progresses.',
+    action: 'View Notifications',
+    href: '/notifications',
   };
-  eligibilityStatus: string;
-  adminComment: string | null;
 }
 
 export default function ApplicationPage() {
-  const [data, setData] = useState<ApplicationData | null>(null);
+  const [requests, setRequests] = useState<PromotionRequest[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    async function loadApplication() {
-      try {
-        const response = await fetch('/api/lecturer/application');
-        const payload = await response.json();
+  const selectedRequest = useMemo(
+    () => requests.find((request) => request.id === selectedId) || requests.find((request) => activeStatuses.has(request.status)) || requests[0] || null,
+    [requests, selectedId]
+  );
 
-        if (!response.ok || !payload.success) {
-          throw new Error(payload.error || 'Failed to load application');
-        }
+  const nextAction = selectedRequest ? nextActionFor(selectedRequest) : null;
 
-        setData(payload.data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load application data');
-      } finally {
-        setLoading(false);
+  async function loadApplications(preferredId?: number | null) {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/promotion-requests?scope=lecturer');
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Failed to load application');
       }
-    }
 
-    loadApplication();
+      const data = (payload.data || []) as PromotionRequest[];
+      setRequests(data);
+
+      const next = data.find((request) => request.id === preferredId) || data.find((request) => activeStatuses.has(request.status)) || data[0] || null;
+      setSelectedId(next?.id || null);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load application data');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadApplications();
   }, []);
 
+  async function submitApplication() {
+    if (!selectedRequest) return;
+
+    setSubmitting(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/promotion-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit', requestId: selectedRequest.id }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Unable to submit application');
+      }
+
+      setMessage('Application submitted successfully. Department review can now begin.');
+      await loadApplications(selectedRequest.id);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unable to submit application');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 shadow-sm">
-          Loading application...
-        </div>
-      </div>
-    );
+    return <LoadingState label="Loading application tracker..." />;
   }
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center font-medium text-slate-900 shadow-sm">
-          {error}
-        </div>
-      </div>
-    );
+  if (error && !selectedRequest) {
+    return <ErrorState message={error} />;
   }
 
-  if (!data || !data.requestId) {
+  if (!selectedRequest) {
     return (
       <div className="space-y-6">
         <section className="pro-hero px-6 py-8">
-          <div>
-            <div className="pro-eyebrow">
-              Active Application
-            </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">No Active Application</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              You don't have an active promotion application yet. Start by uploading your evidence.
-            </p>
-          </div>
+          <div className="pro-eyebrow">Active Application</div>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">No Active Application</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+            You do not have an active promotion application yet. Start by uploading your promotion evidence.
+          </p>
         </section>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-slate-600">Begin your promotion journey by submitting evidence in the Evidence Portfolio.</p>
-          <Link href="/lecturer-portal/evidence" className="mt-4 inline-flex rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">
-            Go to Evidence Portfolio
-          </Link>
-        </div>
+        <EmptyState
+          title="Start your promotion journey"
+          description="Upload evidence in the portfolio. The system will create a draft application and keep your workflow history connected."
+          action={
+            <Link href="/lecturer-portal/evidence" className="inline-flex rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
+              Go to Evidence Portfolio
+            </Link>
+          }
+        />
       </div>
     );
   }
+
+  const documents = selectedRequest.documents || [];
+  const verified = documents.filter((document) => document.verificationStatus === 'VERIFIED').length;
+  const pending = documents.filter((document) => document.verificationStatus === 'PENDING').length;
+  const returned = documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length;
 
   return (
     <div className="space-y-6">
       <section className="pro-hero px-6 py-8">
-        <div>
-          <div className="pro-eyebrow">
-            Active Application
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="pro-eyebrow">Application Tracker</div>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              {selectedRequest.currentRank} to {selectedRequest.targetRank}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+              Track your promotion workflow, evidence decisions, eligibility recommendation, review comments, and next required action.
+            </p>
           </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-            {data.currentRank}  {data.targetRank}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            Your promotion application details and final eligibility determination.
-          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
+              Upload Evidence
+            </Link>
+            <PrintSummaryButton />
+          </div>
         </div>
       </section>
 
-      {/* Application Status */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900">Application Status</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
-            <p className="mt-2 text-lg font-bold text-slate-900">{data.status}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Eligibility</p>
-            <p className="mt-2 text-lg font-bold text-slate-900">{data.eligibilityStatus}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Submitted</p>
-            <p className="mt-2 font-mono text-sm text-slate-700">
-              {data.submittedAt ? new Date(data.submittedAt).toLocaleDateString() : 'Not submitted'}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Verified</p>
-            <p className="mt-2 font-mono text-sm text-slate-700">
-              {data.verifiedAt ? new Date(data.verifiedAt).toLocaleDateString() : 'Pending'}
-            </p>
-          </div>
-        </div>
-      </div>
+      {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{message}</div>}
+      {error && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">{error}</div>}
 
-      {/* Final Scorecard */}
-      {data.status === 'APPROVED' || data.status === 'REJECTED' || data.scores.totalScore !== null ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900">Final Scorecard</h2>
-          <p className="mt-1 text-sm text-slate-600">Weighted performance scores across all categories</p>
-
-          <div className="mt-6 space-y-4">
-            {/* Research Score */}
+      {requests.length > 1 && (
+        <section className="pro-card p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="flex items-center justify-between gap-4 mb-2">
-                <span className="font-semibold text-slate-900">Research Evidence (40%)</span>
-                <span className="text-lg font-bold text-slate-900">{data.scores.researchScore?.toFixed(1) || 0}%</span>
-              </div>
-              <div className="h-3 rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-teal-500 to-teal-600"
-                  style={{ width: `${Math.min(data.scores.researchScore || 0, 100)}%` }}
-                />
-              </div>
+              <h2 className="font-semibold text-slate-950">My Applications</h2>
+              <p className="mt-1 text-sm text-slate-600">Switch between your current and previous promotion records.</p>
             </div>
-
-            {/* Teaching Score */}
-            <div>
-              <div className="flex items-center justify-between gap-4 mb-2">
-                <span className="font-semibold text-slate-900">Teaching Evidence (40%)</span>
-                <span className="text-lg font-bold text-slate-900">{data.scores.teachingScore?.toFixed(1) || 0}%</span>
-              </div>
-              <div className="h-3 rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500"
-                  style={{ width: `${Math.min(data.scores.teachingScore || 0, 100)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Service Score */}
-            <div>
-              <div className="flex items-center justify-between gap-4 mb-2">
-                <span className="font-semibold text-slate-900">Service Evidence (20%)</span>
-                <span className="text-lg font-bold text-slate-900">{data.scores.serviceScore?.toFixed(1) || 0}%</span>
-              </div>
-              <div className="h-3 rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-teal-700 to-teal-800"
-                  style={{ width: `${Math.min(data.scores.serviceScore || 0, 100)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Total Score */}
-            <div className="mt-6 rounded-xl border-2 border-teal-200 bg-slate-50 p-4">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-teal-700">Total Score</p>
-              <p className="mt-2 text-4xl font-bold text-slate-900">{data.scores.totalScore?.toFixed(1) || 0}%</p>
+            <div className="flex flex-wrap gap-2">
+              {requests.map((request) => (
+                <button
+                  key={request.id}
+                  type="button"
+                  onClick={() => setSelectedId(request.id)}
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedRequest.id === request.id ? 'border-teal-600 bg-teal-700 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                >
+                  #{request.id} {label(request.status)}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-      ) : null}
-
-      {/* HR Comment */}
-      {data.adminComment && (
-        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-yellow-950">HR Admin Comment</h2>
-          <p className="mt-3 text-slate-900">{data.adminComment}</p>
-        </div>
+        </section>
       )}
 
-      {/* Back Link */}
-      <Link href="/lecturer-portal" className="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-         Back to Dashboard
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <TrackerMetric code="DOC" label="Uploaded documents" value={documents.length} />
+        <TrackerMetric code="VER" label="Verified" value={verified} />
+        <TrackerMetric code="PEN" label="Pending" value={pending} tone="amber" />
+        <TrackerMetric code="RET" label="Returned" value={returned} tone="rose" />
+      </section>
+
+      {nextAction && (
+        <section className="pro-card p-5">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">Next Required Action</p>
+              <h2 className="mt-2 text-xl font-bold text-slate-950">{nextAction.title}</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{nextAction.detail}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {nextAction.href ? (
+                <Link href={nextAction.href} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
+                  {nextAction.action}
+                </Link>
+              ) : nextAction.action === 'Submit Application' ? (
+                <button type="button" onClick={submitApplication} disabled={submitting} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60">
+                  {submitting ? 'Submitting...' : nextAction.action}
+                </button>
+              ) : (
+                <PrintSummaryButton label={nextAction.action} />
+              )}
+              <Link href="/lecturer-portal/queries" className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                View Feedback
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <PromotionApplicationDetail application={selectedRequest} role="LECTURER">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div>
+            <h3 className="text-lg font-bold text-slate-950">Applicant Controls</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Use these actions to keep your promotion record complete and ready for review.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge status={selectedRequest.status} />
+            <Link href="/lecturer-portal/evidence" className="rounded-lg border border-teal-200 px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50">
+              Evidence Portfolio
+            </Link>
+            <PrintSummaryButton />
+          </div>
+        </div>
+      </PromotionApplicationDetail>
+
+      <Link href="/lecturer-portal" className="inline-flex rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        Back to Dashboard
       </Link>
+    </div>
+  );
+}
+
+function TrackerMetric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'rose' }) {
+  const toneClass = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      : 'border-teal-200 bg-teal-50 text-teal-800';
+
+  return (
+    <div className="pro-tile p-5">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
+        </div>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
+      </div>
     </div>
   );
 }
