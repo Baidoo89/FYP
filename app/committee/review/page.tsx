@@ -39,6 +39,12 @@ function segmentMatches(request: PromotionRequest, segment: QueueSegment) {
   return true;
 }
 
+function segmentForRequest(request: PromotionRequest): QueueSegment {
+  if (segmentMatches(request, 'pending')) return 'pending';
+  if (segmentMatches(request, 'decided')) return 'decided';
+  if (segmentMatches(request, 'further')) return 'further';
+  return 'all';
+}
 function committeeHealth(request: PromotionRequest) {
   const docs = request.documents || [];
   const verified = docs.filter((document) => document.verificationStatus === 'VERIFIED').length;
@@ -121,11 +127,15 @@ export default function CommitteeReviewPage() {
       const scoped = allRequests.filter((request) => visibleStatuses.includes(request.status));
       setRequests(allRequests);
 
-      const next = scoped.find((request) => request.id === preferredId)
+      const preferred = scoped.find((request) => request.id === preferredId) || null;
+      const next = preferred
         || scoped.find((request) => request.status === 'UNDER_COMMITTEE_REVIEW')
         || scoped[0]
         || null;
 
+      if (preferred) {
+        setSegment(segmentForRequest(preferred));
+      }
       setSelectedId(next?.id || null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load committee applications');
@@ -135,7 +145,11 @@ export default function CommitteeReviewPage() {
   }
 
   useEffect(() => {
-    loadRequests();
+    const requestId = typeof window === 'undefined'
+      ? null
+      : Number(new URLSearchParams(window.location.search).get('request'));
+
+    loadRequests(Number.isInteger(requestId) && requestId > 0 ? requestId : null);
   }, []);
 
   async function submitReview(event: React.FormEvent<HTMLFormElement>) {
