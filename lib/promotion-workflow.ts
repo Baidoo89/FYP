@@ -312,6 +312,10 @@ export async function transitionPromotionRequest(
     updateData.reviewedById = input.actor.id;
   }
 
+  if (input.newStatus === RequestStatus.UNDER_COMMITTEE_REVIEW && !current.verifiedAt) {
+    updateData.verifiedAt = now;
+  }
+
   if (input.newStatus === RequestStatus.COMPLETED) {
     updateData.completedAt = now;
   }

@@ -7,7 +7,7 @@ import type { ApiResponse } from '../../../types';
 
 function buildRequestSummary(requestRecord: any) {
   const verifiedDocuments = requestRecord.documents.filter((document: any) => document.verificationStatus === 'VERIFIED').length;
-  const requiredDocuments = requestRecord.documents.length >= 3 ? 3 : requestRecord.documents.length;
+  const requiredDocuments = 3;
 
   return {
     id: requestRecord.id,

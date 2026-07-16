@@ -117,28 +117,28 @@ export default function LecturerDashboardOverview() {
         ? 'In Progress'
         : 'Not Started';
   const eligibilityTone = data.activeRequest?.status === 'REJECTED'
-    ? 'border-amber-300/30 bg-amber-400/12 text-amber-50'
-    : 'border-teal-200/25 bg-white/[0.08] text-teal-50';
+    ? 'border-amber-200 bg-amber-50 text-amber-950'
+    : 'border-blue-100 bg-white text-slate-950';
 
   return (
     <div className="space-y-6">
-      <section id="home" className="overflow-hidden rounded-xl border border-emerald-900/15 bg-[linear-gradient(135deg,#06483f_0%,#03362f_54%,#012923_100%)] px-5 py-6 text-white shadow-[0_18px_45px_rgba(6,72,63,0.18)] sm:px-6 sm:py-7">
-        <div className="grid gap-5 lg:grid-cols-[1.25fr_0.8fr] lg:items-center">
+      <section id="home" className="pro-hero px-5 py-6 sm:px-6 sm:py-7">
+        <div className="relative z-10 grid gap-5 lg:grid-cols-[1.25fr_0.8fr] lg:items-center">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white/80 bg-teal-50 text-xl font-black text-teal-900 shadow-xl">
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-white text-xl font-black text-blue-900 shadow-xl">
               {initials || 'GP'}
-              <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-emerald-900 bg-teal-100 text-[10px] font-black text-teal-800">
+              <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-50 text-[10px] font-black text-emerald-800">
                 OK
               </span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-teal-50/80">Welcome back,</p>
-              <h1 className="mt-1 break-words text-3xl font-semibold tracking-tight sm:text-4xl">{data.user.name}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-teal-50/80">
+              <p className="text-sm font-medium text-slate-600">Welcome back,</p>
+              <h1 className="mt-1 break-words text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{data.user.name}</h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
                 <span>{data.user.currentRank || 'Lecturer'}</span>
-                <span className="h-1 w-1 rounded-full bg-teal-200/70" />
+                <span className="h-1 w-1 rounded-full bg-blue-300" />
                 <span>{data.user.department || 'Not Assigned'}</span>
-                <span className="rounded-full border border-white/15 bg-white/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-teal-50">Lecturer</span>
+                <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-blue-800">Lecturer</span>
               </div>
             </div>
           </div>
@@ -146,13 +146,13 @@ export default function LecturerDashboardOverview() {
           <div className={`rounded-xl border p-4 shadow-inner ${eligibilityTone}`}>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-50/70">Eligibility Status</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-800">Eligibility Status</p>
                 <p className="mt-2 text-2xl font-semibold">{eligibilityLabel}</p>
-                <p className="mt-1 text-xs text-teal-50/65">
+                <p className="mt-1 text-xs text-slate-500">
                   {data.activeRequest?.submittedAt ? `Submitted ${new Date(data.activeRequest.submittedAt).toLocaleDateString()}` : 'Create an application to begin tracking.'}
                 </p>
               </div>
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/[0.10] text-lg font-black text-teal-50 ring-1 ring-white/15">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-50 text-lg font-black text-blue-900 ring-1 ring-blue-100">
                 {data.activeRequest?.progressPercentage ?? 0}%
               </div>
             </div>

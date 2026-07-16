@@ -71,7 +71,7 @@ export default function ProgressStepper({ currentStep, steps, status }: Progress
                   <div className={`absolute left-1/2 top-5 h-0.5 w-full ${styles.line}`} aria-hidden="true" />
                 )}
                 <div className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-black ${styles.circle}`}>
-                  {state === 'complete' ? '✓' : stepNumber}
+                  {state === 'complete' ? <CheckIcon /> : stepNumber}
                 </div>
                 <p className={`mt-3 px-2 text-xs font-bold leading-5 sm:text-sm ${styles.label}`}>{step}</p>
                 <p className="mt-1 text-[11px] font-medium text-gray-500">{styles.meta}</p>
@@ -81,5 +81,13 @@ export default function ProgressStepper({ currentStep, steps, status }: Progress
         </div>
       </div>
     </section>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m5 12 4 4L19 6" />
+    </svg>
   );
 }

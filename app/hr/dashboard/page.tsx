@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import StatusBadge from '../../../components/promotion/StatusBadge';
 
 type DashboardStats = {
   totalRequests: number;
@@ -8,6 +9,7 @@ type DashboardStats = {
   verified: number;
   approved: number;
   rejected: number;
+  totalDocuments: number;
   returned: number;
   committeeReview: number;
   eligible: number;
@@ -34,18 +36,31 @@ export default function HrCommandCenterPage() {
         }
 
         const allRequests = payload.data || [];
+        const allDocuments = allRequests.flatMap((request: any) => request.documents || []);
+        const pendingDocuments = allDocuments.filter((document: any) => !document.verificationStatus || document.verificationStatus === 'PENDING').length;
+        const verifiedDocuments = allDocuments.filter((document: any) => document.verificationStatus === 'VERIFIED').length;
+        const returnedRequests = allRequests.filter((request: any) =>
+          request.status === 'RETURNED_FOR_CORRECTION' ||
+          (request.documents || []).some((document: any) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus))
+        ).length;
+        const actionableRequests = allRequests.filter((request: any) =>
+          ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW', 'UNDER_HR_VERIFICATION', 'REQUIRES_FURTHER_REVIEW', 'RECOMMENDED', 'APPROVED_BY_AUTHORITY'].includes(request.status) ||
+          (request.documents || []).some((document: any) => document.verificationStatus === 'PENDING')
+        );
+
         setStats({
           totalRequests: allRequests.length,
-          pendingReview: allRequests.filter((r: any) => ['SUBMITTED', 'UNDER_HR_VERIFICATION', 'UNDER_REVIEW'].includes(r.status)).length,
-          verified: allRequests.filter((r: any) => r.verifiedAt !== null).length,
-          approved: allRequests.filter((r: any) => ['APPROVED', 'APPROVED_BY_AUTHORITY', 'COMPLETED'].includes(r.status)).length,
-          rejected: allRequests.filter((r: any) => ['REJECTED', 'NOT_RECOMMENDED'].includes(r.status)).length,
-          returned: allRequests.filter((r: any) => r.status === 'RETURNED_FOR_CORRECTION').length,
-          committeeReview: allRequests.filter((r: any) => r.status === 'UNDER_COMMITTEE_REVIEW').length,
-          eligible: allRequests.filter((r: any) => r.eligibilityStatus === 'ELIGIBLE').length,
-          notEligible: allRequests.filter((r: any) => ['NOT_ELIGIBLE', 'INCOMPLETE_APPLICATION'].includes(r.eligibilityStatus)).length,
+          pendingReview: pendingDocuments,
+          verified: verifiedDocuments,
+          approved: allRequests.filter((request: any) => ['APPROVED', 'APPROVED_BY_AUTHORITY', 'COMPLETED'].includes(request.status)).length,
+          rejected: allRequests.filter((request: any) => ['REJECTED', 'NOT_RECOMMENDED'].includes(request.status)).length,
+          totalDocuments: allDocuments.length,
+          returned: returnedRequests,
+          committeeReview: allRequests.filter((request: any) => request.status === 'UNDER_COMMITTEE_REVIEW').length,
+          eligible: allRequests.filter((request: any) => request.eligibilityStatus === 'ELIGIBLE').length,
+          notEligible: allRequests.filter((request: any) => ['NOT_ELIGIBLE', 'INCOMPLETE_APPLICATION'].includes(request.eligibilityStatus)).length,
         });
-        setRecentRequests(allRequests.slice(0, 5));
+        setRecentRequests((actionableRequests.length ? actionableRequests : allRequests).slice(0, 5));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');
       } finally {
@@ -64,7 +79,7 @@ export default function HrCommandCenterPage() {
     return <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">{error}</div>;
   }
 
-  const completion = stats && stats.totalRequests > 0 ? Math.round((stats.verified / stats.totalRequests) * 100) : 0;
+  const completion = stats && stats.totalDocuments > 0 ? Math.round((stats.verified / stats.totalDocuments) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -147,7 +162,7 @@ export default function HrCommandCenterPage() {
       <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr_0.9fr]">
         <div className="pro-card p-5 sm:p-6">
           <h3 className="text-lg font-semibold text-slate-950">Verification Progress</h3>
-          <p className="mt-1 text-sm text-slate-600">Completion across all visible promotion requests.</p>
+          <p className="mt-1 text-sm text-slate-600">Verified evidence across all visible promotion requests.</p>
           <div className="mt-5 flex items-center gap-4">
             <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${completion}%` }} />
@@ -223,19 +238,4 @@ function QuickLink({ href, code, title, description }: { href: string; code: str
       </span>
     </a>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { className: string; label: string }> = {
-    DRAFT: { className: 'bg-slate-100 text-slate-700', label: 'Draft' },
-    SUBMITTED: { className: 'bg-amber-100 text-amber-800', label: 'Submitted' },
-    UNDER_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Under Review' },
-    UNDER_HR_VERIFICATION: { className: 'bg-teal-100 text-teal-800', label: 'HR Verification' },
-    UNDER_COMMITTEE_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Committee Review' },
-    APPROVED: { className: 'bg-emerald-100 text-emerald-800', label: 'Approved' },
-    REJECTED: { className: 'bg-rose-100 text-rose-800', label: 'Rejected' },
-  };
-  const config = statusConfig[status] || { className: 'bg-slate-100 text-slate-700', label: status.replace(/_/g, ' ') };
-
-  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${config.className}`}>{config.label}</span>;
 }

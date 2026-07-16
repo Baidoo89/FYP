@@ -11,9 +11,9 @@ type Action = {
 
 const toneClasses = {
   blue: {
-    card: 'border-teal-100 bg-teal-50/80 text-teal-950',
-    badge: 'border-teal-200 bg-teal-100 text-teal-800',
-    bar: 'bg-teal-700',
+    card: 'border-sky-100 bg-sky-50/90 text-sky-950',
+    badge: 'border-sky-200 bg-sky-100 text-sky-800',
+    bar: 'bg-sky-600',
   },
   amber: {
     card: 'border-amber-100 bg-amber-50/90 text-amber-950',
@@ -57,21 +57,21 @@ export function RoleDashboard(props: {
   return (
     <main className="min-h-screen bg-slate-50 px-0 py-2 sm:py-4">
       <section className="mx-auto max-w-7xl space-y-5">
-        <div className="overflow-hidden rounded-xl border border-emerald-900/15 bg-[linear-gradient(135deg,#06483f_0%,#03362f_55%,#012923_100%)] p-5 text-white shadow-[0_18px_45px_rgba(6,72,63,0.16)] sm:p-6">
-          <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+        <div className="pro-hero p-5 sm:p-6">
+          <div className="relative z-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-100/80">{props.eyebrow}</p>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{props.title}</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-teal-50/78">{props.description}</p>
+              <div className="pro-eyebrow">{props.eyebrow}</div>
+              <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">{props.title}</h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{props.description}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {primaryAction && (
-                <a href={primaryAction.href} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-teal-50">
+                <a href={primaryAction.href} className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-950">
                   {primaryAction.label}
                 </a>
               )}
               {secondaryActions.slice(0, 2).map((action) => (
-                <a key={action.href} href={action.href} className="rounded-lg border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/[0.12]">
+                <a key={action.href} href={action.href} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900">
                   {action.label}
                 </a>
               ))}
@@ -107,7 +107,7 @@ export function RoleDashboard(props: {
                 <h2 className="text-lg font-semibold text-slate-950">Operational Summary</h2>
                 <p className="mt-1 text-sm text-slate-600">Current platform indicators from the live database.</p>
               </div>
-              <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">Prisma live data</span>
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">Prisma live data</span>
             </div>
             <div className="mt-4 divide-y divide-slate-100 rounded-lg border border-slate-200">
               {props.metrics.map((metric) => {
@@ -130,7 +130,7 @@ export function RoleDashboard(props: {
             <p className="mt-1 text-sm text-slate-600">Common actions for this role.</p>
             <div className="mt-4 grid gap-2">
               {props.actions.map((action, index) => (
-                <a key={`${action.href}-${index}`} href={action.href} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800">
+                <a key={`${action.href}-${index}`} href={action.href} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900">
                   <span>{action.label}</span>
                   <span className="text-xs">Open</span>
                 </a>
