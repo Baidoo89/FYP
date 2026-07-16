@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import StatusBadge from '../../../components/promotion/StatusBadge';
 
 type PromotionRequest = {
   id: number;
@@ -276,31 +277,6 @@ function GuidanceCard({ code, title, items }: { code: string; title: string; ite
       </ul>
     </div>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { className: string; label: string }> = {
-    DRAFT: { className: 'bg-slate-100 text-slate-700', label: 'Draft' },
-    SUBMITTED: { className: 'bg-amber-100 text-amber-800', label: 'Submitted' },
-    UNDER_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Under Review' },
-    UNDER_DEPARTMENT_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Department Review' },
-    RETURNED_FOR_CORRECTION: { className: 'bg-amber-100 text-amber-800', label: 'Correction' },
-    UNDER_HR_VERIFICATION: { className: 'bg-teal-100 text-teal-800', label: 'HR Verification' },
-    UNDER_COMMITTEE_REVIEW: { className: 'bg-teal-100 text-teal-800', label: 'Committee Review' },
-    REQUIRES_FURTHER_REVIEW: { className: 'bg-amber-100 text-amber-800', label: 'Further Review' },
-    RECOMMENDED: { className: 'bg-emerald-100 text-emerald-800', label: 'Recommended' },
-    NOT_RECOMMENDED: { className: 'bg-rose-100 text-rose-800', label: 'Not Recommended' },
-    APPROVED_BY_AUTHORITY: { className: 'bg-emerald-100 text-emerald-800', label: 'Authority Approved' },
-    COMPLETED: { className: 'bg-slate-100 text-slate-700', label: 'Completed' },
-    APPROVED: { className: 'bg-emerald-100 text-emerald-800', label: 'Approved' },
-    REJECTED: { className: 'bg-rose-100 text-rose-800', label: 'Rejected' },
-    ELIGIBLE: { className: 'bg-emerald-100 text-emerald-800', label: 'Eligible' },
-    NOT_ELIGIBLE: { className: 'bg-rose-100 text-rose-800', label: 'Not Eligible' },
-    PENDING_REVIEW: { className: 'bg-amber-100 text-amber-800', label: 'Pending' },
-  };
-
-  const config = statusConfig[status] || { className: 'bg-slate-100 text-slate-700', label: formatLabel(status) };
-  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${config.className}`}>{config.label}</span>;
 }
 
 function WorkflowActions({

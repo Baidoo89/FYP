@@ -7,7 +7,7 @@ type ProgressStepperProps = {
 };
 
 function stateForStep(stepNumber: number, currentStep: number, status?: string) {
-  if (status === 'REJECTED') return stepNumber <= currentStep ? 'rejected' : 'pending';
+  if (status === 'REJECTED' || status === 'NOT_RECOMMENDED') return stepNumber <= currentStep ? 'rejected' : 'pending';
   if (status === 'RETURNED_FOR_CORRECTION') return stepNumber === currentStep ? 'returned' : stepNumber < currentStep ? 'complete' : 'pending';
   if (stepNumber < currentStep) return 'complete';
   if (stepNumber === currentStep) return 'current';
@@ -16,40 +16,47 @@ function stateForStep(stepNumber: number, currentStep: number, status?: string) 
 
 const stateStyles = {
   complete: {
-    circle: 'border-emerald-600 bg-emerald-600 text-white',
-    label: 'text-slate-950',
+    circle: 'border-teal-700 bg-teal-700 text-white shadow-sm',
+    label: 'text-gray-950',
     meta: 'Completed',
-    line: 'bg-emerald-600',
+    line: 'bg-teal-700',
   },
   current: {
-    circle: 'border-teal-700 bg-white text-teal-700 ring-4 ring-teal-100',
-    label: 'text-teal-900',
+    circle: 'border-teal-700 bg-white text-teal-800 ring-4 ring-teal-100 shadow-sm',
+    label: 'text-teal-950',
     meta: 'In progress',
     line: 'bg-teal-300',
   },
   pending: {
-    circle: 'border-slate-200 bg-white text-slate-400',
-    label: 'text-slate-600',
+    circle: 'border-gray-200 bg-white text-gray-400',
+    label: 'text-gray-600',
     meta: 'Pending',
-    line: 'bg-slate-200',
+    line: 'bg-gray-200',
   },
   returned: {
-    circle: 'border-orange-400 bg-orange-100 text-orange-700 ring-4 ring-orange-100',
-    label: 'text-orange-900',
+    circle: 'border-amber-400 bg-amber-50 text-amber-800 ring-4 ring-amber-100 shadow-sm',
+    label: 'text-amber-950',
     meta: 'Correction required',
-    line: 'bg-orange-300',
+    line: 'bg-amber-300',
   },
   rejected: {
-    circle: 'border-rose-500 bg-rose-100 text-rose-700 ring-4 ring-rose-100',
-    label: 'text-rose-900',
-    meta: 'Rejected',
+    circle: 'border-rose-500 bg-rose-50 text-rose-800 ring-4 ring-rose-100 shadow-sm',
+    label: 'text-rose-950',
+    meta: 'Stopped',
     line: 'bg-rose-300',
   },
 };
 
 export default function ProgressStepper({ currentStep, steps, status }: ProgressStepperProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 print:shadow-none">
+      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h3 className="text-base font-bold text-gray-950">Promotion Workflow</h3>
+          <p className="mt-1 text-sm text-gray-600">Draft to final administrative completion.</p>
+        </div>
+        {status && <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-gray-600">{status.replace(/_/g, ' ')}</span>}
+      </div>
       <div className="overflow-x-auto pb-1">
         <div className="grid min-w-[760px]" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
           {steps.map((step, index) => {
@@ -64,15 +71,15 @@ export default function ProgressStepper({ currentStep, steps, status }: Progress
                   <div className={`absolute left-1/2 top-5 h-0.5 w-full ${styles.line}`} aria-hidden="true" />
                 )}
                 <div className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-black ${styles.circle}`}>
-                  {state === 'complete' ? 'OK' : stepNumber}
+                  {state === 'complete' ? '✓' : stepNumber}
                 </div>
                 <p className={`mt-3 px-2 text-xs font-bold leading-5 sm:text-sm ${styles.label}`}>{step}</p>
-                <p className="mt-1 text-[11px] font-medium text-slate-500">{styles.meta}</p>
+                <p className="mt-1 text-[11px] font-medium text-gray-500">{styles.meta}</p>
               </div>
             );
           })}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
