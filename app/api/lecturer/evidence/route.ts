@@ -5,6 +5,9 @@ import { getAuthSession } from '../../../../lib/auth';
 import { createSecureFileName, MAX_PROMOTION_PDF_SIZE, saveMockPdfFile } from '../../../../lib/upload';
 import { documentUploadSchema } from '../../../../lib/validation/promotion-request.schema';
 import { createPromotionRequestWithWorkflow, savePromotionDocumentRecord, WorkflowError } from '../../../../lib/promotion-workflow';
+import { REQUIRED_CATEGORIES } from '../../../../lib/promotion-engine';
+
+const ALL_CATEGORIES = Object.values(DocumentCategory);
 
 function inferTargetRank(currentRank?: string | null) {
   const rank = String(currentRank || 'LECTURER').toUpperCase();
@@ -13,6 +16,17 @@ function inferTargetRank(currentRank?: string | null) {
   if (rank === 'LECTURER') return 'SENIOR_LECTURER';
   if (rank === 'SENIOR_LECTURER') return 'ASSOCIATE_PROFESSOR';
   return 'ASSOCIATE_PROFESSOR';
+}
+
+function normalizeRank(rank?: string | null) {
+  return String(rank || 'LECTURER').trim().toUpperCase().replace(/\s+/g, '_').replace(/-/g, '_');
+}
+
+function emptyGrouped() {
+  return ALL_CATEGORIES.reduce<Record<DocumentCategory, any[]>>((grouped, category) => {
+    grouped[category] = [];
+    return grouped;
+  }, {} as Record<DocumentCategory, any[]>);
 }
 
 function workflowErrorResponse(error: unknown, fallback: string) {
@@ -32,21 +46,93 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const documents = await prisma.document.findMany({
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        department: true,
+        currentRank: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Lecturer account not found' },
+        { status: 404 }
+      );
+    }
+
+    const activeRequest = await prisma.promotionRequest.findFirst({
       where: {
-        request: {
-          lecturerId: session.userId,
+        lecturerId: session.userId,
+        status: {
+          notIn: [RequestStatus.COMPLETED, RequestStatus.REJECTED, RequestStatus.NOT_RECOMMENDED],
         },
       },
+      select: {
+        id: true,
+        currentRank: true,
+        targetRank: true,
+        yearsInCurrentRank: true,
+        status: true,
+        eligibilityStatus: true,
+        eligibilityReason: true,
+        totalScore: true,
+        updatedAt: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const currentRank = activeRequest?.currentRank || String(user.currentRank || 'LECTURER');
+    const targetRank = activeRequest?.targetRank || inferTargetRank(user.currentRank);
+
+    const criteria = await prisma.promotionCriteria.findFirst({
+      where: {
+        currentRank: normalizeRank(currentRank) as any,
+        targetRank: normalizeRank(targetRank) as any,
+        isActive: true,
+      },
+      select: {
+        requiredDocumentCategories: true,
+        minimumYearsInCurrentRank: true,
+        minimumTotalScore: true,
+        publicationRequirement: true,
+        professionalDevelopmentRequirement: true,
+      },
+    });
+
+    const requiredCategories = criteria?.requiredDocumentCategories?.length
+      ? criteria.requiredDocumentCategories
+      : [...REQUIRED_CATEGORIES];
+
+    const documents = await prisma.document.findMany({
+      where: activeRequest
+        ? { requestId: activeRequest.id }
+        : {
+            request: {
+              lecturerId: session.userId,
+            },
+          },
       select: {
         id: true,
         category: true,
         title: true,
         fileUrl: true,
+        fileName: true,
+        mimeType: true,
         verificationStatus: true,
         verificationComment: true,
         uploadedAt: true,
         fileSize: true,
+        verifiedAt: true,
+        verifiedBy: {
+          select: {
+            name: true,
+            role: true,
+          },
+        },
       },
       orderBy: { uploadedAt: 'desc' },
     });
@@ -54,25 +140,49 @@ export async function GET(request: NextRequest) {
     const formattedDocuments = documents.map((doc) => ({
       ...doc,
       size: doc.fileSize,
+      required: requiredCategories.includes(doc.category),
     }));
 
-    const grouped = {
-      RESEARCH: formattedDocuments.filter((document) => document.category === 'RESEARCH'),
-      TEACHING: formattedDocuments.filter((document) => document.category === 'TEACHING'),
-      SERVICE: formattedDocuments.filter((document) => document.category === 'SERVICE'),
-    };
+    const grouped = emptyGrouped();
+    for (const document of formattedDocuments) {
+      grouped[document.category].push(document);
+    }
+
+    const categoryStatus = ALL_CATEGORIES.map((category) => {
+      const categoryDocuments = grouped[category];
+      const latest = categoryDocuments[0] || null;
+      return {
+        category,
+        required: requiredCategories.includes(category),
+        uploaded: categoryDocuments.length > 0,
+        status: latest?.verificationStatus || 'MISSING',
+        document: latest,
+      };
+    });
 
     return NextResponse.json(
       {
         success: true,
         data: {
+          request: activeRequest,
+          lecturer: user,
+          currentRank,
+          targetRank,
+          criteria,
+          categories: ALL_CATEGORIES,
+          requiredCategories,
+          categoryStatus,
           documents: formattedDocuments,
           grouped,
           stats: {
             totalDocuments: formattedDocuments.length,
+            requiredCategories: requiredCategories.length,
+            requiredUploadedCount: requiredCategories.filter((category) => grouped[category].length > 0).length,
+            requiredVerifiedCount: requiredCategories.filter((category) => grouped[category].some((document) => document.verificationStatus === 'VERIFIED')).length,
             verifiedCount: formattedDocuments.filter((document) => document.verificationStatus === 'VERIFIED').length,
             pendingCount: formattedDocuments.filter((document) => document.verificationStatus === 'PENDING').length,
-            rejectedCount: formattedDocuments.filter((document) => ['REJECTED', 'REQUIRES_CORRECTION'].includes(document.verificationStatus)).length,
+            returnedCount: formattedDocuments.filter((document) => document.verificationStatus === 'REQUIRES_CORRECTION').length,
+            rejectedCount: formattedDocuments.filter((document) => document.verificationStatus === 'REJECTED').length,
           },
         },
       },
