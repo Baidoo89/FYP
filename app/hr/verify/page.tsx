@@ -39,7 +39,7 @@ const decisionConfig: Record<VerificationDecision, { label: string; description:
   VERIFIED: {
     label: 'Verify Document',
     description: 'Accept this evidence for eligibility calculation and workflow routing.',
-    className: 'border-teal-200 bg-teal-700 text-white hover:bg-teal-800',
+    className: 'border-emerald-200 bg-emerald-700 text-white hover:bg-emerald-800',
     defaultComment: 'Document verified by HR.',
     code: 'OK',
   },
@@ -85,10 +85,9 @@ function formatFileSize(value?: number | null) {
 
 function queueMatches(request: PromotionRequest, segment: QueueSegment) {
   const docs = request.documents || [];
-  const pending = docs.some((document) => document.verificationStatus === 'PENDING');
   const returned = docs.some((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus));
 
-  if (segment === 'pending') return request.status === 'UNDER_HR_VERIFICATION' || pending;
+  if (segment === 'pending') return request.status === 'UNDER_HR_VERIFICATION';
   if (segment === 'returned') return request.status === 'RETURNED_FOR_CORRECTION' || returned;
   if (segment === 'committee') return request.status === 'UNDER_COMMITTEE_REVIEW';
   if (segment === 'completed') return finalStatuses.has(request.status) || request.status === 'RECOMMENDED';
@@ -113,8 +112,12 @@ function queueHealth(request: PromotionRequest) {
     return { title: 'Applicant Action', detail: `${counts.correction + counts.rejected || 1} evidence issue(s) require correction or replacement.`, tone: 'warning' as const };
   }
 
-  if (counts.pending > 0 || request.status === 'UNDER_HR_VERIFICATION') {
+  if (request.status === 'UNDER_HR_VERIFICATION') {
     return { title: 'HR Verification', detail: `${counts.pending} pending document(s) require HR decision.`, tone: 'primary' as const };
+  }
+
+  if (counts.pending > 0) {
+    return { title: 'Awaiting Handoff', detail: 'Evidence is pending, but this application has not reached HR verification yet.', tone: 'slate' as const };
   }
 
   if (request.status === 'UNDER_COMMITTEE_REVIEW') {
@@ -278,7 +281,7 @@ export default function VerificationWorkspacePage() {
   const selectedCounts = documentCounts(selectedRequest);
   const requiredCount = selectedRequest?.requiredDocumentCount || Math.min(3, selectedCounts.total);
   const readiness = requiredCount ? Math.round((selectedCounts.verified / requiredCount) * 100) : 0;
-  const verificationDisabled = !selectedRequest || !selectedDocument || finalStatuses.has(selectedRequest.status);
+  const verificationDisabled = !selectedRequest || !selectedDocument || finalStatuses.has(selectedRequest.status) || selectedRequest.status !== 'UNDER_HR_VERIFICATION';
 
   return (
     <div className="space-y-6">
@@ -292,14 +295,14 @@ export default function VerificationWorkspacePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/hr/requests" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">Master queue</a>
+            <a href="/hr/requests" className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-950">Master queue</a>
             <a href="/analytics" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Reports</a>
           </div>
         </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <Metric code="AP" label="Applications" value={metrics.applications} tone="teal" />
+        <Metric code="AP" label="Applications" value={metrics.applications} tone="blue" />
         <Metric code="PD" label="Pending" value={metrics.pending} tone="amber" />
         <Metric code="VF" label="Verified" value={metrics.verified} tone="green" />
         <Metric code="CR" label="Corrections" value={metrics.correction} tone="orange" />
@@ -307,7 +310,7 @@ export default function VerificationWorkspacePage() {
         <Metric code="CM" label="Committee" value={metrics.committee} tone="blue" />
       </section>
 
-      {message && <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-semibold text-teal-800">{message}</div>}
+      {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{message}</div>}
       {error && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
 
       <section className="grid gap-6 xl:grid-cols-[0.82fr_1.68fr]">
@@ -346,7 +349,7 @@ export default function VerificationWorkspacePage() {
                       key={request.id}
                       type="button"
                       onClick={() => selectRequest(request)}
-                      className={`block w-full p-5 text-left transition hover:bg-gray-50 ${selectedRequestId === request.id ? 'bg-teal-50/70' : ''}`}
+                      className={`block w-full p-5 text-left transition hover:bg-gray-50 ${selectedRequestId === request.id ? 'bg-blue-50/70' : ''}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -360,7 +363,7 @@ export default function VerificationWorkspacePage() {
                       <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold text-gray-600">
                         <span className="rounded-lg bg-gray-100 px-2 py-1">Docs {counts.total}</span>
                         <span className="rounded-lg bg-amber-50 px-2 py-1 text-amber-900">Pending {counts.pending}</span>
-                        <span className="rounded-lg bg-teal-50 px-2 py-1 text-teal-800">Verified {counts.verified}</span>
+                        <span className="rounded-lg bg-emerald-50 px-2 py-1 text-emerald-800">Verified {counts.verified}</span>
                       </div>
                       <HealthPill title={health.title} detail={health.detail} tone={health.tone} />
                     </button>
@@ -395,7 +398,7 @@ export default function VerificationWorkspacePage() {
                           key={document.id}
                           type="button"
                           onClick={() => selectDocument(document)}
-                          className={`w-full rounded-lg border p-3 text-left transition ${selectedDocumentId === document.id ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white hover:border-teal-200 hover:bg-gray-50'}`}
+                          className={`w-full rounded-lg border p-3 text-left transition ${selectedDocumentId === document.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'}`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
@@ -432,6 +435,16 @@ export default function VerificationWorkspacePage() {
                         <InfoTile label="Verified by" value={selectedDocument.verifiedBy?.name || 'Not verified'} />
                       </div>
 
+                      <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
+                        <p className="font-bold uppercase tracking-[0.14em] text-blue-800">Routing rule</p>
+                        <p className="mt-1">When required evidence is verified, the system calculates eligibility and routes eligible applications to committee review automatically.</p>
+                        {selectedDocument.fileUrl && (
+                          <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-semibold text-blue-800 hover:bg-blue-100">
+                            Open source file
+                          </a>
+                        )}
+                      </div>
+
                       <label className="mt-4 block text-sm font-semibold text-gray-800">
                         HR verification comment
                         <textarea
@@ -460,7 +473,7 @@ export default function VerificationWorkspacePage() {
                         ))}
                       </div>
 
-                      {verificationDisabled && <p className="mt-3 text-xs font-medium text-gray-500">This application is not open for document verification changes.</p>}
+                      {verificationDisabled && <p className="mt-3 text-xs font-medium text-gray-500">Verification decisions are enabled only while the application is under HR verification.</p>}
                     </>
                   ) : (
                     <EmptyState title="No document selected" description="Select evidence from the register to record an HR decision." />
@@ -477,7 +490,7 @@ export default function VerificationWorkspacePage() {
                   <h2 className="text-lg font-bold text-gray-950">Document Preview</h2>
                   <p className="mt-1 text-sm text-gray-600">{selectedDocument.title}</p>
                 </div>
-                <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="w-fit rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50">Open in new tab</a>
+                <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="w-fit rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50">Open in new tab</a>
               </div>
               <iframe title="Document preview" src={selectedDocument.fileUrl} className="mt-4 h-[640px] w-full rounded-xl border border-gray-200 bg-white" />
             </section>
@@ -488,7 +501,7 @@ export default function VerificationWorkspacePage() {
   );
 }
 
-function Metric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'rose' | 'green' | 'blue' | 'orange' }) {
+function Metric({ code, label, value, tone = 'blue' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'rose' | 'green' | 'blue' | 'orange' }) {
   const toneClass = tone === 'amber'
     ? 'border-amber-200 bg-amber-50 text-amber-900'
     : tone === 'rose'
@@ -499,7 +512,7 @@ function Metric({ code, label, value, tone = 'teal' }: { code: string; label: st
           ? 'border-sky-200 bg-sky-50 text-sky-900'
           : tone === 'orange'
             ? 'border-orange-200 bg-orange-50 text-orange-900'
-            : 'border-teal-200 bg-teal-50 text-teal-900';
+            : 'border-blue-200 bg-blue-50 text-blue-900';
 
   return (
     <div className="pro-tile p-5">
@@ -519,7 +532,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-3 py-2 transition ${active ? 'border-teal-600 bg-teal-700 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
+      className={`rounded-lg border px-3 py-2 transition ${active ? 'border-blue-700 bg-blue-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900'}`}
     >
       {children}
     </button>
@@ -530,7 +543,7 @@ function HealthPill({ title, detail, tone }: { title: string; detail: string; to
   const toneClass = tone === 'warning'
     ? 'border-amber-200 bg-amber-50 text-amber-950'
     : tone === 'success'
-      ? 'border-teal-200 bg-teal-50 text-teal-950'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
       : tone === 'primary'
         ? 'border-sky-200 bg-sky-50 text-sky-950'
         : 'border-gray-200 bg-gray-50 text-gray-700';
