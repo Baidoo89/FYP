@@ -57,10 +57,10 @@ export default function LoginPage() {
   return (
     <AuthPageShell active="login">
       <div className="mb-7">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">Secure GCTU access</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Sign in to the promotion system</h2>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">Staff access</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Sign in</h2>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Use your verified GCTU Digital Staff Promotion Support System account to enter your role-specific workspace.
+          Access the GCTU Digital Staff Promotion Support System.
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label htmlFor="username" className="mb-2 block text-sm font-semibold text-slate-800">
-            GCTU email or username
+            Email or username
           </label>
           <input
             id="username"
@@ -121,7 +121,7 @@ export default function LoginPage() {
         </button>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-center text-xs font-medium text-slate-600">
-          New GCTU lecturer? <a href="/register" className="font-semibold text-blue-900 hover:text-blue-950">Create your staff promotion account</a>
+          New lecturer? <a href="/register" className="font-semibold text-blue-900 hover:text-blue-950">Create account</a>
         </div>
       </form>
     </AuthPageShell>

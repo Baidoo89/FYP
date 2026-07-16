@@ -67,10 +67,10 @@ export function RegisterForm() {
   return (
     <div>
       <div className="mb-7">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">Official GCTU staff registration</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Create your promotion system account</h2>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">Staff registration</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Create account</h2>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Register with your official GCTU staff email. You will verify your email before completing your profile and submitting a promotion request.
+          Use your official GCTU staff email to register and verify your account.
         </p>
       </div>
 
@@ -109,7 +109,7 @@ export function RegisterForm() {
             required
           />
           <p className="mt-2 text-xs leading-5 text-slate-500">
-            Signup currently accepts official staff addresses ending in @live.gctu.edu.gh.
+            Use an official @live.gctu.edu.gh address.
           </p>
         </div>
 
@@ -167,7 +167,7 @@ export function RegisterForm() {
           disabled={loading}
           className="w-full rounded-lg bg-blue-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 transition hover:bg-blue-950 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? 'Creating account...' : 'Create GCTU account'}
+          {loading ? 'Creating account...' : 'Create account'}
         </button>
       </form>
 
