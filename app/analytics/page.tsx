@@ -384,6 +384,41 @@ export default function AnalyticsPage() {
   );
 }
 
+function ExecutiveInsight({ label, value, detail, tone }: { label: string; value: string | number; detail: string; tone: Tone }) {
+  const toneClass = {
+    green: 'border-emerald-100 bg-emerald-50 text-emerald-900',
+    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    red: 'border-rose-100 bg-rose-50 text-rose-900',
+    blue: 'border-sky-100 bg-sky-50 text-sky-900',
+    slate: 'border-slate-200 bg-white text-slate-900',
+  }[tone];
+
+  return (
+    <div className={`rounded-lg border px-4 py-3 ${toneClass}`}>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-70">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
+      <p className="mt-1 text-xs opacity-70">{detail}</p>
+    </div>
+  );
+}
+
+function ReportNote({ label, value, tone }: { label: string; value: string; tone: Tone }) {
+  const toneClass = {
+    green: 'border-emerald-100 bg-emerald-50 text-emerald-900',
+    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    red: 'border-rose-100 bg-rose-50 text-rose-900',
+    blue: 'border-sky-100 bg-sky-50 text-sky-900',
+    slate: 'border-slate-200 bg-white text-slate-900',
+  }[tone];
+
+  return (
+    <div className={`rounded-lg border px-4 py-3 ${toneClass}`}>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-70">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-6">{value}</p>
+    </div>
+  );
+}
+
 function MiniMetric({ label, value, tone }: { label: string; value: number; tone: Tone }) {
   const toneClass = {
     green: 'border-emerald-100 bg-emerald-50 text-emerald-900',
