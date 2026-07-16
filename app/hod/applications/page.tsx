@@ -36,6 +36,13 @@ function segmentMatches(request: PromotionRequest, segment: QueueSegment) {
   return true;
 }
 
+function segmentForRequest(request: PromotionRequest): QueueSegment {
+  if (segmentMatches(request, 'active')) return 'active';
+  if (segmentMatches(request, 'returned')) return 'returned';
+  if (segmentMatches(request, 'further')) return 'further';
+  if (segmentMatches(request, 'forwarded')) return 'forwarded';
+  return 'all';
+}
 function readinessFor(request: PromotionRequest) {
   const docs = request.documents || [];
   const verified = docs.filter((document) => document.verificationStatus === 'VERIFIED').length;
@@ -114,12 +121,16 @@ export default function HodApplicationsPage() {
       const scoped = allRequests.filter((request) => departmentStatuses.includes(request.status));
       setRequests(allRequests);
 
-      const next = scoped.find((request) => request.id === preferredId)
+      const preferred = scoped.find((request) => request.id === preferredId) || null;
+      const next = preferred
         || scoped.find((request) => request.status === 'UNDER_DEPARTMENT_REVIEW')
         || scoped.find((request) => request.status === 'SUBMITTED')
         || scoped[0]
         || null;
 
+      if (preferred) {
+        setSegment(segmentForRequest(preferred));
+      }
       setSelectedId(next?.id || null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load department applications');
@@ -129,7 +140,11 @@ export default function HodApplicationsPage() {
   }
 
   useEffect(() => {
-    loadRequests();
+    const requestId = typeof window === 'undefined'
+      ? null
+      : Number(new URLSearchParams(window.location.search).get('request'));
+
+    loadRequests(Number.isInteger(requestId) && requestId > 0 ? requestId : null);
   }, []);
 
   async function saveReview(decision: DepartmentDecision) {
