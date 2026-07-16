@@ -3,50 +3,129 @@
 import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
+import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 
 type DocumentItem = {
   id: number;
   title: string;
   category: string;
-  fileUrl: string;
-  verificationStatus: string;
-  verifiedById: number | null;
-  verificationComment: string | null;
-  uploadedAt: string;
+  fileUrl?: string;
+  fileName?: string | null;
+  fileSize?: number | null;
+  verificationStatus?: string;
+  verifiedById?: number | null;
+  verificationComment?: string | null;
+  uploadedAt?: string | null;
+  verifiedAt?: string | null;
+  verifiedBy?: {
+    name?: string | null;
+    role?: string | null;
+  } | null;
 };
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt: string | null;
   verifiedAt: string | null;
+  documentCount: number;
+  verifiedDocumentCount?: number;
+  requiredDocumentCount?: number;
   documents: DocumentItem[];
 };
 
 type VerificationDecision = 'VERIFIED' | 'REQUIRES_CORRECTION' | 'REJECTED';
+type QueueSegment = 'pending' | 'returned' | 'committee' | 'completed' | 'all';
 
-const decisionConfig: Record<VerificationDecision, { label: string; description: string; buttonClass: string; defaultComment: string }> = {
+const decisionConfig: Record<VerificationDecision, { label: string; description: string; className: string; defaultComment: string; code: string }> = {
   VERIFIED: {
     label: 'Verify Document',
-    description: 'Approve this evidence as valid for eligibility calculation.',
-    buttonClass: 'bg-teal-700 text-white hover:bg-teal-800',
+    description: 'Accept this evidence for eligibility calculation and workflow routing.',
+    className: 'border-teal-200 bg-teal-700 text-white hover:bg-teal-800',
     defaultComment: 'Document verified by HR.',
+    code: 'OK',
   },
   REQUIRES_CORRECTION: {
     label: 'Request Correction',
-    description: 'Return this evidence for lecturer correction without final rejection.',
-    buttonClass: 'border border-orange-300 bg-orange-50 text-orange-950 hover:bg-orange-100',
+    description: 'Return this evidence to the applicant with correction guidance.',
+    className: 'border-orange-300 bg-orange-50 text-orange-950 hover:bg-orange-100',
     defaultComment: 'Document requires correction before eligibility can be calculated.',
+    code: 'FIX',
   },
   REJECTED: {
     label: 'Reject Document',
-    description: 'Reject this evidence because it does not satisfy verification requirements.',
-    buttonClass: 'border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100',
+    description: 'Reject this evidence when it does not satisfy verification requirements.',
+    className: 'border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100',
     defaultComment: 'Document rejected by HR verification.',
+    code: 'NO',
   },
 };
+
+const finalStatuses = new Set(['COMPLETED', 'REJECTED', 'NOT_RECOMMENDED', 'APPROVED', 'APPROVED_BY_AUTHORITY']);
 
 function label(value?: string | null) {
   if (!value) return 'Not available';
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function applicationCode(id: number) {
+  return `PR-${String(id).padStart(5, '0')}`;
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return 'Not recorded';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not recorded';
+  return new Intl.DateTimeFormat('en-GH', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+}
+
+function formatFileSize(value?: number | null) {
+  if (!value) return 'Unknown size';
+  if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function queueMatches(request: PromotionRequest, segment: QueueSegment) {
+  const docs = request.documents || [];
+  const pending = docs.some((document) => document.verificationStatus === 'PENDING');
+  const returned = docs.some((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus));
+
+  if (segment === 'pending') return request.status === 'UNDER_HR_VERIFICATION' || pending;
+  if (segment === 'returned') return request.status === 'RETURNED_FOR_CORRECTION' || returned;
+  if (segment === 'committee') return request.status === 'UNDER_COMMITTEE_REVIEW';
+  if (segment === 'completed') return finalStatuses.has(request.status) || request.status === 'RECOMMENDED';
+  return true;
+}
+
+function documentCounts(request?: PromotionRequest | null) {
+  const documents = request?.documents || [];
+  return {
+    total: documents.length,
+    pending: documents.filter((document) => document.verificationStatus === 'PENDING').length,
+    verified: documents.filter((document) => document.verificationStatus === 'VERIFIED').length,
+    correction: documents.filter((document) => document.verificationStatus === 'REQUIRES_CORRECTION').length,
+    rejected: documents.filter((document) => document.verificationStatus === 'REJECTED').length,
+  };
+}
+
+function queueHealth(request: PromotionRequest) {
+  const counts = documentCounts(request);
+
+  if (counts.correction || counts.rejected || request.status === 'RETURNED_FOR_CORRECTION') {
+    return { title: 'Applicant Action', detail: `${counts.correction + counts.rejected || 1} evidence issue(s) require correction or replacement.`, tone: 'warning' as const };
+  }
+
+  if (counts.pending > 0 || request.status === 'UNDER_HR_VERIFICATION') {
+    return { title: 'HR Verification', detail: `${counts.pending} pending document(s) require HR decision.`, tone: 'primary' as const };
+  }
+
+  if (request.status === 'UNDER_COMMITTEE_REVIEW') {
+    return { title: 'Committee Routed', detail: 'Required evidence is verified and the file is with committee.', tone: 'success' as const };
+  }
+
+  if (finalStatuses.has(request.status) || request.status === 'RECOMMENDED') {
+    return { title: 'Final Stage', detail: 'This file is beyond active document verification.', tone: 'slate' as const };
+  }
+
+  return { title: 'Monitor', detail: 'No urgent HR verification issue detected.', tone: 'slate' as const };
 }
 
 export default function VerificationWorkspacePage() {
@@ -55,7 +134,7 @@ export default function VerificationWorkspacePage() {
   const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
   const [verificationComment, setVerificationComment] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [queueFilter, setQueueFilter] = useState<'all' | 'pending' | 'returned' | 'committee'>('pending');
+  const [queueSegment, setQueueSegment] = useState<QueueSegment>('pending');
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState<VerificationDecision | null>(null);
   const [message, setMessage] = useState('');
@@ -68,25 +147,18 @@ export default function VerificationWorkspacePage() {
     const query = searchTerm.trim().toLowerCase();
 
     return requests.filter((request) => {
-      const hasPendingDocument = request.documents.some((document) => document.verificationStatus === 'PENDING');
-      const hasReturnedDocument = request.documents.some((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus));
-      const matchesFilter =
-        queueFilter === 'all' ||
-        (queueFilter === 'pending' && (request.status === 'UNDER_HR_VERIFICATION' || hasPendingDocument)) ||
-        (queueFilter === 'returned' && (request.status === 'RETURNED_FOR_CORRECTION' || hasReturnedDocument)) ||
-        (queueFilter === 'committee' && request.status === 'UNDER_COMMITTEE_REVIEW');
-
-      if (!matchesFilter) return false;
+      if (!queueMatches(request, queueSegment)) return false;
       if (!query) return true;
 
       return (
         request.lecturerName.toLowerCase().includes(query) ||
         request.lecturerEmail.toLowerCase().includes(query) ||
         request.department.toLowerCase().includes(query) ||
-        request.targetRank.toLowerCase().includes(query)
+        request.targetRank.toLowerCase().includes(query) ||
+        applicationCode(request.id).toLowerCase().includes(query)
       );
     });
-  }, [requests, searchTerm, queueFilter]);
+  }, [requests, searchTerm, queueSegment]);
 
   const metrics = useMemo(() => {
     const documents = requests.flatMap((request) => request.documents || []);
@@ -94,7 +166,9 @@ export default function VerificationWorkspacePage() {
       applications: requests.length,
       pending: documents.filter((document) => document.verificationStatus === 'PENDING').length,
       verified: documents.filter((document) => document.verificationStatus === 'VERIFIED').length,
-      returned: documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus)).length,
+      correction: documents.filter((document) => document.verificationStatus === 'REQUIRES_CORRECTION').length,
+      rejected: documents.filter((document) => document.verificationStatus === 'REJECTED').length,
+      committee: requests.filter((request) => request.status === 'UNDER_COMMITTEE_REVIEW').length,
     };
   }, [requests]);
 
@@ -107,7 +181,7 @@ export default function VerificationWorkspacePage() {
       const requestIdParam = params.get('requestId');
       const targetRequestId = preferredRequestId || (requestIdParam ? Number(requestIdParam) : null);
 
-      const response = await fetch('/api/promotion-requests?scope=hr');
+      const response = await fetch('/api/promotion-requests?scope=hr', { cache: 'no-store' });
       const payload = await response.json();
 
       if (!response.ok || !payload.success) {
@@ -127,8 +201,9 @@ export default function VerificationWorkspacePage() {
       setSelectedRequestId(nextRequest?.id || null);
 
       const nextDocument = nextRequest
-        ? nextRequest.documents.find((document) => document.id === preferredDocumentId) ||
+        ? nextRequest.documents.find((document) => document.id === preferredDocumentId && document.verificationStatus === 'PENDING') ||
           nextRequest.documents.find((document) => document.verificationStatus === 'PENDING') ||
+          nextRequest.documents.find((document) => document.id === preferredDocumentId) ||
           nextRequest.documents[0] ||
           null
         : null;
@@ -163,11 +238,7 @@ export default function VerificationWorkspacePage() {
       const response = await fetch(`/api/promotion-requests/${selectedRequest.id}/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentId: selectedDocument.id,
-          verificationStatus: decision,
-          comment,
-        }),
+        body: JSON.stringify({ documentId: selectedDocument.id, verificationStatus: decision, comment }),
       });
 
       const payload = await response.json();
@@ -175,7 +246,8 @@ export default function VerificationWorkspacePage() {
         throw new Error(payload.error || 'Verification failed');
       }
 
-      setMessage(`${selectedDocument.title} marked as ${label(decision)}.`);
+      const routedMessage = payload.data?.status ? ` Application is now ${label(String(payload.data.status))}.` : '';
+      setMessage(`${selectedDocument.title} marked as ${label(decision)}.${routedMessage}`);
       setVerificationComment('');
       await loadRequests(selectedRequest.id, selectedDocument.id);
     } catch (verifyError) {
@@ -193,85 +265,104 @@ export default function VerificationWorkspacePage() {
     setError('');
   }
 
-  if (loading) {
-    return <div className="pro-card p-6 text-sm text-slate-600">Loading verification workspace...</div>;
+  function selectDocument(document: DocumentItem) {
+    setSelectedDocumentId(document.id);
+    setVerificationComment(document.verificationComment || '');
+    setMessage('');
+    setError('');
   }
+
+  if (loading && requests.length === 0) return <LoadingState label="Loading verification workspace..." />;
+  if (error && requests.length === 0) return <ErrorState message={error} />;
+
+  const selectedCounts = documentCounts(selectedRequest);
+  const requiredCount = selectedRequest?.requiredDocumentCount || Math.min(3, selectedCounts.total);
+  const readiness = requiredCount ? Math.round((selectedCounts.verified / requiredCount) * 100) : 0;
+  const verificationDisabled = !selectedRequest || !selectedDocument || finalStatuses.has(selectedRequest.status);
 
   return (
     <div className="space-y-6">
       <section className="pro-hero px-6 py-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">HR Document Verification</div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Verification Workspace</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Verification Workspace</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
               Verify promotion evidence, request corrections, reject invalid documents, and trigger eligibility routing only after required evidence is verified.
             </p>
           </div>
-          <a href="/hr/requests" className="inline-flex w-fit rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
-            Master queue
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <a href="/hr/requests" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">Master queue</a>
+            <a href="/analytics" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Reports</a>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric code="AP" label="Applications" value={metrics.applications} />
-        <Metric code="PD" label="Pending documents" value={metrics.pending} tone="amber" />
-        <Metric code="VF" label="Verified documents" value={metrics.verified} />
-        <Metric code="RT" label="Returned/rejected" value={metrics.returned} tone="rose" />
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        <Metric code="AP" label="Applications" value={metrics.applications} tone="teal" />
+        <Metric code="PD" label="Pending" value={metrics.pending} tone="amber" />
+        <Metric code="VF" label="Verified" value={metrics.verified} tone="green" />
+        <Metric code="CR" label="Corrections" value={metrics.correction} tone="orange" />
+        <Metric code="RJ" label="Rejected" value={metrics.rejected} tone="rose" />
+        <Metric code="CM" label="Committee" value={metrics.committee} tone="blue" />
       </section>
 
-      {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{message}</div>}
-      {error && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">{error}</div>}
+      {message && <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-semibold text-teal-800">{message}</div>}
+      {error && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
 
       <section className="grid gap-6 xl:grid-cols-[0.82fr_1.68fr]">
         <aside className="pro-card overflow-hidden">
-          <div className="border-b border-slate-200 p-5">
-            <h2 className="text-lg font-bold text-slate-950">Verification Queue</h2>
-            <p className="mt-1 text-sm text-slate-600">Select an application and document to verify.</p>
+          <div className="border-b border-gray-200 p-5">
+            <h2 className="text-lg font-bold text-gray-950">Verification Queue</h2>
+            <p className="mt-1 text-sm text-gray-600">Select an application and document to verify.</p>
             <div className="mt-4 space-y-3">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search lecturer, email, department..."
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="Search lecturer, email, department, PR code..."
+                className="brand-input"
               />
-              <div className="grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-4 xl:grid-cols-2">
-                <FilterButton active={queueFilter === 'pending'} onClick={() => setQueueFilter('pending')}>Pending</FilterButton>
-                <FilterButton active={queueFilter === 'returned'} onClick={() => setQueueFilter('returned')}>Returned</FilterButton>
-                <FilterButton active={queueFilter === 'committee'} onClick={() => setQueueFilter('committee')}>Committee</FilterButton>
-                <FilterButton active={queueFilter === 'all'} onClick={() => setQueueFilter('all')}>All</FilterButton>
+              <div className="grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-5 xl:grid-cols-2">
+                <FilterButton active={queueSegment === 'pending'} onClick={() => setQueueSegment('pending')}>Pending</FilterButton>
+                <FilterButton active={queueSegment === 'returned'} onClick={() => setQueueSegment('returned')}>Returned</FilterButton>
+                <FilterButton active={queueSegment === 'committee'} onClick={() => setQueueSegment('committee')}>Committee</FilterButton>
+                <FilterButton active={queueSegment === 'completed'} onClick={() => setQueueSegment('completed')}>Final</FilterButton>
+                <FilterButton active={queueSegment === 'all'} onClick={() => setQueueSegment('all')}>All</FilterButton>
               </div>
             </div>
           </div>
 
-          <div className="max-h-[58rem] overflow-y-auto">
+          <div className="max-h-[72rem] overflow-y-auto">
             {filteredRequests.length === 0 ? (
-              <div className="p-5 text-sm text-slate-600">No applications match the current queue filter.</div>
+              <div className="p-5"><EmptyState title="No matching applications" description="Adjust the queue segment or search term to find HR verification files." /></div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-gray-100">
                 {filteredRequests.map((request) => {
-                  const pendingDocs = request.documents.filter((document) => document.verificationStatus === 'PENDING').length;
+                  const counts = documentCounts(request);
+                  const health = queueHealth(request);
                   return (
                     <button
                       key={request.id}
                       type="button"
                       onClick={() => selectRequest(request)}
-                      className={`block w-full p-5 text-left transition hover:bg-slate-50 ${selectedRequestId === request.id ? 'bg-teal-50' : ''}`}
+                      className={`block w-full p-5 text-left transition hover:bg-gray-50 ${selectedRequestId === request.id ? 'bg-teal-50/70' : ''}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-950">{request.lecturerName}</p>
-                          <p className="mt-1 truncate text-xs text-slate-500">{request.department}</p>
-                          <p className="mt-1 text-xs font-medium text-slate-600">{request.currentRank} to {request.targetRank}</p>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{applicationCode(request.id)}</p>
+                          <p className="mt-2 truncate font-semibold text-gray-950">{request.lecturerName}</p>
+                          <p className="mt-1 truncate text-xs text-gray-500">{request.department}</p>
+                          <p className="mt-1 text-xs font-medium text-gray-600">{label(request.currentRank)} to {label(request.targetRank)}</p>
                         </div>
                         <StatusBadge status={request.status} />
                       </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">{request.documents.length} docs</span>
-                        <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-900">{pendingDocs} pending</span>
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold text-gray-600">
+                        <span className="rounded-lg bg-gray-100 px-2 py-1">Docs {counts.total}</span>
+                        <span className="rounded-lg bg-amber-50 px-2 py-1 text-amber-900">Pending {counts.pending}</span>
+                        <span className="rounded-lg bg-teal-50 px-2 py-1 text-teal-800">Verified {counts.verified}</span>
                       </div>
+                      <HealthPill title={health.title} detail={health.detail} tone={health.tone} />
                     </button>
                   );
                 })}
@@ -282,57 +373,72 @@ export default function VerificationWorkspacePage() {
 
         <div className="space-y-6">
           {!selectedRequest ? (
-            <div className="pro-card p-8 text-center text-sm text-slate-600">Select an application from the verification queue.</div>
+            <div className="pro-card p-6"><EmptyState title="Select an application" description="Choose an application from the verification queue to inspect its evidence." /></div>
           ) : (
             <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN">
-              <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-950">Selected Evidence</h3>
-                  <p className="mt-1 text-sm text-slate-600">Choose a document from this application and record the HR decision.</p>
-                  <div className="mt-4 space-y-2">
+                  <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-950">Evidence Register</h3>
+                      <p className="mt-1 text-sm text-gray-600">Choose a document and record the HR decision.</p>
+                    </div>
+                    <span className="w-fit rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">{readiness}% ready</span>
+                  </div>
+
+                  <div className="mt-4 grid gap-2">
                     {selectedRequest.documents.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">No evidence documents attached.</div>
+                      <EmptyState title="No evidence attached" description="The applicant has not uploaded evidence for this request." />
                     ) : (
                       selectedRequest.documents.map((document) => (
                         <button
                           key={document.id}
                           type="button"
-                          onClick={() => {
-                            setSelectedDocumentId(document.id);
-                            setVerificationComment(document.verificationComment || '');
-                          }}
-                          className={`w-full rounded-lg border p-3 text-left transition ${selectedDocumentId === document.id ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white hover:border-teal-200'}`}
+                          onClick={() => selectDocument(document)}
+                          className={`w-full rounded-lg border p-3 text-left transition ${selectedDocumentId === document.id ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white hover:border-teal-200 hover:bg-gray-50'}`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="font-semibold text-slate-950">{document.title}</p>
-                              <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label(document.category)}</p>
+                              <p className="font-semibold text-gray-950">{document.title}</p>
+                              <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{label(document.category)}</p>
+                              <p className="mt-1 text-xs text-gray-500">Uploaded {formatDate(document.uploadedAt)} | {formatFileSize(document.fileSize)}</p>
                             </div>
                             <StatusBadge status={document.verificationStatus || 'PENDING'} />
                           </div>
+                          {document.verificationComment && <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-950">{document.verificationComment}</p>}
                         </button>
                       ))
                     )}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="text-lg font-bold text-slate-950">Verification Decision</h3>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <h3 className="text-lg font-bold text-gray-950">Verification Decision</h3>
                   {selectedDocument ? (
                     <>
-                      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
-                        <p className="font-semibold text-slate-950">{selectedDocument.title}</p>
-                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label(selectedDocument.category)}</p>
-                        <div className="mt-3"><StatusBadge status={selectedDocument.verificationStatus || 'PENDING'} /></div>
+                      <div className="mt-3 rounded-lg border border-gray-200 bg-white p-4">
+                        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                          <div>
+                            <p className="font-semibold text-gray-950">{selectedDocument.title}</p>
+                            <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{label(selectedDocument.category)}</p>
+                            <p className="mt-1 text-xs text-gray-500">{selectedDocument.fileName || 'Evidence file'} | {formatFileSize(selectedDocument.fileSize)}</p>
+                          </div>
+                          <StatusBadge status={selectedDocument.verificationStatus || 'PENDING'} />
+                        </div>
                       </div>
 
-                      <label className="mt-4 block text-sm font-semibold text-slate-800">
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <InfoTile label="Uploaded" value={formatDate(selectedDocument.uploadedAt)} />
+                        <InfoTile label="Verified by" value={selectedDocument.verifiedBy?.name || 'Not verified'} />
+                      </div>
+
+                      <label className="mt-4 block text-sm font-semibold text-gray-800">
                         HR verification comment
                         <textarea
                           value={verificationComment}
                           onChange={(event) => setVerificationComment(event.target.value)}
                           placeholder="Record decision rationale, correction instructions, or verification note..."
-                          className="mt-2 min-h-28 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                          className="brand-input mt-2 min-h-32"
                         />
                       </label>
 
@@ -341,18 +447,23 @@ export default function VerificationWorkspacePage() {
                           <button
                             key={decision}
                             type="button"
-                            disabled={Boolean(verifying)}
+                            disabled={Boolean(verifying) || verificationDisabled}
                             onClick={() => handleVerifyDocument(decision)}
-                            className={`rounded-lg px-4 py-3 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${decisionConfig[decision].buttonClass}`}
+                            className={`rounded-lg border px-4 py-3 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${decisionConfig[decision].className}`}
                           >
-                            <span className="block">{verifying === decision ? 'Saving decision...' : decisionConfig[decision].label}</span>
+                            <span className="flex items-center justify-between gap-3">
+                              <span>{verifying === decision ? 'Saving decision...' : decisionConfig[decision].label}</span>
+                              <span className="rounded-md bg-white/50 px-2 py-1 text-[10px] font-black">{decisionConfig[decision].code}</span>
+                            </span>
                             <span className="mt-1 block text-xs font-medium opacity-80">{decisionConfig[decision].description}</span>
                           </button>
                         ))}
                       </div>
+
+                      {verificationDisabled && <p className="mt-3 text-xs font-medium text-gray-500">This application is not open for document verification changes.</p>}
                     </>
                   ) : (
-                    <p className="mt-3 text-sm text-slate-600">Select a document to begin verification.</p>
+                    <EmptyState title="No document selected" description="Select evidence from the register to record an HR decision." />
                   )}
                 </div>
               </div>
@@ -363,14 +474,12 @@ export default function VerificationWorkspacePage() {
             <section className="pro-card p-5">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-950">Document Preview</h2>
-                  <p className="mt-1 text-sm text-slate-600">{selectedDocument.title}</p>
+                  <h2 className="text-lg font-bold text-gray-950">Document Preview</h2>
+                  <p className="mt-1 text-sm text-gray-600">{selectedDocument.title}</p>
                 </div>
-                <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="w-fit rounded-lg border border-teal-200 px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50">
-                  Open in new tab
-                </a>
+                <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="w-fit rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50">Open in new tab</a>
               </div>
-              <iframe title="Document preview" src={selectedDocument.fileUrl} className="mt-4 h-[640px] w-full rounded-xl border border-slate-200 bg-white" />
+              <iframe title="Document preview" src={selectedDocument.fileUrl} className="mt-4 h-[640px] w-full rounded-xl border border-gray-200 bg-white" />
             </section>
           )}
         </div>
@@ -379,21 +488,27 @@ export default function VerificationWorkspacePage() {
   );
 }
 
-function Metric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'rose' }) {
+function Metric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'rose' | 'green' | 'blue' | 'orange' }) {
   const toneClass = tone === 'amber'
-    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    ? 'border-amber-200 bg-amber-50 text-amber-900'
     : tone === 'rose'
-      ? 'border-rose-200 bg-rose-50 text-rose-800'
-      : 'border-teal-200 bg-teal-50 text-teal-800';
+      ? 'border-rose-200 bg-rose-50 text-rose-900'
+      : tone === 'green'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+        : tone === 'blue'
+          ? 'border-sky-200 bg-sky-50 text-sky-900'
+          : tone === 'orange'
+            ? 'border-orange-200 bg-orange-50 text-orange-900'
+            : 'border-teal-200 bg-teal-50 text-teal-900';
 
   return (
     <div className="pro-tile p-5">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold text-gray-950">{value}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
+        <span className={`rounded-lg border px-2.5 py-1 text-[10px] font-black ${toneClass}`}>{code}</span>
       </div>
     </div>
   );
@@ -404,9 +519,35 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-3 py-2 transition ${active ? 'border-teal-600 bg-teal-700 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+      className={`rounded-lg border px-3 py-2 transition ${active ? 'border-teal-600 bg-teal-700 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
     >
       {children}
     </button>
+  );
+}
+
+function HealthPill({ title, detail, tone }: { title: string; detail: string; tone: 'primary' | 'warning' | 'success' | 'slate' }) {
+  const toneClass = tone === 'warning'
+    ? 'border-amber-200 bg-amber-50 text-amber-950'
+    : tone === 'success'
+      ? 'border-teal-200 bg-teal-50 text-teal-950'
+      : tone === 'primary'
+        ? 'border-sky-200 bg-sky-50 text-sky-950'
+        : 'border-gray-200 bg-gray-50 text-gray-700';
+
+  return (
+    <div className={`mt-4 rounded-lg border p-3 ${toneClass}`}>
+      <p className="text-xs font-bold uppercase tracking-[0.12em] opacity-75">{title}</p>
+      <p className="mt-1 text-xs leading-5 opacity-85">{detail}</p>
+    </div>
+  );
+}
+
+function InfoTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-gray-950">{value}</p>
+    </div>
   );
 }
