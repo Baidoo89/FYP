@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DocumentCategory, RequestStatus } from '@prisma/client';
-import { prisma } from '../../../../lib/prisma';
+import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../lib/prisma';
 import { getAuthSession } from '../../../../lib/auth';
 import { createSecureFileName, MAX_PROMOTION_PDF_SIZE, saveMockPdfFile } from '../../../../lib/upload';
 import { documentUploadSchema } from '../../../../lib/validation/promotion-request.schema';
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
         request: requestRecord,
         document: documentRecord,
       };
-    });
+    }, WORKFLOW_TRANSACTION_OPTIONS);
 
     return NextResponse.json(
       {

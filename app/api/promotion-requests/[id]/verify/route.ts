@@ -1,6 +1,6 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { VerificationStatus } from '@prisma/client';
-import { prisma } from '../../../../../lib/prisma';
+import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../../lib/prisma';
 import { getAuthSession } from '../../../../../lib/auth';
 import { verificationSchema } from '../../../../../lib/validation/promotion-request.schema';
 import { verifyPromotionDocument, WorkflowError } from '../../../../../lib/promotion-workflow';
@@ -55,7 +55,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         documentId: parsed.data.documentId,
         verificationStatus: parsed.data.verificationStatus as VerificationStatus,
         comment: parsed.data.comment || null,
-      })
+      }),
+      WORKFLOW_TRANSACTION_OPTIONS
     );
 
     return NextResponse.json({

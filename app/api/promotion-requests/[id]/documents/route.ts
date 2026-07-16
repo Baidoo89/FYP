@@ -1,5 +1,5 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../../lib/prisma';
 import { getAuthSession } from '../../../../../lib/auth';
 import { createSecureFileName, MAX_PROMOTION_PDF_SIZE, saveMockPdfFile } from '../../../../../lib/upload';
 import { documentUploadSchema } from '../../../../../lib/validation/promotion-request.schema';
@@ -79,7 +79,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         mimeType: file.type,
         fileType: file.type,
         fileSize: file.size,
-      })
+      }),
+      WORKFLOW_TRANSACTION_OPTIONS
     );
 
     return NextResponse.json(

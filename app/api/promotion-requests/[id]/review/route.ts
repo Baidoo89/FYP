@@ -1,7 +1,7 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ReviewRecommendation } from '@prisma/client';
 import { getAuthSession } from '../../../../../lib/auth';
-import { prisma } from '../../../../../lib/prisma';
+import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../../lib/prisma';
 import {
   recordCommitteeReview,
   recordDepartmentReview,
@@ -68,7 +68,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
           requestId,
           decision: departmentDecision,
           comment,
-        })
+        }),
+        WORKFLOW_TRANSACTION_OPTIONS
       );
 
       return NextResponse.json({
@@ -84,7 +85,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         requestId,
         comment,
         recommendation,
-      })
+      }),
+      WORKFLOW_TRANSACTION_OPTIONS
     );
 
     return NextResponse.json({

@@ -1,7 +1,7 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { RequestStatus } from '@prisma/client';
 import { getAuthSession } from '../../../../../lib/auth';
-import { prisma } from '../../../../../lib/prisma';
+import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../../lib/prisma';
 import { transitionPromotionRequest, WorkflowError } from '../../../../../lib/promotion-workflow';
 import type { ApiResponse } from '../../../../../types';
 
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         newStatus,
         comment,
         action: 'promotion_request.status_changed',
-      })
+      }),
+      WORKFLOW_TRANSACTION_OPTIONS
     );
 
     return NextResponse.json({

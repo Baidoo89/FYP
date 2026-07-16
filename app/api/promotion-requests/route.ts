@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../lib/prisma';
 import { getAuthSession } from '../../../lib/auth';
 import { promotionRequestSchema } from '../../../lib/validation/promotion-request.schema';
 import { createPromotionRequestWithWorkflow, submitPromotionRequest, WorkflowError } from '../../../lib/promotion-workflow';
@@ -176,7 +176,8 @@ export async function POST(request: NextRequest) {
             name: session.name,
           },
           requestId,
-        })
+        }),
+        WORKFLOW_TRANSACTION_OPTIONS
       );
 
       return NextResponse.json({
@@ -222,7 +223,8 @@ export async function POST(request: NextRequest) {
         targetRank: parsed.data.targetRank,
         yearsInCurrentRank: parsed.data.yearsInCurrentRank || 0,
         adminComment: parsed.data.adminComment || null,
-      })
+      }),
+      WORKFLOW_TRANSACTION_OPTIONS
     );
 
     return NextResponse.json(
