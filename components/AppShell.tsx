@@ -231,14 +231,7 @@ export default function AppShell({ children }: AppShellProps) {
   }, [isAuthPage, pathname]);
 
   if (isAuthPage) {
-    return (
-      <div className="relative min-h-screen bg-slate-50 lpads-fade-in">
-        <div className="fixed right-4 top-4 z-50">
-          <ThemeToggle compact />
-        </div>
-        {children}
-      </div>
-    );
+    return <div className="relative min-h-screen bg-slate-50 lpads-fade-in">{children}</div>;
   }
 
   return (
