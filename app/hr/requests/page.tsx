@@ -2,20 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
+import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
+import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 
-type PromotionRequest = {
-  id: number;
-  lecturerName: string;
-  lecturerEmail: string;
-  department: string;
-  currentRank: string;
-  targetRank: string;
-  status: string;
+type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt: string | null;
   verifiedAt: string | null;
-  totalScore: number | null;
-  eligibilityStatus: string;
-  eligibilityReason?: string | null;
   documentCount: number;
   verifiedDocumentCount?: number;
   requiredDocumentCount?: number;
@@ -62,10 +54,26 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat('en-GH', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
 }
 
+function documentCounts(request?: PromotionRequest | null) {
+  const documents = request?.documents || [];
+  return {
+    total: documents.length,
+    pending: documents.filter((document) => !document.verificationStatus || document.verificationStatus === 'PENDING').length,
+    verified: documents.filter((document) => document.verificationStatus === 'VERIFIED').length,
+    returned: documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length,
+  };
+}
+
 function segmentMatches(request: PromotionRequest, segment: QueueSegment) {
+  const counts = documentCounts(request);
+
   if (segment === 'all') return true;
-  if (segment === 'hr-work') return ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW', 'UNDER_HR_VERIFICATION', 'REQUIRES_FURTHER_REVIEW'].includes(request.status);
-  if (segment === 'returned') return request.status === 'RETURNED_FOR_CORRECTION' || request.eligibilityStatus === 'INCOMPLETE_APPLICATION';
+  if (segment === 'hr-work') {
+    return ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW', 'UNDER_HR_VERIFICATION', 'REQUIRES_FURTHER_REVIEW'].includes(request.status) || counts.pending > 0;
+  }
+  if (segment === 'returned') {
+    return request.status === 'RETURNED_FOR_CORRECTION' || request.eligibilityStatus === 'INCOMPLETE_APPLICATION' || counts.returned > 0;
+  }
   if (segment === 'committee') return request.status === 'UNDER_COMMITTEE_REVIEW';
   if (segment === 'final') return ['RECOMMENDED', 'NOT_RECOMMENDED', 'APPROVED_BY_AUTHORITY'].includes(request.status);
   if (segment === 'completed') return ['COMPLETED', 'REJECTED', 'APPROVED'].includes(request.status);
@@ -73,12 +81,14 @@ function segmentMatches(request: PromotionRequest, segment: QueueSegment) {
 }
 
 function workflowHealth(request: PromotionRequest) {
-  if (request.status === 'RETURNED_FOR_CORRECTION') {
+  const counts = documentCounts(request);
+
+  if (request.status === 'RETURNED_FOR_CORRECTION' || counts.returned > 0) {
     return { title: 'Applicant action needed', detail: 'Returned evidence or application details must be corrected before HR can continue.', tone: 'warning' as const };
   }
 
-  if (request.status === 'UNDER_HR_VERIFICATION') {
-    return { title: 'Verify evidence', detail: 'Open the verification workspace and complete document checks before committee routing.', tone: 'primary' as const };
+  if (request.status === 'UNDER_HR_VERIFICATION' || counts.pending > 0) {
+    return { title: 'Verify evidence', detail: `${counts.pending} pending document(s) require an HR verification decision.`, tone: 'primary' as const };
   }
 
   if (request.status === 'UNDER_COMMITTEE_REVIEW') {
@@ -106,15 +116,16 @@ function workflowHealth(request: PromotionRequest) {
 
 export default function MasterQueuePage() {
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [segment, setSegment] = useState<QueueSegment>('all');
+  const [segment, setSegment] = useState<QueueSegment>('hr-work');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const loadRequests = async () => {
+  const loadRequests = async (preferredId?: number | null) => {
     setLoading(true);
     setError('');
 
@@ -126,7 +137,17 @@ export default function MasterQueuePage() {
         throw new Error(payload.error || 'Failed to load requests');
       }
 
-      setRequests(payload.data || []);
+      const allRequests = (payload.data || []) as PromotionRequest[];
+      setRequests(allRequests);
+
+      const next = allRequests.find((request) => request.id === preferredId)
+        || allRequests.find((request) => request.status === 'UNDER_HR_VERIFICATION')
+        || allRequests.find((request) => request.status === 'RECOMMENDED')
+        || allRequests.find((request) => segmentMatches(request, 'hr-work'))
+        || allRequests[0]
+        || null;
+
+      setSelectedId(next?.id || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load requests');
     } finally {
@@ -145,8 +166,8 @@ export default function MasterQueuePage() {
       filtered = filtered.filter((request) => request.status === statusFilter);
     }
 
-    if (searchTerm) {
-      const query = searchTerm.toLowerCase();
+    if (searchTerm.trim()) {
+      const query = searchTerm.trim().toLowerCase();
       filtered = filtered.filter(
         (request) =>
           request.lecturerName.toLowerCase().includes(query) ||
@@ -158,6 +179,11 @@ export default function MasterQueuePage() {
 
     return filtered;
   }, [requests, searchTerm, statusFilter, segment]);
+
+  const selectedRequest = filteredRequests.find((request) => request.id === selectedId)
+    || requests.find((request) => request.id === selectedId)
+    || filteredRequests[0]
+    || null;
 
   async function updateStatus(requestId: number, status: string, comment: string) {
     setUpdatingId(requestId);
@@ -175,7 +201,7 @@ export default function MasterQueuePage() {
         throw new Error(payload.error || 'Failed to update status');
       }
       setMessage(`${applicationCode(requestId)} updated to ${formatLabel(status)}.`);
-      await loadRequests();
+      await loadRequests(requestId);
     } catch (statusError) {
       setError(statusError instanceof Error ? statusError.message : 'Failed to update status');
     } finally {
@@ -183,9 +209,8 @@ export default function MasterQueuePage() {
     }
   }
 
-  if (loading) {
-    return <div className="pro-card p-6 text-sm text-gray-600">Loading master queue...</div>;
-  }
+  if (loading && requests.length === 0) return <LoadingState label="Loading HR master queue..." />;
+  if (error && requests.length === 0) return <ErrorState message={error} />;
 
   const hrWorkCount = requests.filter((request) => segmentMatches(request, 'hr-work')).length;
   const committeeCount = requests.filter((request) => request.status === 'UNDER_COMMITTEE_REVIEW').length;
@@ -201,11 +226,11 @@ export default function MasterQueuePage() {
             <div className="pro-eyebrow">Queue Management</div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">HR Master Queue</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Control verification, committee routing, authority approval, and final administrative close-out from one professional queue.
+              Control verification, committee routing, authority approval, and final administrative close-out from one shared application workspace.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/hr/verify" className="inline-flex w-fit rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">
+            <a href="/hr/verify" className="inline-flex w-fit rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-950">
               Verification workspace
             </a>
             <a href="/analytics" className="inline-flex w-fit rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">
@@ -219,11 +244,11 @@ export default function MasterQueuePage() {
         <QueueMetric code="ALL" label="All requests" value={requests.length} />
         <QueueMetric code="HR" label="Active HR work" value={hrWorkCount} tone="amber" />
         <QueueMetric code="RET" label="Returned" value={returnedCount} tone="rose" />
-        <QueueMetric code="FIN" label="Final decisions" value={finalCount} tone="teal" />
+        <QueueMetric code="FIN" label="Final decisions" value={finalCount} tone="blue" />
         <QueueMetric code="DONE" label="Completed" value={completedCount} tone="slate" />
       </section>
 
-      {message && <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-semibold text-teal-800">{message}</div>}
+      {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{message}</div>}
       {error && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
 
       <section className="pro-card p-4 sm:p-5">
@@ -249,7 +274,7 @@ export default function MasterQueuePage() {
               ))}
             </select>
           </label>
-          <div>
+          <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Queue segment</span>
             <select value={segment} onChange={(event) => setSegment(event.target.value as QueueSegment)} className="brand-input">
               <option value="all">All work</option>
@@ -259,7 +284,7 @@ export default function MasterQueuePage() {
               <option value="final">Final decisions</option>
               <option value="completed">Completed</option>
             </select>
-          </div>
+          </label>
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
             Showing {filteredRequests.length} of {requests.length}
           </div>
@@ -269,94 +294,117 @@ export default function MasterQueuePage() {
       <section className="grid gap-4 md:grid-cols-3">
         <DecisionCard title="Verification Discipline" detail="Use the verification workspace for evidence decisions. HR routing should happen only after required evidence is clear." code="01" />
         <DecisionCard title="Committee Boundary" detail={`${committeeCount} application(s) are with committee. Wait for formal recommendation before final administrative action.`} code="02" />
-        <DecisionCard title="Final Authority" detail={`${finalCount} application(s) are ready for authority approval or close-out. Use the final controls with a clear audit note.`} code="03" />
+        <DecisionCard title="Final Authority" detail={`${finalCount} application(s) are ready for authority approval or close-out. Use final controls with a clear audit note.`} code="03" />
       </section>
 
-      <section className="pro-card overflow-hidden">
-        <div className="flex flex-col justify-between gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-end">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-950">Promotion Requests</h2>
-            <p className="mt-1 text-sm text-gray-600">Use final actions only after committee recommendation or authority approval has been recorded.</p>
+      <section className="grid gap-6 xl:grid-cols-[0.82fr_1.68fr]">
+        <aside className="pro-card overflow-hidden">
+          <div className="border-b border-gray-200 p-5">
+            <h2 className="text-lg font-bold text-gray-950">Promotion Queue</h2>
+            <p className="mt-1 text-sm text-gray-600">Select an application to inspect details, evidence, history, and HR actions.</p>
           </div>
-          <span className="w-fit rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
-            {filteredRequests.length} records
-          </span>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-[1120px] w-full text-sm">
-            <thead className="brand-table-head text-left text-xs uppercase tracking-[0.14em] text-gray-500">
-              <tr>
-                <th className="px-5 py-3">Application</th>
-                <th className="px-5 py-3">Lecturer</th>
-                <th className="px-5 py-3">Promotion</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Eligibility</th>
-                <th className="px-5 py-3">Evidence</th>
-                <th className="px-5 py-3">HR Guidance</th>
-                <th className="px-5 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-gray-600">
-                    No requests found for the current filters.
-                  </td>
-                </tr>
-              ) : (
-                filteredRequests.map((request) => {
-                  const health = workflowHealth(request);
-                  return (
-                    <tr key={request.id} className="border-t border-gray-100 align-top hover:bg-gray-50">
-                      <td className="px-5 py-4">
-                        <div className="font-bold text-gray-950">{applicationCode(request.id)}</div>
-                        <div className="mt-1 text-xs text-gray-500">Submitted {formatDate(request.submittedAt)}</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="font-semibold text-gray-950">{request.lecturerName}</div>
-                        <div className="text-xs text-gray-500">{request.lecturerEmail}</div>
-                        <div className="mt-1 text-xs font-medium text-gray-600">{request.department}</div>
-                      </td>
-                      <td className="px-5 py-4 font-medium text-gray-700">{formatLabel(request.currentRank)} to {formatLabel(request.targetRank)}</td>
-                      <td className="px-5 py-4"><StatusBadge status={request.status} /></td>
-                      <td className="px-5 py-4">
-                        <StatusBadge status={request.eligibilityStatus} />
-                        {request.eligibilityReason && <p className="mt-2 max-w-xs text-xs leading-5 text-gray-500">{request.eligibilityReason}</p>}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="font-bold text-gray-950">{request.verifiedDocumentCount ?? 0}/{request.documentCount}</div>
-                        <div className="mt-1 text-xs text-gray-500">verified documents</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <HealthPill title={health.title} detail={health.detail} tone={health.tone} />
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-2">
-                          <a href={`/hr/verify?requestId=${request.id}`} className="w-fit rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-teal-700 shadow-sm hover:bg-teal-50">Open review</a>
-                          <WorkflowActions request={request} updating={updatingId === request.id} onUpdate={updateStatus} />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+          {filteredRequests.length === 0 ? (
+            <div className="p-5">
+              <EmptyState title="No matching requests" description="Adjust the segment, status, or search term to view promotion files." />
+            </div>
+          ) : (
+            <div className="max-h-[76rem] divide-y divide-gray-100 overflow-y-auto">
+              {filteredRequests.map((request) => {
+                const health = workflowHealth(request);
+                const counts = documentCounts(request);
+                const isSelected = selectedRequest?.id === request.id;
+
+                return (
+                  <button
+                    key={request.id}
+                    type="button"
+                    onClick={() => setSelectedId(request.id)}
+                    className={`block w-full p-5 text-left transition hover:bg-gray-50 ${isSelected ? 'bg-blue-50/70' : ''}`}
+                  >
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start xl:flex-col 2xl:flex-row">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{applicationCode(request.id)}</p>
+                        <p className="mt-2 truncate font-semibold text-gray-950">{request.lecturerName}</p>
+                        <p className="mt-1 truncate text-sm text-gray-600">{request.department}</p>
+                        <p className="mt-1 text-xs text-gray-500">Submitted {formatDate(request.submittedAt)}</p>
+                      </div>
+                      <StatusBadge status={request.status} />
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold text-gray-600">
+                      <span className="rounded-lg bg-gray-100 px-2 py-1">Docs {counts.total}</span>
+                      <span className="rounded-lg bg-emerald-50 px-2 py-1 text-emerald-800">Verified {counts.verified}</span>
+                      <span className="rounded-lg bg-amber-50 px-2 py-1 text-amber-900">Pending {counts.pending}</span>
+                    </div>
+                    <HealthPill title={health.title} detail={health.detail} tone={health.tone} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </aside>
+
+        {!selectedRequest ? (
+          <div className="pro-card p-6">
+            <EmptyState title="Select an application" description="Choose a promotion file from the queue to open the shared application detail workspace." />
+          </div>
+        ) : (
+          <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN">
+            <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
+              <div>
+                <h3 className="text-lg font-bold text-gray-950">HR Administrative Actions</h3>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  Use document verification for evidence decisions. Use final workflow controls only when committee or authority outcomes are ready to record.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a href={`/hr/verify?requestId=${selectedRequest.id}`} className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-950">
+                    Open verification workspace
+                  </a>
+                  <a href="/hr/logs" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                    View audit activity
+                  </a>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Current HR guidance</p>
+                <HealthPill {...workflowHealth(selectedRequest)} />
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold text-gray-600">
+                  <InfoTile label="Required" value={selectedRequest.requiredDocumentCount || 3} />
+                  <InfoTile label="Verified" value={selectedRequest.verifiedDocumentCount || 0} />
+                  <InfoTile label="Uploaded" value={selectedRequest.documentCount || 0} />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                <div>
+                  <p className="text-sm font-bold text-gray-950">Final Workflow Controls</p>
+                  <p className="mt-1 text-xs leading-5 text-gray-500">Actions are permission-checked by the server and recorded in audit logs, status history, and notifications.</p>
+                </div>
+                <StatusBadge status={selectedRequest.status} />
+              </div>
+              <div className="mt-4">
+                <WorkflowActions request={selectedRequest} updating={updatingId === selectedRequest.id} onUpdate={updateStatus} />
+              </div>
+            </div>
+          </PromotionApplicationDetail>
+        )}
       </section>
     </div>
   );
 }
 
-function QueueMetric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'slate' | 'rose' }) {
+function QueueMetric({ code, label, value, tone = 'blue' }: { code: string; label: string; value: number; tone?: 'blue' | 'amber' | 'slate' | 'rose' }) {
   const toneClass = tone === 'amber'
     ? 'border-amber-200 bg-amber-50 text-amber-800'
     : tone === 'slate'
       ? 'border-gray-200 bg-gray-100 text-gray-700'
       : tone === 'rose'
         ? 'border-rose-200 bg-rose-50 text-rose-800'
-        : 'border-teal-200 bg-teal-50 text-teal-800';
+        : 'border-blue-200 bg-blue-50 text-blue-800';
 
   return (
     <div className="pro-tile p-5">
@@ -389,7 +437,7 @@ function HealthPill({ title, detail, tone }: { title: string; detail: string; to
   const toneClass = tone === 'warning'
     ? 'border-amber-200 bg-amber-50 text-amber-950'
     : tone === 'success'
-      ? 'border-teal-200 bg-teal-50 text-teal-950'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
       : tone === 'primary'
         ? 'border-sky-200 bg-sky-50 text-sky-950'
         : 'border-gray-200 bg-gray-50 text-gray-700';
@@ -398,6 +446,15 @@ function HealthPill({ title, detail, tone }: { title: string; detail: string; to
     <div className={`rounded-lg border p-3 ${toneClass}`}>
       <p className="text-xs font-bold uppercase tracking-[0.12em] opacity-75">{title}</p>
       <p className="mt-1 text-xs leading-5 opacity-85">{detail}</p>
+    </div>
+  );
+}
+
+function InfoTile({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">{label}</p>
+      <p className="mt-1 text-base font-bold text-gray-950">{value}</p>
     </div>
   );
 }
@@ -414,11 +471,11 @@ function WorkflowActions({
   const actions = getWorkflowActions(request);
 
   if (actions.length === 0) {
-    return <span className="text-xs font-medium text-gray-500">No direct HR action</span>;
+    return <span className="text-xs font-medium text-gray-500">No direct HR final action is currently available for this application.</span>;
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 md:grid-cols-2">
       {actions.map((action) => (
         <button
           key={action.status}
@@ -428,10 +485,10 @@ function WorkflowActions({
             if (action.confirm && !window.confirm(action.confirm)) return;
             onUpdate(request.id, action.status, action.comment);
           }}
-          className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${actionClass(action.variant)}`}
+          className={`rounded-lg border px-3 py-3 text-left text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${actionClass(action.variant)}`}
         >
           <span className="block">{updating ? 'Updating...' : action.label}</span>
-          <span className="mt-1 block font-normal opacity-75">{action.description}</span>
+          <span className="mt-1 block font-normal leading-5 opacity-75">{action.description}</span>
         </button>
       ))}
     </div>
@@ -462,7 +519,7 @@ function getWorkflowActions(request: PromotionRequest): WorkflowAction[] {
     });
   }
 
-  if (request.status === 'UNDER_HR_VERIFICATION' && !['INCOMPLETE_APPLICATION', 'NOT_CALCULATED'].includes(request.eligibilityStatus)) {
+  if (request.status === 'UNDER_HR_VERIFICATION' && request.eligibilityStatus === 'ELIGIBLE') {
     actions.push({
       status: 'UNDER_COMMITTEE_REVIEW',
       label: 'Send to committee',
@@ -528,7 +585,7 @@ function getWorkflowActions(request: PromotionRequest): WorkflowAction[] {
 }
 
 function actionClass(variant: WorkflowAction['variant']) {
-  if (variant === 'success') return 'border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100';
+  if (variant === 'success') return 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100';
   if (variant === 'warning') return 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100';
   if (variant === 'slate') return 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50';
   return 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100';
