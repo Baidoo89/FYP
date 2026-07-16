@@ -149,7 +149,7 @@ export default function HrCommandCenterPage() {
                     <td className="px-4 py-4"><StatusBadge status={request.status} /></td>
                     <td className="px-4 py-4 text-slate-700">{request.documentCount} docs</td>
                     <td className="px-4 py-4">
-                      <a href={`/hr/verify?requestId=${request.id}`} className="font-semibold text-teal-700 hover:text-teal-900">Review</a>
+                      <a href={`/hr/requests?request=${request.id}`} className="font-semibold text-teal-700 hover:text-teal-900">Open</a>
                     </td>
                   </tr>
                 ))

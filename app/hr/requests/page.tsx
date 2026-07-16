@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
-import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt: string | null;
@@ -80,6 +80,18 @@ function segmentMatches(request: PromotionRequest, segment: QueueSegment) {
   return true;
 }
 
+function segmentForRequest(request: PromotionRequest): QueueSegment {
+  if (segmentMatches(request, 'hr-work')) return 'hr-work';
+  if (segmentMatches(request, 'returned')) return 'returned';
+  if (segmentMatches(request, 'committee')) return 'committee';
+  if (segmentMatches(request, 'final')) return 'final';
+  if (segmentMatches(request, 'completed')) return 'completed';
+  return 'all';
+}
+
+function latestCommitteeRecommendation(request: PromotionRequest) {
+  return (request.reviewComments || []).find((comment) => Boolean(comment.recommendation))?.recommendation || null;
+}
 function workflowHealth(request: PromotionRequest) {
   const counts = documentCounts(request);
 
@@ -140,13 +152,18 @@ export default function MasterQueuePage() {
       const allRequests = (payload.data || []) as PromotionRequest[];
       setRequests(allRequests);
 
-      const next = allRequests.find((request) => request.id === preferredId)
+      const preferred = allRequests.find((request) => request.id === preferredId) || null;
+      const next = preferred
         || allRequests.find((request) => request.status === 'UNDER_HR_VERIFICATION')
         || allRequests.find((request) => request.status === 'RECOMMENDED')
         || allRequests.find((request) => segmentMatches(request, 'hr-work'))
         || allRequests[0]
         || null;
 
+      if (preferred) {
+        setSegment(segmentForRequest(preferred));
+        setStatusFilter('');
+      }
       setSelectedId(next?.id || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load requests');
@@ -156,7 +173,11 @@ export default function MasterQueuePage() {
   };
 
   useEffect(() => {
-    loadRequests();
+    const requestId = typeof window === 'undefined'
+      ? null
+      : Number(new URLSearchParams(window.location.search).get('request') || new URLSearchParams(window.location.search).get('requestId'));
+
+    loadRequests(Number.isInteger(requestId) && requestId > 0 ? requestId : null);
   }, []);
 
   const filteredRequests = useMemo(() => {
@@ -230,7 +251,7 @@ export default function MasterQueuePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/hr/verify" className="inline-flex w-fit rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-950">
+            <a href="/hr/verify" className="inline-flex w-fit rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-900">
               Verification workspace
             </a>
             <a href="/analytics" className="inline-flex w-fit rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">
@@ -244,7 +265,7 @@ export default function MasterQueuePage() {
         <QueueMetric code="ALL" label="All requests" value={requests.length} />
         <QueueMetric code="HR" label="Active HR work" value={hrWorkCount} tone="amber" />
         <QueueMetric code="RET" label="Returned" value={returnedCount} tone="rose" />
-        <QueueMetric code="FIN" label="Final decisions" value={finalCount} tone="blue" />
+        <QueueMetric code="FIN" label="Final decisions" value={finalCount} tone="teal" />
         <QueueMetric code="DONE" label="Completed" value={completedCount} tone="slate" />
       </section>
 
@@ -320,7 +341,7 @@ export default function MasterQueuePage() {
                     key={request.id}
                     type="button"
                     onClick={() => setSelectedId(request.id)}
-                    className={`block w-full p-5 text-left transition hover:bg-gray-50 ${isSelected ? 'bg-blue-50/70' : ''}`}
+                    className={`block w-full p-5 text-left transition hover:bg-gray-50 ${isSelected ? 'bg-teal-50/70' : ''}`}
                   >
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start xl:flex-col 2xl:flex-row">
                       <div className="min-w-0">
@@ -358,7 +379,7 @@ export default function MasterQueuePage() {
                   Use document verification for evidence decisions. Use final workflow controls only when committee or authority outcomes are ready to record.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <a href={`/hr/verify?requestId=${selectedRequest.id}`} className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-950">
+                  <a href={`/hr/verify?requestId=${selectedRequest.id}`} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-900">
                     Open verification workspace
                   </a>
                   <a href="/hr/logs" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
@@ -377,6 +398,8 @@ export default function MasterQueuePage() {
                 </div>
               </div>
             </div>
+
+            <FinalizationBrief request={selectedRequest} />
 
             <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -397,14 +420,55 @@ export default function MasterQueuePage() {
   );
 }
 
-function QueueMetric({ code, label, value, tone = 'blue' }: { code: string; label: string; value: number; tone?: 'blue' | 'amber' | 'slate' | 'rose' }) {
+function FinalizationBrief({ request }: { request: PromotionRequest }) {
+  const recommendation = latestCommitteeRecommendation(request);
+  const finalStage = ['RECOMMENDED', 'NOT_RECOMMENDED', 'APPROVED_BY_AUTHORITY', 'COMPLETED', 'APPROVED'].includes(request.status);
+  const completed = request.status === 'COMPLETED';
+  const title = completed
+    ? 'Administrative record completed'
+    : finalStage
+      ? 'Final administrative close-out'
+      : 'Finalization readiness';
+  const detail = completed
+    ? 'This promotion file has been completed. Keep reports, audit trail, and application summary ready for institutional records.'
+    : finalStage
+      ? 'Committee or authority outcome is available. Confirm documentation, record the final status, and generate the required administrative reports.'
+      : 'This file is not yet in the final administrative stage. HR can still prepare reports and monitor audit activity.';
+
+  return (
+    <div className={`mt-4 rounded-lg border p-4 ${finalStage ? 'border-emerald-200 bg-emerald-50/70' : 'border-gray-200 bg-gray-50'}`}>
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+        <div>
+          <p className={`text-xs font-bold uppercase tracking-[0.14em] ${finalStage ? 'text-emerald-800' : 'text-gray-500'}`}>Final administration</p>
+          <h3 className="mt-2 text-lg font-bold text-gray-950">{title}</h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-700">{detail}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <StatusBadge status={request.status} />
+            {recommendation && <StatusBadge status={recommendation} label={`Committee: ${formatLabel(recommendation)}`} />}
+            {request.eligibilityStatus && <StatusBadge status={request.eligibilityStatus} label={`Eligibility: ${formatLabel(request.eligibilityStatus)}`} />}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 lg:justify-end">
+          <PrintSummaryButton label="Print Summary" />
+          <a href="/api/reports/export?type=analytics&format=pdf" className="rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm font-semibold text-teal-800 shadow-sm hover:bg-teal-50">
+            Export PDF
+          </a>
+          <a href="/api/reports/export?type=analytics&format=csv" className="rounded-lg bg-teal-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-900">
+            Export CSV
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+function QueueMetric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'slate' | 'rose' }) {
   const toneClass = tone === 'amber'
     ? 'border-amber-200 bg-amber-50 text-amber-800'
     : tone === 'slate'
       ? 'border-gray-200 bg-gray-100 text-gray-700'
       : tone === 'rose'
         ? 'border-rose-200 bg-rose-50 text-rose-800'
-        : 'border-blue-200 bg-blue-50 text-blue-800';
+        : 'border-teal-200 bg-teal-50 text-teal-800';
 
   return (
     <div className="pro-tile p-5">
