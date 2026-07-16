@@ -1,36 +1,36 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { registerSchema } from '../../lib/validation/auth.schema';
-import GctuBrandMark from '../GctuBrandMark';
 
 export function RegisterForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [verificationUrl, setVerificationUrl] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // Validate with Zod
       const validation = registerSchema.safeParse(formData);
       if (!validation.success) {
         setError(validation.error.issues[0]?.message || 'Validation failed');
@@ -65,100 +65,118 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg shadow-slate-200/70 border border-slate-200">
-      <GctuBrandMark
-        align="center"
-        size="lg"
-        title="GCTU Staff Sign Up"
-        subtitle="Create your official staff promotion account using your university email address."
-        className="mb-6"
-      />
+    <div>
+      <div className="mb-7">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Official GCTU staff registration</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Create your promotion system account</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Register with your official GCTU staff email. You will verify your email before completing your profile and submitting a promotion request.
+        </p>
+      </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
+        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
           {error}
         </div>
       )}
 
       {verificationUrl && (
-        <div className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Development verification link:{' '}
           <button
             type="button"
             onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-            className="font-semibold text-teal-700 underline"
+            className="font-semibold text-emerald-800 underline"
           >
             verify account
           </button>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Official Email
+          <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-800">
+            Official GCTU staff email
           </label>
           <input
+            id="email"
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="john.smith@gctu.edu.gh"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            placeholder="name@live.gctu.edu.gh"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10"
             required
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Use your official @gctu.edu.gh or @artlive.gctu.edu.gh email
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Signup currently accepts official staff addresses ending in @live.gctu.edu.gh.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-800">
             Password
           </label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder=""
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-            required
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Minimum 8 characters
-          </p>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 pr-16 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute inset-y-1 right-1 rounded-md px-3 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-500">Use at least 8 characters.</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Confirm Password
+          <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-slate-800">
+            Confirm password
           </label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder=""
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-            required
-          />
+          <div className="relative">
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 pr-16 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((current) => !current)}
+              className="absolute inset-y-1 right-1 rounded-md px-3 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+            >
+              {showConfirmPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2 px-4 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors"
+          className="w-full rounded-lg bg-emerald-800 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-800/15 transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? 'Creating Account...' : 'Create Account'}
+          {loading ? 'Creating account...' : 'Create GCTU account'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-600 mt-6">
-        Already have an account?{' '}
+      <p className="mt-6 text-center text-sm text-slate-600">
+        Already registered?{' '}
         <button
+          type="button"
           onClick={() => router.push('/login')}
-          className="text-teal-700 hover:text-teal-700 font-medium"
+          className="font-semibold text-emerald-800 hover:text-emerald-900"
         >
           Sign in
         </button>
@@ -166,5 +184,3 @@ export function RegisterForm() {
     </div>
   );
 }
-
-

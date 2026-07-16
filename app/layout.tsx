@@ -27,8 +27,8 @@ export default function RootLayout({
             `,
           }}
         />
-        <title>GCTU Promotion System</title>
-        <meta name="description" content="Promotion analysis and decision support system" />
+        <title>GCTU Digital Staff Promotion Support System</title>
+        <meta name="description" content="Official GCTU digital staff promotion request, evidence verification, and decision support system." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>
           {`

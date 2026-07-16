@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 type GctuBrandMarkProps = {
   align?: 'left' | 'center';
@@ -11,9 +11,9 @@ type GctuBrandMarkProps = {
 };
 
 const logoSize = {
-  sm: 'h-10 w-10 rounded-lg',
-  md: 'h-12 w-12 rounded-xl',
-  lg: 'h-16 w-16 rounded-2xl',
+  sm: 'h-11 w-11 rounded-lg',
+  md: 'h-14 w-14 rounded-xl',
+  lg: 'h-20 w-20 rounded-2xl',
 };
 
 const titleSize = {
@@ -53,4 +53,3 @@ export default function GctuBrandMark({
     </div>
   );
 }
-
