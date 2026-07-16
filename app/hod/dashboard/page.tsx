@@ -1,20 +1,62 @@
-import { RequestStatus } from '@prisma/client';
+import { RequestStatus, type Prisma } from '@prisma/client';
+import { cookies } from 'next/headers';
 import { RoleDashboard } from '../../../components/RoleDashboard';
 import { prisma } from '../../../lib/prisma';
+import { SESSION_COOKIE_NAME, verifySessionToken } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+async function getDepartmentScopeWhere(): Promise<Prisma.PromotionRequestWhereInput> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const session = verifySessionToken(sessionToken);
+
+  if (session?.role !== 'HOD_DEAN') {
+    return {};
+  }
+
+  const reviewer = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: {
+      department: true,
+      departmentId: true,
+      facultyId: true,
+    },
+  });
+
+  const lecturerFilters: Prisma.UserWhereInput[] = [];
+
+  if (reviewer?.facultyId) {
+    lecturerFilters.push({ facultyId: reviewer.facultyId });
+  }
+
+  if (reviewer?.departmentId) {
+    lecturerFilters.push({ departmentId: reviewer.departmentId });
+  }
+
+  if (reviewer?.department || session.department) {
+    lecturerFilters.push({ department: reviewer?.department || session.department });
+  }
+
+  return lecturerFilters.length > 0
+    ? { lecturer: { OR: lecturerFilters } }
+    : { lecturerId: -1 };
+}
+
 export default async function HodDashboardPage() {
+  const scopeWhere = await getDepartmentScopeWhere();
+  const withStatus = (status: RequestStatus): Prisma.PromotionRequestWhereInput => ({ ...scopeWhere, status });
+
   const [
     departmentApplications,
     pendingDepartmentReview,
     forwardedApplications,
     returnedForCorrection,
   ] = await Promise.all([
-    prisma.promotionRequest.count(),
-    prisma.promotionRequest.count({ where: { status: RequestStatus.UNDER_DEPARTMENT_REVIEW } }),
-    prisma.promotionRequest.count({ where: { status: RequestStatus.UNDER_HR_VERIFICATION } }),
-    prisma.promotionRequest.count({ where: { status: RequestStatus.RETURNED_FOR_CORRECTION } }),
+    prisma.promotionRequest.count({ where: scopeWhere }),
+    prisma.promotionRequest.count({ where: withStatus(RequestStatus.UNDER_DEPARTMENT_REVIEW) }),
+    prisma.promotionRequest.count({ where: withStatus(RequestStatus.UNDER_HR_VERIFICATION) }),
+    prisma.promotionRequest.count({ where: withStatus(RequestStatus.RETURNED_FOR_CORRECTION) }),
   ]);
 
   return (

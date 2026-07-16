@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { getAuthSession } from '../../../lib/auth';
 import { promotionRequestSchema } from '../../../lib/validation/promotion-request.schema';
@@ -58,11 +58,42 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
-  const where = scope === 'lecturer'
-    ? { lecturerId: session.userId }
-    : statusFilter
-      ? { status: statusFilter as any }
-      : {};
+  let where: any;
+
+  if (scope === 'lecturer') {
+    where = { lecturerId: session.userId };
+  } else {
+    where = statusFilter ? { status: statusFilter as any } : {};
+
+    if (session.role === 'HOD_DEAN') {
+      const reviewer = await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: {
+          department: true,
+          departmentId: true,
+          facultyId: true,
+        },
+      });
+
+      const lecturerFilters: any[] = [];
+
+      if (reviewer?.facultyId) {
+        lecturerFilters.push({ facultyId: reviewer.facultyId });
+      }
+
+      if (reviewer?.departmentId) {
+        lecturerFilters.push({ departmentId: reviewer.departmentId });
+      }
+
+      if (reviewer?.department || session.department) {
+        lecturerFilters.push({ department: reviewer?.department || session.department });
+      }
+
+      where.lecturer = lecturerFilters.length > 0
+        ? { OR: lecturerFilters }
+        : { id: -1 };
+    }
+  }
 
   const promotionRequests = await prisma.promotionRequest.findMany({
     where,
