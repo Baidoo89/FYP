@@ -24,13 +24,12 @@ type NavItem = {
 const PORTAL_ROLE_STORAGE_KEY = 'gctu-portal-role';
 
 const baseNavItems: NavItem[] = [
-  { href: '/dashboard', icon: 'DB', label: 'Dashboard' },
-  { href: '/lecturers', icon: 'LC', label: 'Lecturers' },
-  { href: '/appraisals', icon: 'AP', label: 'Appraisals' },
-  { href: '/analytics', icon: 'AN', label: 'Analytics' },
-  { href: '/audit', icon: 'AU', label: 'Audit Logs' },
-  { href: '/promotions', icon: 'PR', label: 'Promotions' },
-  { href: '/notifications', icon: 'NT', label: 'Notifications' },
+  { href: '/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Role overview' },
+  { href: '/promotions', icon: 'PR', label: 'Promotion Requests', subtitle: 'Workflow queue' },
+  { href: '/lecturers', icon: 'SR', label: 'Staff Records', subtitle: 'Academic profiles' },
+  { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Promotion analytics' },
+  { href: '/audit', icon: 'AU', label: 'Audit Logs', subtitle: 'System activity' },
+  { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
 ];
 
 function isAuthRole(value: string | null): value is AuthRole {
@@ -87,7 +86,7 @@ export default function AppShell({ children }: AppShellProps) {
           ? 'Committee Portal'
           : isHodNav
             ? 'HOD / Dean Portal'
-            : 'Admin Console';
+            : 'GCTU Promotion System';
   const portalSubtitle = isLecturerNav
     ? 'Promotion workspace'
     : isHrNav
@@ -98,20 +97,20 @@ export default function AppShell({ children }: AppShellProps) {
           ? 'Committee review workspace'
           : isHodNav
             ? 'Department review workspace'
-            : 'Promotion administration';
+            : 'University promotion workspace';
 
   const navItems: NavItem[] = isLecturerNav
     ? [
         { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview' },
         { href: '/lecturer-portal/application', icon: 'PR', label: 'Promotion Requests', subtitle: 'Track application' },
         { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence Portfolio', subtitle: 'Documents' },
-        { href: '/lecturer-portal/application', icon: 'AP', label: 'My Applications', subtitle: 'Status history' },
+        { href: '/lecturer-portal/applications', icon: 'AP', label: 'My Applications', subtitle: 'Status history' },
         { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback & Remarks', subtitle: 'HR comments' },
-        { href: '/lecturer-portal/application', icon: 'EL', label: 'Eligibility Status', subtitle: 'Criteria outcome' },
+        { href: '/lecturer-portal/eligibility', icon: 'EL', label: 'Eligibility Status', subtitle: 'Criteria outcome' },
         { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
         { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Academic record' },
-        { href: '/lecturer-portal/profile', icon: 'HC', label: 'Help Center', subtitle: 'Support' },
-        { href: '/lecturer-portal/profile', icon: 'SE', label: 'Settings', subtitle: 'Account' },
+        { href: '/lecturer-portal/help', icon: 'HC', label: 'Help Center', subtitle: 'Support' },
+        { href: '/lecturer-portal/settings', icon: 'SE', label: 'Settings', subtitle: 'Account' },
       ]
     : isHrNav
       ? [

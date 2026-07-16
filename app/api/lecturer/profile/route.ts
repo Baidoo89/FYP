@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         email: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
         name: true,
         role: true,
         currentRank: true,
@@ -41,6 +43,8 @@ export async function GET(request: NextRequest) {
         data: {
           profile: {
             email: user.email,
+            emailVerified: user.emailVerified,
+            emailVerifiedAt: user.emailVerifiedAt,
             name: user.name,
             role: user.role,
             currentRank: user.currentRank,
