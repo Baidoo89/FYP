@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
     data: {
       notifications,
       summary,
+      viewerRole: session.role,
       filters: {
         readState: readState || (unreadOnly ? 'unread' : 'all'),
         type: type || 'ALL',

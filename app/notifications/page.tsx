@@ -7,6 +7,7 @@ import StatusBadge from '../../components/promotion/StatusBadge';
 
 type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
 type ReadState = 'all' | 'unread' | 'read';
+type ViewerRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 type PromotionContext = {
   id: number;
@@ -42,6 +43,7 @@ type NotificationSummary = {
 type NotificationsPayload = {
   notifications: NotificationItem[];
   summary: NotificationSummary;
+  viewerRole: ViewerRole;
 };
 
 type NotificationsResponse = {
@@ -68,16 +70,20 @@ function typeTone(type: NotificationType) {
   if (type === 'SUCCESS') return 'border-teal-200 bg-teal-50 text-teal-800';
   if (type === 'WARNING') return 'border-amber-200 bg-amber-50 text-amber-900';
   if (type === 'ERROR') return 'border-rose-200 bg-rose-50 text-rose-800';
-  return 'border-sky-200 bg-sky-50 text-sky-800';
+  return 'border-teal-200 bg-teal-50 text-teal-800';
 }
 
 function typeLabel(type: string) {
   return type.toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
-function applicationHref(notification: NotificationItem) {
+function applicationHref(notification: NotificationItem, viewerRole: ViewerRole) {
   if (!notification.promotionRequestId) return null;
-  return `/lecturer-portal/application`;
+
+  if (viewerRole === 'LECTURER') return '/lecturer-portal/application';
+  if (viewerRole === 'HOD_DEAN') return `/hod/applications?request=${notification.promotionRequestId}`;
+  if (viewerRole === 'COMMITTEE_REVIEWER') return `/committee/review?request=${notification.promotionRequestId}`;
+  return `/hr/requests?request=${notification.promotionRequestId}`;
 }
 
 function rankPath(request: PromotionContext) {
@@ -87,6 +93,7 @@ function rankPath(request: PromotionContext) {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [viewerRole, setViewerRole] = useState<ViewerRole>('LECTURER');
   const [summary, setSummary] = useState<NotificationSummary>({ total: 0, unread: 0, read: 0, filtered: 0, typeCounts: { INFO: 0, SUCCESS: 0, WARNING: 0, ERROR: 0 } });
   const [readState, setReadState] = useState<ReadState>('all');
   const [typeFilter, setTypeFilter] = useState<'ALL' | NotificationType>('ALL');
@@ -114,6 +121,7 @@ export default function NotificationsPage() {
         throw new Error(payload.error || 'Unable to load notifications');
       }
       setNotifications(payload.data.notifications || []);
+      setViewerRole(payload.data.viewerRole || 'LECTURER');
       setSummary(payload.data.summary);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load notifications');
@@ -236,7 +244,7 @@ export default function NotificationsPage() {
           </div>
 
           {notifications.map((notification) => {
-            const href = applicationHref(notification);
+            const href = applicationHref(notification, viewerRole);
             return (
               <article
                 key={notification.id}
