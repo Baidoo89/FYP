@@ -56,6 +56,7 @@ export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sessionRole, setSessionRole] = useState<AuthRole | null>(getStoredPortalRole);
+  const [notificationCount, setNotificationCount] = useState(0);
   const isAuthPage =
     pathname === '/login' ||
     pathname.startsWith('/login/') ||
@@ -200,6 +201,35 @@ export default function AppShell({ children }: AppShellProps) {
       cancelled = true;
     };
   }, [isAuthPage]);
+  useEffect(() => {
+    if (isAuthPage) {
+      setNotificationCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadNotificationCount() {
+      try {
+        const response = await fetch('/api/notifications?unread=true&take=1', { cache: 'no-store' });
+        if (!response.ok) {
+          if (!cancelled) setNotificationCount(0);
+          return;
+        }
+        const payload = await response.json();
+        const unread = Number(payload?.data?.summary?.unread || 0);
+        if (!cancelled) setNotificationCount(unread);
+      } catch {
+        if (!cancelled) setNotificationCount(0);
+      }
+    }
+
+    loadNotificationCount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthPage, pathname]);
 
   if (isAuthPage) {
     return (
@@ -289,9 +319,13 @@ export default function AppShell({ children }: AppShellProps) {
               Search anything...
             </div>
             <ThemeToggle compact />
-            <a href="/notifications" className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex">
+            <a href="/notifications" className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex" aria-label={`${notificationCount} unread notifications`}>
               NT
-              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-rose-500 ring-2 ring-white" />
+              {notificationCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-black text-white ring-2 ring-white">
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </span>
+              )}
             </a>
             {!isLecturerNav && (
               <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:block">

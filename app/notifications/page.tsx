@@ -1,31 +1,120 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { EmptyState, ErrorState, LoadingState } from '../../components/enterprise-ui';
+import StatusBadge from '../../components/promotion/StatusBadge';
+
+type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
+type ReadState = 'all' | 'unread' | 'read';
+
+type PromotionContext = {
+  id: number;
+  status: string;
+  eligibilityStatus: string;
+  currentRank: string;
+  targetRank: string;
+  lecturer?: {
+    name?: string | null;
+    department?: string | null;
+  } | null;
+} | null;
 
 type NotificationItem = {
   id: number;
   title: string;
   message: string;
-  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
+  type: NotificationType;
   isRead: boolean;
   createdAt: string;
+  promotionRequestId?: number | null;
+  promotionRequest?: PromotionContext;
 };
+
+type NotificationSummary = {
+  total: number;
+  unread: number;
+  read: number;
+  filtered: number;
+  typeCounts: Record<NotificationType, number>;
+};
+
+type NotificationsPayload = {
+  notifications: NotificationItem[];
+  summary: NotificationSummary;
+};
+
+type NotificationsResponse = {
+  success: boolean;
+  data?: NotificationsPayload;
+  error?: string;
+};
+
+const typeOptions: Array<'ALL' | NotificationType> = ['ALL', 'INFO', 'SUCCESS', 'WARNING', 'ERROR'];
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not recorded';
+  return new Intl.DateTimeFormat('en-GH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function typeTone(type: NotificationType) {
+  if (type === 'SUCCESS') return 'border-teal-200 bg-teal-50 text-teal-800';
+  if (type === 'WARNING') return 'border-amber-200 bg-amber-50 text-amber-900';
+  if (type === 'ERROR') return 'border-rose-200 bg-rose-50 text-rose-800';
+  return 'border-sky-200 bg-sky-50 text-sky-800';
+}
+
+function typeLabel(type: string) {
+  return type.toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function applicationHref(notification: NotificationItem) {
+  if (!notification.promotionRequestId) return null;
+  return `/lecturer-portal/application`;
+}
+
+function rankPath(request: PromotionContext) {
+  if (!request) return '';
+  return `${request.currentRank.replace(/_/g, ' ')} to ${request.targetRank.replace(/_/g, ' ')}`;
+}
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [summary, setSummary] = useState<NotificationSummary>({ total: 0, unread: 0, read: 0, filtered: 0, typeCounts: { INFO: 0, SUCCESS: 0, WARNING: 0, ERROR: 0 } });
+  const [readState, setReadState] = useState<ReadState>('all');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | NotificationType>('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<number | 'all' | null>(null);
   const [error, setError] = useState('');
+
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('readState', readState);
+    params.set('take', '100');
+    if (typeFilter !== 'ALL') params.set('type', typeFilter);
+    if (searchTerm.trim()) params.set('q', searchTerm.trim());
+    return params.toString();
+  }, [readState, typeFilter, searchTerm]);
 
   async function loadNotifications() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/notifications');
-      const payload = await response.json();
-      if (!response.ok || !payload.success) {
+      const response = await fetch(`/api/notifications?${queryString}`, { cache: 'no-store' });
+      const payload = (await response.json()) as NotificationsResponse;
+      if (!response.ok || !payload.success || !payload.data) {
         throw new Error(payload.error || 'Unable to load notifications');
       }
-      setNotifications(payload.data || []);
+      setNotifications(payload.data.notifications || []);
+      setSummary(payload.data.summary);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load notifications');
     } finally {
@@ -33,85 +122,202 @@ export default function NotificationsPage() {
     }
   }
 
-  async function markRead(notificationId?: number) {
-    await fetch('/api/notifications', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(notificationId ? { notificationId } : { markAllRead: true }),
-    });
-    await loadNotifications();
+  async function updateReadState(notificationId: number | undefined, isRead = true) {
+    setUpdatingId(notificationId || 'all');
+    setError('');
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationId ? { notificationId, isRead } : { markAllRead: true }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Unable to update notification');
+      }
+      await loadNotifications();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Unable to update notification');
+    } finally {
+      setUpdatingId(null);
+    }
   }
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+  }, [queryString]);
 
-  const unreadCount = notifications.filter((notification) => !notification.isRead).length;
+  const actionItems = notifications.filter((notification) => !notification.isRead || notification.type === 'WARNING' || notification.type === 'ERROR').length;
 
   return (
-    <section className="mx-auto max-w-5xl">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Notification Centre</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">System Notifications</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Review account, workflow, evidence verification, eligibility, and status-change updates.
-          </p>
+    <section className="space-y-6">
+      <div className="pro-hero px-6 py-8">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="pro-eyebrow">Notification Centre</div>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">System Notifications</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
+              Track workflow actions, evidence decisions, eligibility updates, account verification, and administrative messages in one professional inbox.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updateReadState(undefined)}
+            disabled={summary.unread === 0 || Boolean(updatingId)}
+            className="w-fit rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-800 disabled:bg-gray-400"
+          >
+            {updatingId === 'all' ? 'Updating...' : 'Mark all read'}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => markRead()}
-          disabled={unreadCount === 0}
-          className="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
-        >
-          Mark all read
-        </button>
       </div>
 
-      {error && <div className="mt-6 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
-      {loading && <div className="mt-6 rounded border border-slate-200 bg-white p-6 text-sm text-slate-600">Loading notifications...</div>}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <InboxMetric code="ALL" label="Total" value={summary.total} detail="All notifications" />
+        <InboxMetric code="NEW" label="Unread" value={summary.unread} detail="Needs attention" tone="amber" />
+        <InboxMetric code="ACT" label="Action Items" value={actionItems} detail="Warnings, errors, unread" tone="rose" />
+        <InboxMetric code="OK" label="Success" value={summary.typeCounts.SUCCESS || 0} detail="Positive workflow updates" />
+      </section>
+
+      <section className="pro-card p-4 sm:p-5">
+        <div className="grid gap-3 xl:grid-cols-[1fr_auto_auto] xl:items-end">
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Search</span>
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search title or message"
+              className="brand-input"
+            />
+          </label>
+          <div>
+            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Read State</span>
+            <div className="grid grid-cols-3 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs font-bold">
+              {(['all', 'unread', 'read'] as ReadState[]).map((state) => (
+                <button
+                  key={state}
+                  type="button"
+                  onClick={() => setReadState(state)}
+                  className={`rounded-md px-3 py-2 capitalize ${readState === state ? 'bg-white text-teal-800 shadow-sm' : 'text-gray-600 hover:text-gray-950'}`}
+                >
+                  {state}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Type</span>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as 'ALL' | NotificationType)} className="brand-input min-w-44">
+              {typeOptions.map((type) => (
+                <option key={type} value={type}>{type === 'ALL' ? 'All types' : typeLabel(type)}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      {error && <ErrorState message={error} />}
+      {loading && <LoadingState label="Loading notifications..." />}
 
       {!loading && notifications.length === 0 && (
-        <div className="mt-6 rounded border border-slate-200 bg-white p-6 text-sm text-slate-600">
-          No notifications yet.
-        </div>
+        <EmptyState title="No notifications found" description="Adjust the filters or wait for workflow activity to generate system notifications." />
       )}
 
-      <div className="mt-6 space-y-3">
-        {notifications.map((notification) => (
-          <article
-            key={notification.id}
-            className={`rounded-lg border bg-white p-4 shadow-sm ${
-              notification.isRead ? 'border-slate-200' : 'border-slate-200 ring-1 ring-blue-100'
-            }`}
-          >
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-semibold text-slate-950">{notification.title}</h2>
-                  {!notification.isRead && (
-                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-slate-700">New</span>
-                  )}
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
-                    {notification.type.toLowerCase()}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-700">{notification.message}</p>
-                <p className="mt-2 text-xs text-slate-500">{new Date(notification.createdAt).toLocaleString()}</p>
-              </div>
-              {!notification.isRead && (
-                <button
-                  type="button"
-                  onClick={() => markRead(notification.id)}
-                  className="rounded border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Mark read
-                </button>
-              )}
+      {!loading && notifications.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-gray-700">Showing {summary.filtered} notification(s)</p>
+            <div className="hidden flex-wrap gap-2 sm:flex">
+              {typeOptions.filter((type) => type !== 'ALL').map((type) => (
+                <span key={type} className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${typeTone(type as NotificationType)}`}>
+                  {typeLabel(type)} {summary.typeCounts[type as NotificationType] || 0}
+                </span>
+              ))}
             </div>
-          </article>
-        ))}
-      </div>
+          </div>
+
+          {notifications.map((notification) => {
+            const href = applicationHref(notification);
+            return (
+              <article
+                key={notification.id}
+                className={`pro-card overflow-hidden ${notification.isRead ? '' : 'ring-2 ring-teal-100'}`}
+              >
+                <div className="grid gap-0 lg:grid-cols-[1fr_17rem]">
+                  <div className="p-5">
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${typeTone(notification.type)}`}>{typeLabel(notification.type)}</span>
+                          {!notification.isRead && <span className="rounded-full bg-teal-700 px-2.5 py-1 text-xs font-bold text-white">New</span>}
+                          <span className="text-xs font-medium text-gray-500">{formatDate(notification.createdAt)}</span>
+                        </div>
+                        <h2 className="mt-3 text-lg font-bold text-gray-950">{notification.title}</h2>
+                        <p className="mt-2 text-sm leading-6 text-gray-700">{notification.message}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => updateReadState(notification.id, !notification.isRead)}
+                        disabled={updatingId === notification.id}
+                        className="w-fit rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                      >
+                        {updatingId === notification.id ? 'Updating...' : notification.isRead ? 'Mark unread' : 'Mark read'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <aside className="border-t border-gray-200 bg-gray-50 p-5 lg:border-l lg:border-t-0">
+                    {notification.promotionRequest ? (
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Application Context</p>
+                          <p className="mt-1 font-semibold text-gray-950">PR-{String(notification.promotionRequest.id).padStart(5, '0')}</p>
+                          <p className="mt-1 text-xs leading-5 text-gray-600">{notification.promotionRequest.lecturer?.name || 'Promotion applicant'} | {notification.promotionRequest.lecturer?.department || 'Department not set'}</p>
+                          <p className="mt-1 text-xs leading-5 text-gray-600">{rankPath(notification.promotionRequest)}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <StatusBadge status={notification.promotionRequest.status} />
+                          <StatusBadge status={notification.promotionRequest.eligibilityStatus} />
+                        </div>
+                        {href && (
+                          <Link href={href} className="inline-flex rounded-lg bg-white px-3 py-2 text-xs font-semibold text-teal-700 shadow-sm hover:bg-teal-50">
+                            Open Application
+                          </Link>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">System Message</p>
+                        <p className="mt-2 text-sm leading-6 text-gray-600">This notification is not attached to a promotion application.</p>
+                      </div>
+                    )}
+                  </aside>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
     </section>
+  );
+}
+
+function InboxMetric({ code, label, value, detail, tone = 'teal' }: { code: string; label: string; value: number; detail: string; tone?: 'teal' | 'amber' | 'rose' }) {
+  const toneClass = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-900'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      : 'border-teal-200 bg-teal-50 text-teal-800';
+
+  return (
+    <div className="pro-tile p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold text-gray-950">{value}</p>
+          <p className="mt-1 text-xs text-gray-500">{detail}</p>
+        </div>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-black ${toneClass}`}>{code}</span>
+      </div>
+    </div>
   );
 }
