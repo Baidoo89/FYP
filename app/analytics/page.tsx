@@ -154,6 +154,12 @@ export default function AnalyticsPage() {
   const statusRows = activeRows(summary.statusBreakdown);
   const eligibilityRows = activeRows(summary.eligibilityBreakdown);
   const categoryRows = summary.documents.categories.map((category) => ({ label: category.label, value: category.value, tone: 'green' as Tone }));
+  const evidenceAttention = summary.documents.pending + summary.documents.correction + summary.documents.rejected;
+  const decidedRecommendations = summary.recommendations.recommended + summary.recommendations.notRecommended;
+  const committeeDecisionRate = summary.recommendations.totalComments
+    ? Math.round((decidedRecommendations / summary.recommendations.totalComments) * 100)
+    : 0;
+  const reportScope = summary.filters.enforcedDepartment || summary.filters.department || 'Institution-wide';
 
   return (
     <div className="space-y-6">
@@ -231,14 +237,38 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+        <SectionCard title="Executive Reporting Brief" description="High-level readout for HR, deans, committees, and university leadership.">
+          <div className="grid gap-3 md:grid-cols-2">
+            <ExecutiveInsight label="Completion Rate" value={`${summary.executive.completionRate}%`} detail={`${summary.executive.completed} completed of ${summary.executive.totalApplications} application(s).`} tone="green" />
+            <ExecutiveInsight label="Active Workload" value={summary.executive.activeApplications} detail="Applications still moving through the workflow." tone="amber" />
+            <ReportNote label="Evidence Attention" value={`${evidenceAttention} document(s) need verification, correction, or rejection follow-up.`} tone={evidenceAttention ? 'amber' : 'green'} />
+            <ReportNote label="Committee Decisions" value={`${committeeDecisionRate}% of committee comments contain a final recommendation outcome.`} tone={committeeDecisionRate >= 70 ? 'green' : 'slate'} />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Export Centre" description={`Current scope: ${reportScope}.`}>
+          <div className="grid gap-2">
+            <a href={`/api/reports/export?type=analytics&format=pdf${exportSuffix}`} className="rounded-lg bg-teal-800 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-900">
+              Download Analytics PDF
+            </a>
+            <a href={`/api/reports/export?type=analytics&format=csv${exportSuffix}`} className="rounded-lg border border-teal-200 bg-white px-4 py-3 text-sm font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50">
+              Download Analytics CSV
+            </a>
+            <a href="/api/reports/export?type=audit&format=csv" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white">
+              Export Audit CSV
+            </a>
+          </div>
+        </SectionCard>
+      </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardCard label="Total Applications" value={summary.executive.totalApplications} description="All promotion requests" code="APP" tone="green" />
-        <DashboardCard label="Pending Verification" value={summary.executive.pendingVerification} description="Awaiting HR document checks" code="HR" tone="blue" />
+        <DashboardCard label="Pending Verification" value={summary.executive.pendingVerification} description="Awaiting HR document checks" code="HR" tone="green" />
         <DashboardCard label="Committee Review" value={summary.executive.underCommitteeReview} description="With promotion committee" code="COM" tone="amber" />
         <DashboardCard label="Eligible Applicants" value={summary.executive.eligibleApplicants} description="Criteria satisfied" code="EL" tone="green" />
         <DashboardCard label="Returned" value={summary.executive.returnedForCorrection} description="Needs correction" code="RET" tone="amber" />
         <DashboardCard label="Completed" value={summary.executive.completed} description={`${summary.executive.completionRate}% completion rate`} code="FIN" tone="green" />
-        <DashboardCard label="Verified Documents" value={`${summary.documents.verifiedRate}%`} description={`${summary.documents.verified} of ${summary.documents.total} documents`} code="DOC" tone="blue" />
+        <DashboardCard label="Verified Documents" value={`${summary.documents.verifiedRate}%`} description={`${summary.documents.verified} of ${summary.documents.total} documents`} code="DOC" tone="green" />
         <DashboardCard label="Average Score" value={`${summary.executive.averageScore}%`} description="Across scored applications" code="SC" tone="slate" />
       </div>
 
@@ -301,7 +331,7 @@ export default function AnalyticsPage() {
                     <td className="px-4 py-3 text-slate-700">{department.total}</td>
                     <td className="px-4 py-3 text-emerald-700">{department.eligible}</td>
                     <td className="px-4 py-3 text-rose-700">{department.notEligible}</td>
-                    <td className="px-4 py-3 text-sky-700">{department.committeeReview}</td>
+                    <td className="px-4 py-3 text-teal-700">{department.committeeReview}</td>
                     <td className="px-4 py-3 text-orange-700">{department.returned}</td>
                     <td className="px-4 py-3 text-slate-700">{department.completed}</td>
                     <td className="px-4 py-3 font-semibold text-slate-950">{department.pendingDocuments}</td>
@@ -356,7 +386,7 @@ export default function AnalyticsPage() {
           <div className="space-y-3">
             <MiniMetric label="Recommended" value={summary.recommendations.recommended} tone="green" />
             <MiniMetric label="Not Recommended" value={summary.recommendations.notRecommended} tone="red" />
-            <MiniMetric label="Further Review" value={summary.recommendations.furtherReview} tone="blue" />
+            <MiniMetric label="Further Review" value={summary.recommendations.furtherReview} tone="green" />
             <MiniMetric label="Total Comments" value={summary.recommendations.totalComments} tone="slate" />
           </div>
         </SectionCard>
@@ -389,7 +419,7 @@ function ExecutiveInsight({ label, value, detail, tone }: { label: string; value
     green: 'border-emerald-100 bg-emerald-50 text-emerald-900',
     amber: 'border-amber-100 bg-amber-50 text-amber-900',
     red: 'border-rose-100 bg-rose-50 text-rose-900',
-    blue: 'border-sky-100 bg-sky-50 text-sky-900',
+    blue: 'border-teal-100 bg-teal-50 text-teal-900',
     slate: 'border-slate-200 bg-white text-slate-900',
   }[tone];
 
@@ -407,7 +437,7 @@ function ReportNote({ label, value, tone }: { label: string; value: string; tone
     green: 'border-emerald-100 bg-emerald-50 text-emerald-900',
     amber: 'border-amber-100 bg-amber-50 text-amber-900',
     red: 'border-rose-100 bg-rose-50 text-rose-900',
-    blue: 'border-sky-100 bg-sky-50 text-sky-900',
+    blue: 'border-teal-100 bg-teal-50 text-teal-900',
     slate: 'border-slate-200 bg-white text-slate-900',
   }[tone];
 
@@ -424,7 +454,7 @@ function MiniMetric({ label, value, tone }: { label: string; value: number; tone
     green: 'border-emerald-100 bg-emerald-50 text-emerald-900',
     amber: 'border-amber-100 bg-amber-50 text-amber-900',
     red: 'border-rose-100 bg-rose-50 text-rose-900',
-    blue: 'border-sky-100 bg-sky-50 text-sky-900',
+    blue: 'border-teal-100 bg-teal-50 text-teal-900',
     slate: 'border-slate-200 bg-white text-slate-900',
   }[tone];
 

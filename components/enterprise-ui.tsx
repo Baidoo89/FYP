@@ -8,7 +8,7 @@ const toneMap: Record<Tone, { card: string; icon: string; bar: string }> = {
   green: { card: 'border-emerald-100 bg-emerald-50 text-emerald-950', icon: 'bg-emerald-100 text-emerald-800', bar: 'bg-emerald-600' },
   amber: { card: 'border-amber-100 bg-amber-50 text-amber-950', icon: 'bg-amber-100 text-amber-800', bar: 'bg-amber-500' },
   red: { card: 'border-rose-100 bg-rose-50 text-rose-950', icon: 'bg-rose-100 text-rose-800', bar: 'bg-rose-600' },
-  blue: { card: 'border-sky-100 bg-sky-50 text-sky-950', icon: 'bg-sky-100 text-sky-800', bar: 'bg-sky-600' },
+  blue: { card: 'border-teal-100 bg-teal-50 text-teal-950', icon: 'bg-teal-100 text-teal-800', bar: 'bg-teal-600' },
   slate: { card: 'border-slate-200 bg-white text-slate-950', icon: 'bg-slate-100 text-slate-700', bar: 'bg-slate-700' },
 };
 
