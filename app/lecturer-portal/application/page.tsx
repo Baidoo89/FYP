@@ -55,7 +55,25 @@ function nextActionFor(request: PromotionRequest) {
     };
   }
 
-  if (request.status === 'RETURNED_FOR_CORRECTION' || returned > 0) {
+  if (request.status === 'RETURNED_FOR_CORRECTION') {
+    if (returned > 0) {
+      return {
+        title: 'Correct returned evidence',
+        detail: 'Review HR or department comments and replace the returned document before resubmission.',
+        action: 'Open Evidence Portfolio',
+        href: '/lecturer-portal/evidence',
+      };
+    }
+
+    return {
+      title: 'Resubmit corrected application',
+      detail: 'Returned evidence has been replaced. Resubmit the corrected application so department review can continue.',
+      action: 'Resubmit Application',
+      href: null,
+    };
+  }
+
+  if (returned > 0) {
     return {
       title: 'Correct returned evidence',
       detail: 'Review HR or department comments and replace the returned document before resubmission.',
@@ -161,7 +179,9 @@ export default function ApplicationPage() {
         throw new Error(payload.error || 'Unable to submit application');
       }
 
-      setMessage('Application submitted successfully. Department review can now begin.');
+      setMessage(selectedRequest.status === 'RETURNED_FOR_CORRECTION'
+        ? 'Corrected application resubmitted successfully. Department review can now continue.'
+        : 'Application submitted successfully. Department review can now begin.');
       await loadApplications(selectedRequest.id);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to submit application');
@@ -274,9 +294,9 @@ export default function ApplicationPage() {
                 <Link href={nextAction.href} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
                   {nextAction.action}
                 </Link>
-              ) : nextAction.action === 'Submit Application' ? (
-                <button type="button" onClick={submitApplication} disabled={submitting} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60">
-                  {submitting ? 'Submitting...' : nextAction.action}
+              ) : ['Submit Application', 'Resubmit Application'].includes(nextAction.action) ? (
+                <button type="button" onClick={submitApplication} disabled={submitting} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">
+                  {submitting ? (nextAction.action === 'Resubmit Application' ? 'Resubmitting...' : 'Submitting...') : nextAction.action}
                 </button>
               ) : (
                 <PrintSummaryButton label={nextAction.action} />

@@ -175,6 +175,8 @@ export default function EvidencePage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
+  const [resubmitting, setResubmitting] = useState(false);
+  const [resubmitMessage, setResubmitMessage] = useState('');
   const [fileInputKey, setFileInputKey] = useState(0);
 
   async function loadEvidence() {
@@ -228,6 +230,12 @@ export default function EvidencePage() {
     if (!data) return [];
     return data.requiredCategories.filter((category) => categoryDocuments(data, category).length === 0);
   }, [data]);
+  const attentionDocuments = useMemo(() => {
+    if (!data) return [];
+    return data.documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || ''));
+  }, [data]);
+  const isReturnedApplication = data?.request?.status === 'RETURNED_FOR_CORRECTION';
+  const correctionReady = Boolean(isReturnedApplication && data?.request?.id && attentionDocuments.length === 0);
 
   async function handleUpload() {
     if (!uploadTitle.trim()) {
@@ -242,6 +250,7 @@ export default function EvidencePage() {
 
     setUploading(true);
     setUploadMessage('');
+    setResubmitMessage('');
 
     try {
       const formData = new FormData();
@@ -272,10 +281,39 @@ export default function EvidencePage() {
     }
   }
 
+  async function handleResubmit() {
+    if (!data?.request?.id) return;
+
+    setResubmitting(true);
+    setResubmitMessage('');
+    setUploadMessage('');
+
+    try {
+      const response = await fetch('/api/promotion-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit', requestId: data.request.id }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Unable to resubmit corrected application');
+      }
+
+      setResubmitMessage('Corrected application resubmitted successfully. Department review can now continue.');
+      await loadEvidence();
+    } catch (resubmitError) {
+      setResubmitMessage(resubmitError instanceof Error ? resubmitError.message : 'Unable to resubmit corrected application');
+    } finally {
+      setResubmitting(false);
+    }
+  }
+
   function chooseCategory(category: DocumentCategory) {
     const existing = data ? categoryDocuments(data, category)[0] : null;
     setSelectedCategory(category);
     setUploadMessage('');
+    setResubmitMessage('');
     setUploadTitle(existing?.title || '');
     setUploadFile(null);
     setFileInputKey((key) => key + 1);
@@ -347,6 +385,63 @@ export default function EvidencePage() {
         )}
       </section>
 
+      {isReturnedApplication && (
+        <section className={`pro-card p-5 ${correctionReady ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60'}`}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className={`text-xs font-bold uppercase tracking-[0.16em] ${correctionReady ? 'text-emerald-800' : 'text-amber-800'}`}>
+                Returned application
+              </p>
+              <h2 className="mt-2 text-xl font-bold text-gray-950">
+                {correctionReady ? 'Corrections ready for resubmission' : 'Correction required before resubmission'}
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-700">
+                {correctionReady
+                  ? 'All returned evidence has been replaced and is pending verification. Resubmit the application so the department review can continue.'
+                  : 'Replace each returned or rejected evidence file. Once all issues are cleared, you can resubmit the corrected application.'}
+              </p>
+            </div>
+            {correctionReady && (
+              <button
+                type="button"
+                onClick={handleResubmit}
+                disabled={resubmitting}
+                className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {resubmitting ? 'Resubmitting...' : 'Resubmit Corrected Application'}
+              </button>
+            )}
+          </div>
+
+          {!correctionReady && attentionDocuments.length > 0 && (
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {attentionDocuments.map((document) => (
+                <button
+                  key={document.id}
+                  type="button"
+                  onClick={() => chooseCategory(document.category)}
+                  className="rounded-lg border border-amber-200 bg-white p-3 text-left text-sm transition hover:bg-amber-50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-gray-950">{document.title}</p>
+                      <p className="mt-1 text-xs font-medium text-gray-600">{CATEGORY_INFO[document.category].title}</p>
+                    </div>
+                    <StatusBadge status={document.verificationStatus || 'PENDING'} />
+                  </div>
+                  {document.verificationComment && <p className="mt-2 text-xs leading-5 text-amber-950">{document.verificationComment}</p>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {resubmitMessage && (
+            <p className={`mt-4 text-sm font-semibold ${resubmitMessage.includes('successfully') ? 'text-emerald-800' : 'text-amber-900'}`}>
+              {resubmitMessage}
+            </p>
+          )}
+        </section>
+      )}
       <section className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">
         <div className="pro-card overflow-hidden">
           <div className="border-b border-gray-200 p-5">
