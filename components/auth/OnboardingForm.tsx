@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -107,7 +107,7 @@ export function OnboardingForm() {
             name="department"
             value={formData.department}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800"
             required
           >
             <option value="">Select your department</option>
@@ -132,7 +132,7 @@ export function OnboardingForm() {
             value={formData.staffId}
             onChange={handleChange}
             placeholder="GCTU/CS/2026/001"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -148,7 +148,7 @@ export function OnboardingForm() {
             name="currentRank"
             value={formData.currentRank}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800"
             required
           >
             <option value="">Select your academic rank</option>
@@ -172,7 +172,7 @@ export function OnboardingForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors text-lg mt-8"
+          className="w-full py-3 px-4 bg-blue-900 text-white font-semibold rounded-lg hover:bg-blue-950 disabled:bg-gray-400 transition-colors text-lg mt-8"
         >
           {loading ? 'Completing Profile...' : 'Complete Profile & Continue'}
         </button>
@@ -184,5 +184,3 @@ export function OnboardingForm() {
     </div>
   );
 }
-
-

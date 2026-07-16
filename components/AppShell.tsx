@@ -254,23 +254,23 @@ export default function AppShell({ children }: AppShellProps) {
 
       <nav
         className={[
-          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-emerald-950 bg-[linear-gradient(180deg,#063f36_0%,#02362f_46%,#012821_100%)] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-[#06172f] bg-[linear-gradient(180deg,#0b2d5b_0%,#071f3f_56%,#06172f_100%)] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
       >
         <div className="border-b border-white/10 px-5 py-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-teal-200/25 bg-white p-1 shadow-lg shadow-emerald-950/30">
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-yellow-200/30 bg-white p-1 shadow-lg shadow-slate-950/30">
               <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight">GCTU</h1>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-teal-100/80">Promotion System</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-yellow-100/85">Promotion System</p>
             </div>
           </div>
           <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-100">{portalTitle}</p>
-            <p className="mt-1 text-sm text-emerald-50/75">{portalSubtitle}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-yellow-100">{portalTitle}</p>
+            <p className="mt-1 text-sm text-blue-100/80">{portalSubtitle}</p>
           </div>
         </div>
 
@@ -282,12 +282,12 @@ export default function AppShell({ children }: AppShellProps) {
           ))}
         </ul>
 
-        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-emerald-50/75">
+        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-blue-100/80">
           <p className="font-semibold text-white">Need help?</p>
           <p className="mt-1 leading-5">Contact support for account, evidence, and workflow assistance.</p>
         </div>
 
-        <div className="mt-4 border-t border-white/10 p-4 text-xs text-emerald-100/45">
+        <div className="mt-4 border-t border-white/10 p-4 text-xs text-blue-100/55">
           <p>GCTU Promotion System v1.0</p>
           <p>2026 GCTU. All rights reserved.</p>
         </div>
@@ -308,7 +308,7 @@ export default function AppShell({ children }: AppShellProps) {
               <LecturerHeader />
             ) : (
               <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-700">{portalTitle}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-800">{portalTitle}</p>
                 <h2 className="truncate text-base font-semibold text-slate-950 md:text-lg">{portalSubtitle}</h2>
               </div>
             )}

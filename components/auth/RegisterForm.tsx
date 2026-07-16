@@ -67,7 +67,7 @@ export function RegisterForm() {
   return (
     <div>
       <div className="mb-7">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Official GCTU staff registration</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">Official GCTU staff registration</p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Create your promotion system account</h2>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           Register with your official GCTU staff email. You will verify your email before completing your profile and submitting a promotion request.
@@ -86,7 +86,7 @@ export function RegisterForm() {
           <button
             type="button"
             onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-            className="font-semibold text-emerald-800 underline"
+            className="font-semibold text-blue-900 underline"
           >
             verify account
           </button>
@@ -105,7 +105,7 @@ export function RegisterForm() {
             value={formData.email}
             onChange={handleChange}
             placeholder="name@live.gctu.edu.gh"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-800 focus:ring-4 focus:ring-blue-800/10"
             required
           />
           <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -124,7 +124,7 @@ export function RegisterForm() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 pr-16 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 pr-16 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-800 focus:ring-4 focus:ring-blue-800/10"
               required
             />
             <button
@@ -149,7 +149,7 @@ export function RegisterForm() {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 pr-16 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 pr-16 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-800 focus:ring-4 focus:ring-blue-800/10"
               required
             />
             <button
@@ -165,7 +165,7 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-emerald-800 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-800/15 transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-blue-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 transition hover:bg-blue-950 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Creating account...' : 'Create GCTU account'}
         </button>
@@ -176,7 +176,7 @@ export function RegisterForm() {
         <button
           type="button"
           onClick={() => router.push('/login')}
-          className="font-semibold text-emerald-800 hover:text-emerald-900"
+          className="font-semibold text-blue-900 hover:text-blue-950"
         >
           Sign in
         </button>

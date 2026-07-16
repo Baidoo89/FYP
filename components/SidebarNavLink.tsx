@@ -25,14 +25,14 @@ export default function SidebarNavLink({ href, icon, children, subtitle, onNavig
         onClick={onNavigate}
         className={[
           'group flex items-center gap-3 rounded-lg px-3 py-2.5 transition',
-          'text-emerald-50/78 hover:bg-white/[0.08] hover:text-white',
-          isActive ? 'bg-white/[0.13] text-white shadow-[inset_3px_0_0_rgba(45,212,191,0.85)]' : '',
+          'text-blue-50/82 hover:bg-white/[0.08] hover:text-white',
+          isActive ? 'bg-white/[0.13] text-white shadow-[inset_3px_0_0_rgba(250,204,21,0.92)]' : '',
         ].join(' ')}
       >
         <span
           className={[
             'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-[10px] font-bold tracking-wide',
-            isActive ? 'bg-teal-200 text-emerald-950' : 'bg-white/[0.08] text-teal-100 group-hover:bg-white/[0.14]',
+            isActive ? 'bg-yellow-200 text-slate-950' : 'bg-white/[0.08] text-blue-100 group-hover:bg-white/[0.14]',
           ].join(' ')}
           aria-hidden="true"
         >
@@ -40,7 +40,7 @@ export default function SidebarNavLink({ href, icon, children, subtitle, onNavig
         </span>
         <div className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold leading-tight">{children}</span>
-          {subtitle && <span className="mt-0.5 block truncate text-[11px] text-emerald-100/55 group-hover:text-emerald-50/80">{subtitle}</span>}
+          {subtitle && <span className="mt-0.5 block truncate text-[11px] text-blue-100/62 group-hover:text-blue-50/85">{subtitle}</span>}
         </div>
       </Link>
     </li>
