@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import AppShell from '../components/AppShell';
+import { getAppBaseUrl } from '../lib/app-url';
 import './globals.css';
 
 // Use system font stack to avoid fetching Google Fonts at build time
@@ -9,6 +10,8 @@ export default function RootLayout({
 }: {
   children: ReactNode;
 }) {
+  const appUrl = getAppBaseUrl();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -29,6 +32,11 @@ export default function RootLayout({
         />
         <title>GCTU Digital Staff Promotion Support System</title>
         <meta name="description" content="Official GCTU digital staff promotion request, evidence verification, and decision support system." />
+        <link rel="canonical" href={appUrl} />
+        <meta property="og:title" content="GCTU Digital Staff Promotion Support System" />
+        <meta property="og:description" content="Official GCTU digital staff promotion request, evidence verification, and decision support system." />
+        <meta property="og:url" content={appUrl} />
+        <meta property="og:type" content="website" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>
           {`

@@ -119,6 +119,24 @@ Expected healthy response includes:
 }
 ```
 
+## Production Domain
+
+The production deployment is prepared for Vercel with the Cloudflare-managed domain:
+
+```text
+https://techdalt.com
+```
+
+Set these Vercel production environment variables before redeploying:
+
+```text
+APP_URL=https://techdalt.com
+NEXT_PUBLIC_APP_URL=https://techdalt.com
+NEXT_PUBLIC_API_URL=https://techdalt.com
+```
+
+These values keep email verification links, public metadata, and app redirects aligned with the live domain.
+
 ## Recommended Supervisor Demo Flow
 
 1. Log in as System Admin and show users, roles, faculties, departments, settings, and criteria.

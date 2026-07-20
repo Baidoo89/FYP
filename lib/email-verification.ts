@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { NotificationType } from '@prisma/client';
+import { getAppBaseUrl } from './app-url';
 import { prisma } from './prisma';
 import { sendEmail } from './email';
 import { createNotification } from './notifications';
@@ -9,10 +10,6 @@ const TOKEN_TTL_HOURS = 24;
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-export function getAppBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_URL || process.env.APP_URL || 'http://localhost:3000';
 }
 
 export async function createEmailVerificationToken(userId: number) {

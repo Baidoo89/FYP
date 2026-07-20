@@ -7,18 +7,45 @@ Required:
 ```text
 DATABASE_URL=
 AUTH_SECRET=
-NEXT_PUBLIC_API_URL=
+APP_URL=https://techdalt.com
+NEXT_PUBLIC_APP_URL=https://techdalt.com
+NEXT_PUBLIC_API_URL=https://techdalt.com
 NODE_ENV=production
 ```
 
-Development email verification:
+Email verification:
 
 ```text
 EMAIL_PROVIDER=development
-APP_URL=http://localhost:3000
 ```
 
-Production email delivery should replace `EMAIL_PROVIDER=development` with a real provider configuration.
+Production email delivery should replace `EMAIL_PROVIDER=development` with a real SMTP/provider configuration before live users register.
+
+## Vercel + Cloudflare Domain
+
+Production target:
+
+```text
+https://techdalt.com
+```
+
+Recommended DNS setup in Cloudflare after adding the domain to the Vercel project and checking Vercel's required records:
+
+```text
+Type: A
+Name: @
+Value: Vercel-provided apex A record, commonly 76.76.21.21
+Proxy: DNS only while Vercel verification is pending
+
+Type: CNAME
+Name: www
+Value: Exact Vercel-provided CNAME for this project
+Proxy: DNS only while Vercel verification is pending
+```
+
+If Vercel shows different DNS values inside the project domain screen, use the exact values Vercel provides for `techdalt.com`.
+
+In Vercel Project Settings -> Environment Variables, set `APP_URL`, `NEXT_PUBLIC_APP_URL`, and `NEXT_PUBLIC_API_URL` to `https://techdalt.com`, then redeploy so authentication emails use the public domain instead of localhost.
 
 ## Database
 
@@ -76,5 +103,6 @@ Expected:
 - Use a strong `AUTH_SECRET`.
 - Keep `.env.local` and production secrets out of Git.
 - Use HTTPS in production.
+- Keep `APP_URL`, `NEXT_PUBLIC_APP_URL`, and `NEXT_PUBLIC_API_URL` aligned with the Vercel production domain.
 - Configure a real email provider before live deployment.
 - Restrict database credentials to the deployment environment.
