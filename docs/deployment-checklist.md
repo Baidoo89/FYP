@@ -18,10 +18,10 @@ Email verification:
 ```text
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_replace_with_your_resend_api_key
-EMAIL_FROM="GCTU Promotion System <gctu-promotion@techdalt.com>"
+EMAIL_FROM=GCTU Promotion System <gctu-promotion@techdalt.com>
 ```
 
-Use the existing verified `techdalt.com` Resend domain for sending. The verification links still point to `https://promotion.techdalt.com` through `APP_URL`.
+Use the existing verified `techdalt.com` Resend domain for sending. The verification links still point to `https://promotion.techdalt.com` through `APP_URL`. In the Vercel dashboard, enter `EMAIL_FROM` without outer quote characters.
 
 ## Vercel + Cloudflare Subdomain
 

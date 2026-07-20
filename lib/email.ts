@@ -11,12 +11,37 @@ type EmailResult = {
   id?: string;
 };
 
+function cleanEnvValue(value?: string | null) {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
+function envValue(...names: string[]) {
+  for (const name of names) {
+    const value = cleanEnvValue(process.env[name]);
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return '';
+}
+
 function getEmailFrom() {
-  return (
-    process.env.EMAIL_FROM ||
-    process.env.SMTP_FROM ||
-    'GCTU Promotion System <gctu-promotion@techdalt.com>'
-  );
+  return envValue('EMAIL_FROM', 'SMTP_FROM') || 'GCTU Promotion System <gctu-promotion@techdalt.com>';
 }
 
 function logDevelopmentEmail(input: EmailInput, provider: string): EmailResult {
@@ -29,14 +54,14 @@ function logDevelopmentEmail(input: EmailInput, provider: string): EmailResult {
 }
 
 export async function sendEmail(input: EmailInput): Promise<EmailResult> {
-  const provider = (process.env.EMAIL_PROVIDER || 'development').toLowerCase();
+  const provider = (envValue('EMAIL_PROVIDER') || 'development').toLowerCase();
 
   if (provider === 'development') {
     return logDevelopmentEmail(input, provider);
   }
 
   if (provider === 'resend') {
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey = envValue('RESEND_API_KEY');
 
     if (!apiKey) {
       throw new Error('RESEND_API_KEY is required when EMAIL_PROVIDER=resend');
