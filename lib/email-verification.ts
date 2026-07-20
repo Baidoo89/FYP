@@ -71,6 +71,7 @@ export async function sendVerificationEmail(
 ) {
   const verification = await createEmailVerificationToken(user.id);
   let emailDelivered = false;
+  let emailProvider = 'unknown';
   let emailDeliveryError: string | null = null;
 
   try {
@@ -89,6 +90,7 @@ export async function sendVerificationEmail(
     });
 
     emailDelivered = delivery.delivered;
+    emailProvider = delivery.provider;
   } catch (error) {
     emailDeliveryError = deliveryErrorMessage(error);
     console.error('Verification email delivery failed:', emailDeliveryError);
@@ -110,6 +112,7 @@ export async function sendVerificationEmail(
   return {
     ...verification,
     emailDelivered,
+    emailProvider,
     emailDeliveryError,
   };
 }
