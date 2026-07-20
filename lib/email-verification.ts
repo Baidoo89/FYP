@@ -8,8 +8,16 @@ import { createNotification } from './notifications';
 const TOKEN_BYTES = 32;
 const TOKEN_TTL_HOURS = 24;
 
+type SendVerificationOptions = {
+  throwOnDeliveryFailure?: boolean;
+};
+
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function deliveryErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Verification email delivery failed';
 }
 
 function escapeHtml(value: string) {
@@ -57,31 +65,53 @@ export async function createEmailVerificationToken(userId: number) {
   };
 }
 
-export async function sendVerificationEmail(user: { id: number; name: string; email: string }) {
+export async function sendVerificationEmail(
+  user: { id: number; name: string; email: string },
+  options: SendVerificationOptions = {}
+) {
   const verification = await createEmailVerificationToken(user.id);
+  let emailDelivered = false;
+  let emailDeliveryError: string | null = null;
 
-  await sendEmail({
-    to: user.email,
-    subject: 'Verify your GCTU Promotion System account',
-    text: [
-      `Hello ${user.name},`,
-      '',
-      'Please verify your email address to activate your Digital Staff Promotion Support System account.',
-      verification.verificationUrl,
-      '',
-      'This link expires in 24 hours. If you did not create this account, ignore this message.',
-    ].join('\n'),
-    html: verificationEmailHtml(user.name, verification.verificationUrl),
-  });
+  try {
+    const delivery = await sendEmail({
+      to: user.email,
+      subject: 'Verify your GCTU Promotion System account',
+      text: [
+        `Hello ${user.name},`,
+        '',
+        'Please verify your email address to activate your Digital Staff Promotion Support System account.',
+        verification.verificationUrl,
+        '',
+        'This link expires in 24 hours. If you did not create this account, ignore this message.',
+      ].join('\n'),
+      html: verificationEmailHtml(user.name, verification.verificationUrl),
+    });
+
+    emailDelivered = delivery.delivered;
+  } catch (error) {
+    emailDeliveryError = deliveryErrorMessage(error);
+    console.error('Verification email delivery failed:', emailDeliveryError);
+
+    if (options.throwOnDeliveryFailure !== false) {
+      throw error;
+    }
+  }
 
   await createNotification({
     userId: user.id,
-    title: 'Email verification required',
-    message: 'A verification link has been generated for your account. Please verify your email before continuing.',
-    type: NotificationType.WARNING,
+    title: emailDeliveryError ? 'Verification email delivery issue' : 'Email verification required',
+    message: emailDeliveryError
+      ? 'Your verification link was generated, but the email could not be delivered automatically. Please use the resend option or contact system support.'
+      : 'A verification link has been generated for your account. Please verify your email before continuing.',
+    type: emailDeliveryError ? NotificationType.ERROR : NotificationType.WARNING,
   });
 
-  return verification;
+  return {
+    ...verification,
+    emailDelivered,
+    emailDeliveryError,
+  };
 }
 
 export async function verifyEmailToken(token: string) {

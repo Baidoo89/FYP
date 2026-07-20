@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       id: user.id,
       name: user.name,
       email: user.email,
-    });
+    }, { throwOnDeliveryFailure: false });
 
     await prisma.auditLog.create({
       data: {
@@ -60,7 +60,9 @@ export async function POST(request: NextRequest) {
         action: 'USER_REGISTERED',
         entityType: 'User',
         entityId: String(user.id),
-        description: 'Lecturer account registered and email verification requested.',
+        description: verification.emailDeliveryError
+          ? `Lecturer account registered, but verification email delivery failed: ${verification.emailDeliveryError}`
+          : 'Lecturer account registered and email verification requested.',
       },
     });
 
@@ -68,8 +70,11 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        message: 'Account created successfully. Please verify your email address.',
+        message: verification.emailDeliveryError
+          ? 'Account created successfully, but the verification email could not be sent automatically. Please use resend verification.'
+          : 'Account created successfully. Please verify your email address.',
         userId: user.id,
+        emailDeliveryFailed: Boolean(verification.emailDeliveryError),
         verificationUrl: process.env.NODE_ENV === 'production' ? undefined : verification.verificationUrl,
       },
       { status: 201 }
