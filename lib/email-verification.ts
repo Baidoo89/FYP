@@ -12,6 +12,32 @@ function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function verificationEmailHtml(name: string, verificationUrl: string) {
+  const safeName = escapeHtml(name);
+  const safeUrl = escapeHtml(verificationUrl);
+
+  return [
+    '<div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6; max-width: 560px;">',
+    '<p style="margin: 0 0 8px; color: #475569; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">GCTU Digital Staff Promotion Support System</p>',
+    '<h2 style="margin: 0 0 12px; color: #0b2d5b; font-size: 22px;">Verify your staff account</h2>',
+    `<p>Hello ${safeName},</p>`,
+    '<p>Please verify your email address to activate your secure GCTU promotion workspace.</p>',
+    `<p><a href="${safeUrl}" style="display: inline-block; background: #0b2d5b; color: #ffffff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: 700;">Verify Email Address</a></p>`,
+    `<p style="font-size: 13px; color: #475569;">If the button does not work, copy this link into your browser:<br />${safeUrl}</p>`,
+    '<p style="font-size: 13px; color: #475569;">This link expires in 24 hours. If you did not create this account, ignore this message.</p>',
+    '</div>',
+  ].join('');
+}
+
 export async function createEmailVerificationToken(userId: number) {
   const token = crypto.randomBytes(TOKEN_BYTES).toString('hex');
   const expiresAt = new Date(Date.now() + TOKEN_TTL_HOURS * 60 * 60 * 1000);
@@ -45,6 +71,7 @@ export async function sendVerificationEmail(user: { id: number; name: string; em
       '',
       'This link expires in 24 hours. If you did not create this account, ignore this message.',
     ].join('\n'),
+    html: verificationEmailHtml(user.name, verification.verificationUrl),
   });
 
   await createNotification({

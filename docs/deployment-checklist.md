@@ -16,10 +16,12 @@ NODE_ENV=production
 Email verification:
 
 ```text
-EMAIL_PROVIDER=development
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_replace_with_your_resend_api_key
+EMAIL_FROM="GCTU Promotion System <gctu-promotion@techdalt.com>"
 ```
 
-Production email delivery should replace `EMAIL_PROVIDER=development` with a real SMTP/provider configuration before live users register.
+Use the existing verified `techdalt.com` Resend domain for sending. The verification links still point to `https://promotion.techdalt.com` through `APP_URL`.
 
 ## Vercel + Cloudflare Subdomain
 
@@ -99,5 +101,5 @@ Expected:
 - Keep `.env.local` and production secrets out of Git.
 - Use HTTPS in production.
 - Keep `APP_URL`, `NEXT_PUBLIC_APP_URL`, and `NEXT_PUBLIC_API_URL` aligned with the Vercel production subdomain.
-- Configure a real email provider before live deployment.
+- Configure Resend before live registration.
 - Restrict database credentials to the deployment environment.

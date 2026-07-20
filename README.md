@@ -133,9 +133,12 @@ Set these Vercel production environment variables before redeploying:
 APP_URL=https://promotion.techdalt.com
 NEXT_PUBLIC_APP_URL=https://promotion.techdalt.com
 NEXT_PUBLIC_API_URL=https://promotion.techdalt.com
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_replace_with_your_resend_api_key
+EMAIL_FROM="GCTU Promotion System <gctu-promotion@techdalt.com>"
 ```
 
-These values keep email verification links, public metadata, and app redirects aligned with the live subdomain while leaving the main `techdalt.com` site untouched.
+These values keep email verification links, public metadata, app redirects, and Resend email delivery aligned with the live subdomain while leaving the main `techdalt.com` site untouched.
 
 ## Recommended Supervisor Demo Flow
 
