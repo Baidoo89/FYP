@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,6 +10,12 @@ function VerifyEmailContent() {
   const token = searchParams.get('token') || '';
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Verifying your email address...');
+
+  async function backToLogin() {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
+    router.replace('/login');
+    router.refresh();
+  }
 
   useEffect(() => {
     async function verify() {
@@ -70,7 +76,7 @@ function VerifyEmailContent() {
             </button>
             <button
               type="button"
-              onClick={() => router.push('/login')}
+              onClick={backToLogin}
               className="rounded border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               Back to login
@@ -103,5 +109,3 @@ export default function VerifyEmailPage() {
     </Suspense>
   );
 }
-
-

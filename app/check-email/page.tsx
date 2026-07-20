@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,12 @@ export default function CheckEmailPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [verificationUrl, setVerificationUrl] = useState('');
+
+  async function backToLogin() {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
+    router.replace('/login');
+    router.refresh();
+  }
 
   async function resendVerification() {
     setLoading(true);
@@ -77,7 +83,7 @@ export default function CheckEmailPage() {
           </button>
           <button
             type="button"
-            onClick={() => router.push('/login')}
+            onClick={backToLogin}
             className="rounded border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             Back to login
@@ -87,5 +93,3 @@ export default function CheckEmailPage() {
     </main>
   );
 }
-
-
