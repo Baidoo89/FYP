@@ -121,21 +121,21 @@ Expected healthy response includes:
 
 ## Production Domain
 
-The production deployment is prepared for Vercel with the Cloudflare-managed domain:
+The production deployment is prepared for Vercel with the Cloudflare-managed subdomain:
 
 ```text
-https://techdalt.com
+https://promotion.techdalt.com
 ```
 
 Set these Vercel production environment variables before redeploying:
 
 ```text
-APP_URL=https://techdalt.com
-NEXT_PUBLIC_APP_URL=https://techdalt.com
-NEXT_PUBLIC_API_URL=https://techdalt.com
+APP_URL=https://promotion.techdalt.com
+NEXT_PUBLIC_APP_URL=https://promotion.techdalt.com
+NEXT_PUBLIC_API_URL=https://promotion.techdalt.com
 ```
 
-These values keep email verification links, public metadata, and app redirects aligned with the live domain.
+These values keep email verification links, public metadata, and app redirects aligned with the live subdomain while leaving the main `techdalt.com` site untouched.
 
 ## Recommended Supervisor Demo Flow
 
