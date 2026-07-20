@@ -8,9 +8,7 @@ type AuthPageShellProps = {
   active?: 'login' | 'register';
 };
 
-const tabBase = 'rounded-lg px-4 py-2.5 text-center text-sm font-semibold outline-none transition duration-200 focus-visible:ring-2 focus-visible:ring-[#0b2d5b] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950';
-
-export default function AuthPageShell({ children, active = 'login' }: AuthPageShellProps) {
+export default function AuthPageShell({ children }: AuthPageShellProps) {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-5 text-slate-950 dark:bg-slate-950 dark:text-white sm:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-6xl flex-col">
@@ -28,25 +26,8 @@ export default function AuthPageShell({ children, active = 'login' }: AuthPageSh
         </header>
 
         <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
-          <div className="w-full max-w-[460px]">
+          <div className="w-full max-w-[440px]">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 sm:p-7">
-              <nav aria-label="Authentication" className="mb-7 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-slate-600 dark:bg-slate-950 dark:text-slate-300">
-                <a
-                  href="/login"
-                  aria-current={active === 'login' ? 'page' : undefined}
-                  className={`${tabBase} ${active === 'login' ? 'bg-white text-[#0b2d5b] shadow-sm dark:bg-slate-800 dark:text-white' : 'hover:bg-white/70 hover:text-slate-950 dark:hover:bg-slate-800/70 dark:hover:text-white'}`}
-                >
-                  Sign In
-                </a>
-                <a
-                  href="/register"
-                  aria-current={active === 'register' ? 'page' : undefined}
-                  className={`${tabBase} ${active === 'register' ? 'bg-white text-[#0b2d5b] shadow-sm dark:bg-slate-800 dark:text-white' : 'hover:bg-white/70 hover:text-slate-950 dark:hover:bg-slate-800/70 dark:hover:text-white'}`}
-                >
-                  Create Account
-                </a>
-              </nav>
-
               {children}
             </div>
 
