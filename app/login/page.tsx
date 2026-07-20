@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import AuthPageShell, { AuthTrustStrip } from '../../components/auth/AuthPageShell';
+import AuthPageShell from '../../components/auth/AuthPageShell';
 
 type LoginResponse = {
   success: boolean;
@@ -17,6 +17,8 @@ const DASHBOARD_BY_ROLE: Record<NonNullable<LoginResponse['role']>, string> = {
   COMMITTEE_REVIEWER: '/committee/dashboard',
   SYSTEM_ADMIN: '/system-admin/dashboard',
 };
+
+const inputClass = 'h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-950 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-400 focus:border-[#0b2d5b] focus:ring-4 focus:ring-[#0b2d5b]/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:hover:border-slate-500';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,23 +74,20 @@ export default function LoginPage() {
   return (
     <AuthPageShell active="login">
       <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">Staff access</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Welcome Back</h2>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Sign in to access your secure GCTU promotion workspace.
-        </p>
-        <AuthTrustStrip />
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#0b2d5b] dark:text-yellow-100">Staff access</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Sign in</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Use your official GCTU account to continue.</p>
       </div>
 
       {error && (
-        <div className="mb-5 animate-[lpadsFade_0.2s_ease-out] rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900" role="alert">
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100" role="alert">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
-          <label htmlFor="username" className="mb-2 block text-sm font-semibold text-slate-800">
+          <label htmlFor="username" className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-100">
             Email or username
           </label>
           <input
@@ -100,18 +99,16 @@ export default function LoginPage() {
               if (fieldErrors.username) setFieldErrors((current) => ({ ...current, username: '' }));
             }}
             aria-invalid={Boolean(fieldErrors.username)}
-            aria-describedby="username-message"
+            aria-describedby={fieldErrors.username ? 'username-error' : undefined}
             autoComplete="username"
-            className="h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-950 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-400 focus:border-2 focus:border-blue-800 focus:shadow-[0_0_0_4px_rgba(30,64,175,0.12)]"
+            className={inputClass}
             placeholder="name@live.gctu.edu.gh"
           />
-          <p id="username-message" className={`mt-2 text-xs leading-5 transition duration-200 ${fieldErrors.username ? 'text-red-700' : 'text-slate-500'}`}>
-            {fieldErrors.username || 'Use your official GCTU staff account.'}
-          </p>
+          {fieldErrors.username && <p id="username-error" className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">{fieldErrors.username}</p>}
         </div>
 
         <div>
-          <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-800">
+          <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-100">
             Password
           </label>
           <div className="relative">
@@ -124,38 +121,39 @@ export default function LoginPage() {
                 if (fieldErrors.password) setFieldErrors((current) => ({ ...current, password: '' }));
               }}
               aria-invalid={Boolean(fieldErrors.password)}
-              aria-describedby="password-message"
+              aria-describedby={fieldErrors.password ? 'password-error' : undefined}
               autoComplete="current-password"
-              className="h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-16 text-sm text-slate-950 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-400 focus:border-2 focus:border-blue-800 focus:shadow-[0_0_0_4px_rgba(30,64,175,0.12)]"
-              placeholder="Enter your password"
+              className={`${inputClass} pr-16`}
+              placeholder="Enter password"
             />
             <button
               type="button"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               onClick={() => setShowPassword((current) => !current)}
-              className="absolute inset-y-1 right-1 rounded-lg px-3 text-xs font-semibold text-slate-500 outline-none transition-all duration-200 hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-800 active:scale-95"
+              className="absolute inset-y-1 right-1 rounded-lg px-3 text-xs font-semibold text-slate-500 outline-none transition hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b2d5b] dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
             >
               {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>
-          <p id="password-message" className={`mt-2 text-xs leading-5 transition duration-200 ${fieldErrors.password ? 'text-red-700' : 'text-slate-500'}`}>
-            {fieldErrors.password || 'Your password is protected during sign in.'}
-          </p>
+          {fieldErrors.password && <p id="password-error" className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">{fieldErrors.password}</p>}
         </div>
 
         <button
           type="submit"
           disabled={loading || success}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 outline-none transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-950 hover:shadow-xl hover:shadow-blue-900/20 focus-visible:ring-2 focus-visible:ring-blue-800 focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+          className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0b2d5b] px-4 text-sm font-semibold text-white shadow-lg shadow-[#0b2d5b]/15 outline-none transition duration-200 hover:-translate-y-0.5 hover:bg-[#082346] focus-visible:ring-2 focus-visible:ring-[#0b2d5b] focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 dark:focus-visible:ring-offset-slate-900"
         >
           {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
           {success ? 'Access granted' : loading ? 'Signing in...' : 'Sign In'}
         </button>
-
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-center text-xs font-medium text-slate-600">
-          New lecturer? <a href="/register" className="rounded-sm font-semibold text-blue-900 outline-none transition hover:text-blue-950 focus-visible:ring-2 focus-visible:ring-blue-800 focus-visible:ring-offset-2 dark:hover:text-blue-200">Create account</a>
-        </div>
       </form>
+
+      <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
+        New lecturer?{' '}
+        <a href="/register" className="rounded-sm font-semibold text-[#0b2d5b] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[#0b2d5b] focus-visible:ring-offset-2 dark:text-yellow-100 dark:focus-visible:ring-offset-slate-900">
+          Create account
+        </a>
+      </p>
     </AuthPageShell>
   );
 }
