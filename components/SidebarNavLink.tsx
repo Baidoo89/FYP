@@ -3,6 +3,29 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  Bell,
+  BookOpenCheck,
+  BriefcaseBusiness,
+  ClipboardCheck,
+  ClipboardList,
+  FileCheck2,
+  FileText,
+  Gauge,
+  HelpCircle,
+  History,
+  LayoutDashboard,
+  ListChecks,
+  MessageSquareText,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  Square,
+  UserCog,
+  UserRound,
+  UsersRound,
+} from 'lucide-react';
+import { cn } from '../lib/utils';
 
 type SidebarNavLinkProps = {
   href: string;
@@ -12,10 +35,44 @@ type SidebarNavLinkProps = {
   onNavigate?: () => void;
 };
 
+const iconMap = {
+  AA: ClipboardList,
+  AP: BriefcaseBusiness,
+  AS: ClipboardCheck,
+  AU: History,
+  CR: ListChecks,
+  DA: ClipboardCheck,
+  DB: LayoutDashboard,
+  DC: FileText,
+  DP: UsersRound,
+  EL: Gauge,
+  ER: Gauge,
+  EV: FileCheck2,
+  FB: MessageSquareText,
+  FC: UsersRound,
+  FW: ScrollText,
+  HC: HelpCircle,
+  NT: Bell,
+  PF: UserRound,
+  PR: BriefcaseBusiness,
+  RC: MessageSquareText,
+  RH: History,
+  RK: BookOpenCheck,
+  RL: ShieldCheck,
+  RM: ClipboardCheck,
+  RP: ScrollText,
+  RR: ClipboardList,
+  SE: Settings,
+  SR: UsersRound,
+  US: UserCog,
+  VQ: FileCheck2,
+} as const;
+
 export default function SidebarNavLink({ href, icon, children, subtitle, onNavigate }: SidebarNavLinkProps) {
   const pathname = usePathname();
   const normalizedHref = href.split('#')[0].split('?')[0];
   const isActive = pathname === normalizedHref || pathname.startsWith(`${normalizedHref}/`);
+  const Icon = iconMap[icon as keyof typeof iconMap] || Square;
 
   return (
     <li>
@@ -23,24 +80,24 @@ export default function SidebarNavLink({ href, icon, children, subtitle, onNavig
         href={href}
         aria-current={isActive ? 'page' : undefined}
         onClick={onNavigate}
-        className={[
-          'group flex items-center gap-3 rounded-lg px-3 py-2.5 transition',
-          'text-emerald-50/85 hover:bg-white/[0.08] hover:text-white',
-          isActive ? 'bg-white/[0.13] text-white shadow-[inset_3px_0_0_rgba(250,204,21,0.92)]' : '',
-        ].join(' ')}
+        className={cn(
+          'group flex items-center gap-3 rounded-lg px-3 py-2.5 transition duration-200',
+          'text-blue-50/85 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-primary',
+          isActive && 'bg-white/[0.13] text-white shadow-[inset_3px_0_0_rgba(212,175,55,0.98)]'
+        )}
       >
         <span
-          className={[
-            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-[10px] font-bold tracking-wide',
-            isActive ? 'bg-yellow-200 text-slate-950' : 'bg-white/[0.08] text-emerald-50/85 group-hover:bg-white/[0.14]',
-          ].join(' ')}
+          className={cn(
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md',
+            isActive ? 'bg-brand-accent text-slate-950' : 'bg-white/[0.08] text-blue-50/85 group-hover:bg-white/[0.14]'
+          )}
           aria-hidden="true"
         >
-          {icon}
+          <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold leading-tight">{children}</span>
-          {subtitle && <span className="mt-0.5 block truncate text-[11px] text-emerald-50/60 group-hover:text-emerald-50/90">{subtitle}</span>}
+          {subtitle && <span className="mt-0.5 block truncate text-[11px] text-blue-50/60 group-hover:text-blue-50/90">{subtitle}</span>}
         </div>
       </Link>
     </li>

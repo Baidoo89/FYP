@@ -3,10 +3,12 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { Bell, Menu } from 'lucide-react';
 import LogoutButton from './LogoutButton';
 import SidebarNavLink from './SidebarNavLink';
 import LecturerHeader from './LecturerHeader';
 import ThemeToggle from './ThemeToggle';
+import BottomNavigation from './BottomNavigation';
 
 type AppShellProps = {
   children: ReactNode;
@@ -231,11 +233,11 @@ export default function AppShell({ children }: AppShellProps) {
   }, [isAuthPage, pathname]);
 
   if (isAuthPage) {
-    return <div className="relative min-h-screen bg-slate-50 lpads-fade-in">{children}</div>;
+    return <div className="relative min-h-screen bg-brand-background lpads-fade-in">{children}</div>;
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50 lg:flex">
+    <div className="min-h-screen overflow-x-hidden bg-brand-background lg:flex">
       {mobileOpen && (
         <button
           type="button"
@@ -247,7 +249,7 @@ export default function AppShell({ children }: AppShellProps) {
 
       <nav
         className={[
-          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-[#032b28] bg-[linear-gradient(180deg,#064e3b_0%,#064033_56%,#032b28_100%)] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-[#102a54] bg-[linear-gradient(180deg,#183A72_0%,#102A54_60%,#0B1F3E_100%)] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
       >
@@ -263,7 +265,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
           <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-yellow-100">{portalTitle}</p>
-            <p className="mt-1 text-sm text-emerald-50/80">{portalSubtitle}</p>
+            <p className="mt-1 text-sm text-blue-50/80">{portalSubtitle}</p>
           </div>
         </div>
 
@@ -275,44 +277,44 @@ export default function AppShell({ children }: AppShellProps) {
           ))}
         </ul>
 
-        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-emerald-50/80">
+        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-blue-50/80">
           <p className="font-semibold text-white">Need help?</p>
           <p className="mt-1 leading-5">Contact support for account, evidence, and workflow assistance.</p>
         </div>
 
-        <div className="mt-4 border-t border-white/10 p-4 text-xs text-emerald-50/55">
+        <div className="mt-4 border-t border-white/10 p-4 text-xs text-blue-50/55">
           <p>GCTU Promotion System v1.0</p>
           <p>2026 GCTU. All rights reserved.</p>
         </div>
       </nav>
 
       <div className="flex min-w-0 flex-1 flex-col lg:ml-72">
-        <header className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-3 py-3 shadow-sm backdrop-blur sm:px-4 md:px-8 lg:left-72 lg:py-3">
+        <header className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-brand-border bg-white/95 px-3 py-3 shadow-sm backdrop-blur sm:px-4 md:px-8 lg:left-72 lg:py-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen((previous) => !previous)}
-              className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 lg:hidden"
+              className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md border border-brand-border bg-white text-brand-muted shadow-sm hover:bg-brand-background lg:hidden"
               aria-label="Toggle navigation menu"
             >
-              <span className="h-0.5 w-5 bg-current shadow-[0_6px_0_currentColor,0_-6px_0_currentColor]" />
+              <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
             {isLecturerNav ? (
               <LecturerHeader />
             ) : (
               <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-800">{portalTitle}</p>
-                <h2 className="truncate text-base font-semibold text-slate-950 md:text-lg">{portalSubtitle}</h2>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-primary">{portalTitle}</p>
+                <h2 className="truncate text-base font-semibold text-brand-text md:text-lg">{portalSubtitle}</h2>
               </div>
             )}
           </div>
           <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-            <div className="hidden w-64 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 xl:flex">
+            <div className="hidden w-64 items-center rounded-lg border border-brand-border bg-brand-background px-3 py-2 text-sm text-brand-muted xl:flex">
               Search anything...
             </div>
             <ThemeToggle compact />
-            <a href={isLecturerNav ? "/lecturer-portal/notifications" : "/notifications"} className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex" aria-label={`${notificationCount} unread notifications`}>
-              NT
+            <a href={isLecturerNav ? "/lecturer-portal/notifications" : "/notifications"} className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-brand-border bg-white text-sm font-bold text-brand-muted shadow-sm hover:bg-brand-background sm:flex" aria-label={`${notificationCount} unread notifications`}>
+              <Bell className="h-4 w-4" aria-hidden="true" />
               {notificationCount > 0 && (
                 <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-black text-white ring-2 ring-white">
                   {notificationCount > 9 ? '9+' : notificationCount}
@@ -320,7 +322,7 @@ export default function AppShell({ children }: AppShellProps) {
               )}
             </a>
             {!isLecturerNav && (
-              <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:block">
+              <div className="hidden rounded-full border border-brand-border bg-brand-background px-3 py-1.5 text-xs font-semibold text-brand-muted sm:block">
                 {isHrNav ? 'HR Panel' : rolePanelLabel(effectivePortalRole)}
               </div>
             )}
@@ -328,11 +330,12 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-6 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-24">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-24 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-24 lg:pb-6">{children}</main>
 
-        <footer className="border-t border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500 md:px-8">
+        <footer className="border-t border-brand-border bg-white px-4 py-4 pb-20 text-center text-xs text-brand-muted md:px-8 lg:pb-4">
           <p>GCTU Promotion System v1.0 | University Promotion Management Platform</p>
         </footer>
+        <BottomNavigation role={effectivePortalRole} />
       </div>
     </div>
   );

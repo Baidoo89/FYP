@@ -209,18 +209,18 @@ export default function LecturerDashboardOverview() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-2xl border border-emerald-900/15 bg-[linear-gradient(135deg,#063d33_0%,#075f4d_58%,#0f766e_100%)] p-5 text-white shadow-[0_18px_48px_rgba(6,78,59,0.22)] sm:p-6">
+      <section className="relative overflow-hidden rounded-2xl border border-brand-primary/20 bg-[linear-gradient(135deg,#183A72_0%,#102A54_60%,#0B1F3E_100%)] p-5 text-white shadow-[0_18px_48px_rgba(24,58,114,0.22)] sm:p-6">
         <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-center">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/95 p-1 shadow-lg">
               <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-50/80">Digital Staff Promotion Support System</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-50/80">Digital Staff Promotion Support System</p>
               <h1 className="mt-2 break-words text-2xl font-semibold tracking-tight sm:text-3xl">Welcome back, {data.user.name}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-50/85">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-50/85">
                 <span>{formatEnum(data.user.currentRank)}</span>
-                <span className="h-1 w-1 rounded-full bg-emerald-100/70" />
+                <span className="h-1 w-1 rounded-full bg-blue-100/70" />
                 <span>{data.user.department || 'Department not assigned'}</span>
                 <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white">Lecturer</span>
               </div>
@@ -230,11 +230,11 @@ export default function LecturerDashboardOverview() {
           <div className="rounded-xl border border-white/15 bg-white/10 p-4 shadow-inner backdrop-blur">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-50/75">Current Application</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-50/75">Current Application</p>
                 <p className="mt-2 text-xl font-semibold">{request ? rankPath : 'No active request'}</p>
-                <p className="mt-1 text-xs text-emerald-50/75">{request ? `Updated ${formatDate(request.updatedAt)}` : 'Create a request when you are ready to apply.'}</p>
+                <p className="mt-1 text-xs text-blue-50/75">{request ? `Updated ${formatDate(request.updatedAt)}` : 'Create a request when you are ready to apply.'}</p>
               </div>
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white text-sm font-black text-emerald-900">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white text-sm font-black text-brand-primary">
                 {request?.progressPercentage ?? 0}%
               </div>
             </div>
@@ -293,7 +293,7 @@ function LoadingDashboard() {
 function MetricCard({ label, value, detail, code, tone = 'slate' }: { label: string; value: number; detail: string; code: string; tone?: 'slate' | 'green' | 'amber' | 'rose' }) {
   const toneClass = {
     slate: 'border-slate-200 bg-slate-100 text-slate-700',
-    green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    green: 'border-brand-primary/25 bg-brand-primarySoft text-brand-primary',
     amber: 'border-amber-200 bg-amber-50 text-amber-900',
     rose: 'border-rose-200 bg-rose-50 text-rose-800',
   }[tone];
@@ -316,10 +316,10 @@ function NoRequestPanel() {
   return (
     <section className="pro-card p-6">
       <div className="max-w-2xl">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Promotion Workflow</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">Promotion Workflow</p>
         <h2 className="mt-2 text-xl font-semibold text-slate-950">No active promotion request yet</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">Create a request when your promotion cycle is ready. The workflow tracker will appear here after the request is created.</p>
-        <Link href="/lecturer-portal/application" className="mt-4 inline-flex rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-800">
+        <Link href="/lecturer-portal/application" className="mt-4 inline-flex rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
           Start Request
         </Link>
       </div>
@@ -348,10 +348,10 @@ function CurrentApplicationCard({ request, rankPath }: { request: DashboardData[
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <Link href="/lecturer-portal/application" className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800">
+        <Link href="/lecturer-portal/application" className="rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-primaryDark">
           Track Application
         </Link>
-        <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">
+        <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
           Evidence Portfolio
         </Link>
         <PrintSummaryButton />
@@ -371,7 +371,7 @@ function SummaryFact({ label, value }: { label: string; value: string }) {
 
 function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> }) {
   const toneClass = {
-    green: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    green: 'border-brand-primary/25 bg-brand-primarySoft text-brand-primary',
     amber: 'border-amber-200 bg-amber-50 text-amber-900',
     blue: 'border-sky-200 bg-sky-50 text-sky-900',
     rose: 'border-rose-200 bg-rose-50 text-rose-900',
@@ -402,7 +402,7 @@ function EligibilityPanel({ request }: { request: DashboardData['activeRequest']
       <p className="mt-3 text-sm leading-6 text-slate-600">
         {request?.eligibilityReason || 'Eligibility will be calculated after the required evidence has been verified by HR.'}
       </p>
-      <Link href="/lecturer-portal/eligibility" className="mt-4 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-900">
+      <Link href="/lecturer-portal/eligibility" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primary">
         View eligibility details
       </Link>
     </section>
@@ -437,7 +437,7 @@ function FeedbackPanel({ feedback }: { feedback: DashboardData['recentFeedback']
         )}
       </div>
 
-      <Link href="/lecturer-portal/queries" className="mt-4 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-900">
+      <Link href="/lecturer-portal/queries" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primary">
         Open feedback inbox
       </Link>
     </section>
@@ -457,7 +457,7 @@ function QuickActionPanel({ unreadNotifications }: { unreadNotifications: number
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Quick Actions</p>
       <div className="mt-4 grid gap-2">
         {links.map((link) => (
-          <Link key={link.href} href={link.href} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">
+          <Link key={link.href} href={link.href} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
             <span>
               <span className="block">{link.label}</span>
               <span className="mt-0.5 block text-xs font-normal text-slate-500">{link.detail}</span>

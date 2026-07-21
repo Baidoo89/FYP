@@ -16,16 +16,16 @@ function stateForStep(stepNumber: number, currentStep: number, status?: string) 
 
 const stateStyles = {
   complete: {
-    circle: 'border-teal-700 bg-teal-700 text-white shadow-sm',
+    circle: 'border-green-600 bg-green-600 text-white shadow-sm',
     label: 'text-gray-950',
     meta: 'Completed',
-    line: 'bg-teal-700',
+    line: 'bg-green-600',
   },
   current: {
-    circle: 'border-teal-700 bg-white text-teal-800 ring-4 ring-teal-100 shadow-sm',
-    label: 'text-teal-950',
+    circle: 'border-brand-primary bg-white text-brand-primary ring-4 ring-brand-primary/10 shadow-sm',
+    label: 'text-brand-primary',
     meta: 'In progress',
-    line: 'bg-teal-300',
+    line: 'bg-brand-primary/30',
   },
   pending: {
     circle: 'border-gray-200 bg-white text-gray-400',
