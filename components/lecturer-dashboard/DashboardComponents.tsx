@@ -9,7 +9,7 @@ interface AcademicHeaderProps {
 
 export function AcademicHeader({ name, staffId, currentRank, department }: AcademicHeaderProps) {
   return (
-    <div className="pro-card p-5 sm:p-6">
+    <div className="pro-card min-w-0 max-w-full p-5 sm:p-6">
       <div className="grid gap-4 md:grid-cols-4">
         <ProfileFact label="Full name" value={name} />
         <ProfileFact label="Staff ID" value={staffId} mono />
@@ -53,7 +53,7 @@ export function PromotionReadinessGauge({ percentage, targetRank, status }: Prom
   };
 
   return (
-    <div className="pro-card p-5 sm:p-6">
+    <div className="pro-card min-w-0 max-w-full p-5 sm:p-6">
       <div className="grid gap-5 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">Promotion readiness</p>
@@ -107,10 +107,10 @@ function statusTone(status: string) {
 
 export function RecentActivity({ documents }: RecentActivityProps) {
   return (
-    <div className="pro-card p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-950">Recent Activity</h3>
+    <div className="pro-card min-w-0 max-w-full p-5 sm:p-6">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="break-words text-lg font-semibold text-slate-950">Recent Activity</h3>
           <p className="mt-1 text-sm text-slate-600">Latest document updates and verification states.</p>
         </div>
         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -125,13 +125,13 @@ export function RecentActivity({ documents }: RecentActivityProps) {
           </div>
         ) : (
           documents.map((doc, idx) => (
-            <div key={idx} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3">
-              <span className="pro-code-badge">EV</span>
+            <div key={idx} className="flex min-w-0 items-start gap-3 rounded-lg border border-slate-200 bg-white p-3">
+              <span className="pro-code-badge shrink-0">EV</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-slate-950">{doc.title}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span className="rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 font-semibold text-brand-primary">{doc.category}</span>
-                  <span className={`rounded-full border px-2 py-0.5 font-semibold ${statusTone(doc.verificationStatus)}`}>{doc.verificationStatus}</span>
+                <p className="break-words font-semibold text-slate-950">{doc.title}</p>
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span className="max-w-full break-words rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 font-semibold text-brand-primary">{doc.category}</span>
+                  <span className={`max-w-full break-words rounded-full border px-2 py-0.5 font-semibold ${statusTone(doc.verificationStatus)}`}>{doc.verificationStatus}</span>
                   <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
                 </div>
               </div>

@@ -49,16 +49,17 @@ const stateStyles = {
 
 export default function ProgressStepper({ currentStep, steps, status }: ProgressStepperProps) {
   return (
-    <section className="max-w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 print:shadow-none">
-      <div className="mb-4 flex min-w-0 flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+    <section className="h-full min-w-0 max-w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 print:shadow-none">
+      <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <h3 className="text-base font-bold text-gray-950">Promotion Workflow</h3>
           <p className="mt-1 text-sm text-gray-600">Draft to final administrative completion.</p>
         </div>
-        {status && <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-gray-600">{status.replace(/_/g, ' ')}</span>}
+        {status && <span className="w-fit max-w-full whitespace-normal rounded-full bg-gray-100 px-3 py-1 text-xs font-bold uppercase leading-4 tracking-[0.12em] text-gray-600">{status.replace(/_/g, ' ')}</span>}
       </div>
-      <div className="pro-scroll-x -mx-4 px-4 pb-2 sm:-mx-5 sm:px-5">
-        <div className="grid min-w-[680px] sm:min-w-[760px]" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
+
+      <div className="pro-scroll-x pb-2">
+        <div className="grid min-w-[660px] sm:min-w-[720px]" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
           {steps.map((step, index) => {
             const stepNumber = index + 1;
             const state = stateForStep(stepNumber, currentStep, status) as keyof typeof stateStyles;
@@ -66,7 +67,7 @@ export default function ProgressStepper({ currentStep, steps, status }: Progress
             const isLast = index === steps.length - 1;
 
             return (
-              <div key={step} className="relative flex flex-col items-center text-center">
+              <div key={step} className="relative flex min-w-0 flex-col items-center text-center">
                 {!isLast && (
                   <div className={`absolute left-1/2 top-5 h-0.5 w-full ${styles.line}`} aria-hidden="true" />
                 )}

@@ -48,7 +48,7 @@ function getConfig(status: string) {
 export default function StatusBadge({ status, label }: StatusBadgeProps) {
   const config = getConfig(status);
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${config.className}`}>
+    <span className={`inline-flex max-w-full items-center whitespace-normal break-words rounded-full border px-3 py-1 text-left text-xs font-semibold leading-4 ${config.className}`}>
       {label || config.label}
     </span>
   );

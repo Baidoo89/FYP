@@ -228,7 +228,7 @@ export default function LecturerDashboardOverview() {
   const initials = initialsFor(data.user.name) || 'GU';
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 max-w-full space-y-5 overflow-x-hidden">
       <section className="relative overflow-hidden rounded-xl border border-brand-primary/20 bg-[linear-gradient(135deg,#183A72_0%,#102A54_62%,#0B1F3E_100%)] p-4 text-white shadow-[0_14px_36px_rgba(24,58,114,0.18)] sm:p-5">
         <div className="relative z-10 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,21rem)] lg:items-center">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -265,22 +265,24 @@ export default function LecturerDashboardOverview() {
         <MetricCard label="Returned" value={data.documentStats.returnedCount} detail="Needs correction" icon={RotateCcw} tone="rose" />
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
-        <div className="space-y-5">
-          {nextAction && <div className="xl:hidden"><NextActionPanel action={nextAction} /></div>}
-
+      <section className="grid min-w-0 max-w-full gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] 2xl:items-stretch">
+        <div className="min-w-0">
           {request ? (
             <ProgressStepper currentStep={currentStep} steps={WORKFLOW_STEPS} status={request.status} />
           ) : (
             <NoRequestPanel />
           )}
+        </div>
+        {nextAction && <NextActionPanel action={nextAction} />}
+      </section>
 
+      <div className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(0,1fr)_23rem]">
+        <div className="min-w-0 max-w-full space-y-5">
           <CurrentApplicationCard request={request} rankPath={rankPath} />
           <RecentActivity documents={data.recentDocuments} />
         </div>
 
-        <aside className="space-y-5">
-          {nextAction && <div className="hidden xl:block"><NextActionPanel action={nextAction} /></div>}
+        <aside className="min-w-0 max-w-full space-y-5">
           <EligibilityPanel request={request} />
           <FeedbackPanel feedback={data.recentFeedback} />
           <QuickActionPanel unreadNotifications={data.documentStats.unreadNotifications} />
@@ -301,7 +303,7 @@ function ApplicationFact({ label, value }: { label: string; value: string }) {
 
 function LoadingDashboard() {
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 max-w-full space-y-5 overflow-x-hidden">
       <div className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
       <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (
@@ -339,7 +341,7 @@ function MetricCard({ label, value, detail, icon: Icon, tone = 'slate' }: { labe
 
 function NoRequestPanel() {
   return (
-    <section className="pro-card p-5">
+    <section className="pro-card min-w-0 p-5">
       <div className="max-w-2xl">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">Promotion Workflow</p>
         <h2 className="mt-2 text-xl font-semibold text-slate-950">No active promotion request yet</h2>
@@ -354,9 +356,9 @@ function NoRequestPanel() {
 
 function CurrentApplicationCard({ request, rankPath }: { request: DashboardData['activeRequest']; rankPath: string }) {
   return (
-    <section className="pro-card min-w-0 p-5 sm:p-6">
+    <section className="pro-card min-w-0 max-w-full p-5 sm:p-6">
       <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Application Summary</p>
           <h2 className="mt-2 break-words text-lg font-semibold text-slate-950">{request ? rankPath : 'Promotion request not started'}</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -366,17 +368,17 @@ function CurrentApplicationCard({ request, rankPath }: { request: DashboardData[
         {request && <StatusBadge status={request.status} />}
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-3">
         <SummaryFact label="Submitted" value={formatDate(request?.submittedAt)} />
         <SummaryFact label="Total Score" value={request?.totalScore == null ? 'Pending' : `${Math.round(request.totalScore)}%`} />
         <SummaryFact label="Latest Evidence" value={request?.latestDocument?.title || 'No upload yet'} />
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        <Link href="/lecturer-portal/application" className="rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-primaryDark">
+      <div className="mt-5 grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:gap-3 [&>button]:w-full sm:[&>button]:w-auto">
+        <Link href="/lecturer-portal/application" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-primaryDark sm:w-auto">
           Track Application
         </Link>
-        <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
+        <Link href="/lecturer-portal/evidence" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary sm:w-auto">
           Evidence Portfolio
         </Link>
         <PrintSummaryButton />
@@ -403,18 +405,18 @@ function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> 
   }[action.tone];
 
   return (
-    <section className={`rounded-xl border p-4 shadow-sm sm:p-5 ${toneClass}`}>
-      <div className="flex min-w-0 items-start gap-3">
+    <section className={`flex h-full min-w-0 max-w-full flex-col rounded-xl border p-4 shadow-sm sm:p-5 ${toneClass}`}>
+      <div className="flex min-w-0 max-w-full items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/70">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-75">Next Required Action</p>
-          <h2 className="mt-1 text-lg font-semibold">{action.title}</h2>
-          <p className="mt-1 text-sm leading-6 opacity-80">{action.detail}</p>
+          <h2 className="mt-1 break-words text-lg font-semibold">{action.title}</h2>
+          <p className="mt-1 break-words text-sm leading-6 opacity-80">{action.detail}</p>
         </div>
       </div>
-      <Link href={action.href} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5">
+      <Link href={action.href} className="mt-4 inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 2xl:mt-auto">
         {action.label}
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </Link>
@@ -424,7 +426,7 @@ function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> 
 
 function EligibilityPanel({ request }: { request: DashboardData['activeRequest'] }) {
   return (
-    <section className="pro-card p-5">
+    <section className="pro-card min-w-0 p-5">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Eligibility Status</p>
@@ -444,7 +446,7 @@ function EligibilityPanel({ request }: { request: DashboardData['activeRequest']
 
 function FeedbackPanel({ feedback }: { feedback: DashboardData['recentFeedback'] }) {
   return (
-    <section className="pro-card p-5">
+    <section className="pro-card min-w-0 p-5">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Recent Feedback</p>
@@ -486,20 +488,20 @@ function QuickActionPanel({ unreadNotifications }: { unreadNotifications: number
   ];
 
   return (
-    <section className="pro-card p-5">
+    <section className="pro-card min-w-0 p-5">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Quick Actions</p>
       <div className="mt-4 grid gap-2">
         {links.map((link) => {
           const Icon = link.icon;
           return (
-            <Link key={link.href} href={link.href} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
-              <span className="flex min-w-0 items-start gap-3">
+            <Link key={link.href} href={link.href} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
+              <span className="flex min-w-0 max-w-full items-start gap-3">
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand-primary/20 bg-white text-brand-primary">
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block">{link.label}</span>
-                  <span className="mt-0.5 block text-xs font-normal text-slate-500">{link.detail}</span>
+                  <span className="block break-words">{link.label}</span>
+                  <span className="mt-0.5 block break-words text-xs font-normal text-slate-500">{link.detail}</span>
                 </span>
               </span>
               <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
