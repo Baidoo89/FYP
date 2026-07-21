@@ -197,7 +197,7 @@ export default function AppraisalList({ refreshToken }: AppraisalListProps) {
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden pro-scroll-x md:block">
             <table className="w-full table-fixed text-sm">
               <colgroup>
                 <col className="w-[26%]" />

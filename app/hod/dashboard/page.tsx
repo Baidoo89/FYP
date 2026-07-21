@@ -213,7 +213,7 @@ export default async function HodDashboardPage() {
               <EmptyPanel title="No department applications" description="Promotion files will appear here when lecturers in your scope submit applications." />
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="pro-scroll-x">
               <table className="min-w-full divide-y divide-gray-100 text-left text-sm">
                 <thead className="bg-gray-50 text-xs font-bold uppercase tracking-[0.12em] text-gray-500">
                   <tr>

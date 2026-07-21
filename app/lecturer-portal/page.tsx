@@ -230,7 +230,7 @@ export default function LecturerDashboardOverview() {
   return (
     <div className="space-y-5">
       <section className="relative overflow-hidden rounded-xl border border-brand-primary/20 bg-[linear-gradient(135deg,#183A72_0%,#102A54_62%,#0B1F3E_100%)] p-4 text-white shadow-[0_14px_36px_rgba(24,58,114,0.18)] sm:p-5">
-        <div className="relative z-10 grid gap-4 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-center">
+        <div className="relative z-10 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,21rem)] lg:items-center">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/15 text-base font-black text-white shadow-sm sm:h-16 sm:w-16 sm:text-lg">
               {initials}
@@ -258,7 +258,7 @@ export default function LecturerDashboardOverview() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
         <MetricCard label="Documents" value={data.documentStats.totalDocuments} detail="Total uploaded" icon={FileText} />
         <MetricCard label="Verified" value={data.documentStats.verifiedCount} detail="Approved by HR" icon={CheckCircle2} tone="green" />
         <MetricCard label="Pending" value={data.documentStats.pendingCount} detail="Awaiting review" icon={Clock3} tone="amber" />
@@ -294,7 +294,7 @@ function ApplicationFact({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-50/60">{label}</p>
-      <p className="mt-1 text-sm font-semibold leading-5 text-white">{value}</p>
+      <p className="mt-1 break-words text-sm font-semibold leading-5 text-white">{value}</p>
     </div>
   );
 }
@@ -303,7 +303,7 @@ function LoadingDashboard() {
   return (
     <div className="space-y-5">
       <div className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (
           <div key={item} className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
         ))}
@@ -322,8 +322,8 @@ function MetricCard({ label, value, detail, icon: Icon, tone = 'slate' }: { labe
   }[tone];
 
   return (
-    <article className="pro-tile p-4">
-      <div className="flex items-start justify-between gap-3">
+    <article className="pro-tile min-w-0 p-4">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
           <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">{value}</p>
@@ -354,11 +354,11 @@ function NoRequestPanel() {
 
 function CurrentApplicationCard({ request, rankPath }: { request: DashboardData['activeRequest']; rankPath: string }) {
   return (
-    <section className="pro-card p-5 sm:p-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+    <section className="pro-card min-w-0 p-5 sm:p-6">
+      <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Application Summary</p>
-          <h2 className="mt-2 text-lg font-semibold text-slate-950">{request ? rankPath : 'Promotion request not started'}</h2>
+          <h2 className="mt-2 break-words text-lg font-semibold text-slate-950">{request ? rankPath : 'Promotion request not started'}</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
             {request ? `Application PR-${String(request.id).padStart(5, '0')} last updated ${formatDate(request.updatedAt)}.` : 'Your application details will appear here once a request is created.'}
           </p>
@@ -387,9 +387,9 @@ function CurrentApplicationCard({ request, rankPath }: { request: DashboardData[
 
 function SummaryFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className="mt-2 truncate text-sm font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-950">{value}</p>
     </div>
   );
 }
@@ -404,7 +404,7 @@ function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> 
 
   return (
     <section className={`rounded-xl border p-4 shadow-sm sm:p-5 ${toneClass}`}>
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/70">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
@@ -425,10 +425,10 @@ function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> 
 function EligibilityPanel({ request }: { request: DashboardData['activeRequest'] }) {
   return (
     <section className="pro-card p-5">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Eligibility Status</p>
-          <h2 className="mt-2 text-lg font-semibold text-slate-950">{formatEnum(request?.eligibilityStatus || 'NOT_CALCULATED')}</h2>
+          <h2 className="mt-2 break-words text-lg font-semibold text-slate-950">{formatEnum(request?.eligibilityStatus || 'NOT_CALCULATED')}</h2>
         </div>
         <StatusBadge status={request?.eligibilityStatus || 'NOT_CALCULATED'} />
       </div>
@@ -445,10 +445,10 @@ function EligibilityPanel({ request }: { request: DashboardData['activeRequest']
 function FeedbackPanel({ feedback }: { feedback: DashboardData['recentFeedback'] }) {
   return (
     <section className="pro-card p-5">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Recent Feedback</p>
-          <h2 className="mt-2 text-lg font-semibold text-slate-950">HR remarks and corrections</h2>
+          <h2 className="mt-2 break-words text-lg font-semibold text-slate-950">HR remarks and corrections</h2>
         </div>
         <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{feedback.length}</span>
       </div>

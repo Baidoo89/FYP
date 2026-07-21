@@ -168,7 +168,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden pro-scroll-x md:block">
             <table className="w-full min-w-[860px]">
               <thead className="brand-table-head">
                 <tr>

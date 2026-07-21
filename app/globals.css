@@ -54,6 +54,32 @@ body {
   background: #f3f4f6;
 }
 
+.pro-scroll-x {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(24, 58, 114, 0.35) transparent;
+}
+
+.pro-scroll-x::-webkit-scrollbar {
+  height: 0.5rem;
+}
+
+.pro-scroll-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pro-scroll-x::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(24, 58, 114, 0.28);
+}
+
+.pro-scroll-x::-webkit-scrollbar-thumb:hover {
+  background: rgba(24, 58, 114, 0.45);
+}
 .brand-input {
   width: 100%;
   border: 1px solid #d1d5db;

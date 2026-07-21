@@ -200,10 +200,10 @@ export default function ApplicationPage() {
 
   if (!selectedRequest) {
     return (
-      <div className="space-y-6">
-        <section className="pro-hero px-6 py-8">
+      <div className="min-w-0 space-y-6">
+        <section className="pro-hero px-4 py-6 sm:px-6 sm:py-8">
           <div className="pro-eyebrow">Active Application</div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">No Active Application</h1>
+          <h1 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-4xl">No Active Application</h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
             You do not have an active promotion application yet. Start by uploading your promotion evidence.
           </p>
@@ -227,19 +227,19 @@ export default function ApplicationPage() {
   const returned = documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length;
 
   return (
-    <div className="space-y-6">
-      <section className="pro-hero px-6 py-8">
+    <div className="min-w-0 space-y-6">
+      <section className="pro-hero px-4 py-6 sm:px-6 sm:py-8">
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">Application Tracker</div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-4xl">
               {selectedRequest.currentRank} to {selectedRequest.targetRank}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
               Track your promotion workflow, evidence decisions, eligibility recommendation, review comments, and next required action.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex min-w-0 flex-wrap gap-2">
             <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
               Upload Evidence
             </Link>
@@ -253,22 +253,24 @@ export default function ApplicationPage() {
 
       {requests.length > 1 && (
         <section className="pro-card p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="font-semibold text-slate-950">My Applications</h2>
               <p className="mt-1 text-sm text-slate-600">Switch between your current and previous promotion records.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {requests.map((request) => (
-                <button
-                  key={request.id}
-                  type="button"
-                  onClick={() => setSelectedId(request.id)}
-                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedRequest.id === request.id ? 'border-teal-600 bg-teal-700 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
-                >
-                  #{request.id} {label(request.status)}
-                </button>
-              ))}
+            <div className="pro-scroll-x -mx-4 px-4 pb-1 lg:mx-0 lg:px-0">
+              <div className="flex min-w-max gap-2">
+                {requests.map((request) => (
+                  <button
+                    key={request.id}
+                    type="button"
+                    onClick={() => setSelectedId(request.id)}
+                    className={`whitespace-nowrap rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedRequest.id === request.id ? 'border-teal-600 bg-teal-700 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                  >
+                    #{request.id} {label(request.status)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -289,7 +291,7 @@ export default function ApplicationPage() {
               <h2 className="mt-2 text-xl font-bold text-slate-950">{nextAction.title}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{nextAction.detail}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex min-w-0 flex-wrap gap-2">
               {nextAction.href ? (
                 <Link href={nextAction.href} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
                   {nextAction.action}
@@ -317,7 +319,7 @@ export default function ApplicationPage() {
               Use these actions to keep your promotion record complete and ready for review.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex min-w-0 flex-wrap gap-2">
             <StatusBadge status={selectedRequest.status} />
             <Link href="/lecturer-portal/evidence" className="rounded-lg border border-teal-200 px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50">
               Evidence Portfolio
@@ -342,13 +344,13 @@ function TrackerMetric({ code, label, value, tone = 'teal' }: { code: string; la
       : 'border-teal-200 bg-teal-50 text-teal-800';
 
   return (
-    <div className="pro-tile p-5">
-      <div className="flex items-center justify-between gap-4">
+    <div className="pro-tile min-w-0 p-4 sm:p-5">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{value}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
       </div>
     </div>
   );

@@ -23,17 +23,17 @@ export default function LecturerHeader() {
   return (
     <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
       <nav className="flex min-w-0 items-center gap-2 text-sm" aria-label="Lecturer portal breadcrumb">
-        <Link href="/lecturer-portal" className="inline-flex items-center gap-2 rounded-md text-slate-600 outline-none transition hover:text-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2">
+        <Link href="/lecturer-portal" className="inline-flex min-w-0 items-center gap-2 rounded-md text-slate-600 outline-none transition hover:text-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2">
           <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-brand-primary/20 bg-white p-0.5 shadow-sm">
             <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
           </span>
-          <span className="hidden font-semibold sm:inline">GCTU Promotion System</span>
-          <span className="font-semibold sm:hidden">GCTU</span>
+          <span className="hidden min-w-0 truncate font-semibold sm:inline">GCTU Promotion System</span>
+          <span className="min-w-0 truncate font-semibold sm:hidden">GCTU</span>
         </Link>
 
         {pathname !== '/lecturer-portal' && (
           <>
-            <span className="text-slate-300">/</span>
+            <span className="shrink-0 text-slate-300">/</span>
             <span className="inline-flex min-w-0 items-center gap-2 font-semibold text-slate-950">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand-primarySoft text-[10px] font-bold text-brand-primary">
                 {currentPage.code}

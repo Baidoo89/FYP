@@ -180,7 +180,7 @@ export default async function CommitteeDashboardPage() {
               <EmptyPanel title="No committee applications" description="HR-verified promotion files will appear here once routed to committee review." />
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="pro-scroll-x">
               <table className="min-w-full divide-y divide-gray-100 text-left text-sm">
                 <thead className="bg-gray-50 text-xs font-bold uppercase tracking-[0.12em] text-gray-500">
                   <tr>

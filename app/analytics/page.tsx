@@ -310,7 +310,7 @@ export default function AnalyticsPage() {
         {summary.departmentApplications.length === 0 ? (
           <EmptyState title="No applications found" description="Adjust the filters or create promotion applications to populate this report." />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="pro-scroll-x">
             <table className="w-full min-w-[860px] text-sm">
               <thead className="brand-table-head">
                 <tr>
@@ -348,7 +348,7 @@ export default function AnalyticsPage() {
           {summary.recentApplications.length === 0 ? (
             <EmptyState title="No recent applications" description="Applications will appear here when lecturers submit promotion requests." />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="pro-scroll-x">
               <table className="w-full min-w-[900px] text-sm">
                 <thead className="brand-table-head">
                   <tr>

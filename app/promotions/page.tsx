@@ -165,7 +165,7 @@ export default function PromotionsPage() {
               ))}
             </div>
 
-            <div className="hidden overflow-x-auto md:block">
+            <div className="hidden pro-scroll-x md:block">
               <table className="w-full min-w-[1120px] text-sm">
                 <thead className="brand-table-head">
                   <tr>

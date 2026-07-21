@@ -146,7 +146,7 @@ export default async function SystemAdminDashboardPage() {
               User Management
             </Link>
           </div>
-          <div className="overflow-x-auto">
+          <div className="pro-scroll-x">
             <table className="min-w-full divide-y divide-gray-100 text-left text-sm">
               <thead className="bg-gray-50 text-xs font-bold uppercase tracking-[0.12em] text-gray-500">
                 <tr>

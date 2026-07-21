@@ -274,7 +274,7 @@ export default function AuditLogViewer({
         ) : logs.length === 0 ? (
           <div className="p-5"><EmptyState title="No audit events found" description="Adjust filters or perform workflow actions to populate this audit trail." /></div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="pro-scroll-x">
             <table className="w-full min-w-[1040px] text-sm">
               <thead className="brand-table-head text-left text-xs uppercase tracking-[0.14em] text-gray-500">
                 <tr>

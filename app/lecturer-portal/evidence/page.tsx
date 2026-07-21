@@ -328,12 +328,12 @@ export default function EvidencePage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="pro-hero px-6 py-8">
+    <div className="min-w-0 space-y-6">
+      <section className="pro-hero px-4 py-6 sm:px-6 sm:py-8">
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">Evidence Portfolio</div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">Promotion Evidence Workspace</h1>
+            <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-gray-950 sm:text-4xl">Promotion Evidence Workspace</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
               Upload, replace, and track official promotion evidence. Required categories must be verified before eligibility can be calculated.
             </p>
@@ -349,17 +349,17 @@ export default function EvidencePage() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <PortfolioMetric code="REQ" label="Required verified" value={`${data.stats.requiredVerifiedCount}/${data.stats.requiredCategories}`} detail={`${readinessPercent}% readiness`} />
         <PortfolioMetric code="DOC" label="Uploaded documents" value={data.stats.totalDocuments} detail="Across active application" />
         <PortfolioMetric code="PEN" label="Pending review" value={data.stats.pendingCount} detail="Awaiting HR decision" tone="amber" />
         <PortfolioMetric code="RET" label="Needs attention" value={data.stats.returnedCount + data.stats.rejectedCount} detail="Correction or rejection" tone="rose" />
       </section>
 
-      <section className="pro-card p-5">
+      <section className="pro-card min-w-0 p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-gray-950">Application Evidence Readiness</h2>
+            <h2 className="break-words text-lg font-bold text-gray-950">Application Evidence Readiness</h2>
             <p className="mt-1 text-sm leading-6 text-gray-600">
               {data.request ? `${label(data.request.currentRank)} to ${label(data.request.targetRank)} | ${label(data.request.status)}` : `${label(data.currentRank)} to ${label(data.targetRank)} draft evidence plan`}
             </p>
@@ -422,7 +422,7 @@ export default function EvidencePage() {
                   onClick={() => chooseCategory(document.category)}
                   className="rounded-lg border border-amber-200 bg-white p-3 text-left text-sm transition hover:bg-amber-50"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="font-semibold text-gray-950">{document.title}</p>
                       <p className="mt-1 text-xs font-medium text-gray-600">{CATEGORY_INFO[document.category].title}</p>
@@ -442,10 +442,10 @@ export default function EvidencePage() {
           )}
         </section>
       )}
-      <section className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">
+      <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
         <div className="pro-card overflow-hidden">
           <div className="border-b border-gray-200 p-5">
-            <h2 className="text-lg font-bold text-gray-950">Evidence Categories</h2>
+            <h2 className="break-words text-lg font-bold text-gray-950">Evidence Categories</h2>
             <p className="mt-1 text-sm text-gray-600">Select a category to upload, replace, or inspect evidence.</p>
           </div>
           <div className="grid gap-3 p-4 md:grid-cols-2">
@@ -460,15 +460,15 @@ export default function EvidencePage() {
                   onClick={() => chooseCategory(category)}
                   className={`rounded-xl border p-4 text-left transition ${active ? 'border-teal-600 bg-teal-50 shadow-sm' : 'border-gray-200 bg-white hover:border-teal-200 hover:bg-gray-50'}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex gap-3">
+                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs font-black text-teal-800">{info.code}</span>
-                      <div>
-                        <p className="font-bold text-gray-950">{info.title}</p>
+                      <div className="min-w-0">
+                        <p className="break-words font-bold text-gray-950">{info.title}</p>
                         <p className="mt-1 line-clamp-2 text-xs leading-5 text-gray-600">{info.description}</p>
                       </div>
                     </div>
-                    {row?.required && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-900">Required</span>}
+                    {row?.required && <span className="w-fit shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-900">Required</span>}
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone(row?.status || 'MISSING')}`}>{row?.status === 'MISSING' ? 'Missing' : label(row?.status)}</span>
@@ -480,12 +480,12 @@ export default function EvidencePage() {
           </div>
         </div>
 
-        <div className="pro-card p-5">
+        <div className="pro-card min-w-0 p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <span className="pro-code-badge">{selectedInfo.code}</span>
-                <h2 className="text-lg font-bold text-gray-950">{selectedInfo.title}</h2>
+                <h2 className="break-words text-lg font-bold text-gray-950">{selectedInfo.title}</h2>
               </div>
               <p className="mt-3 text-sm leading-6 text-gray-600">{selectedInfo.description}</p>
               <p className="mt-2 text-xs font-medium text-gray-500">Examples: {selectedInfo.examples}</p>
@@ -498,10 +498,10 @@ export default function EvidencePage() {
           {latestSelectedDoc && (
             <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Current file</p>
-                  <p className="mt-1 font-semibold text-gray-950">{latestSelectedDoc.title}</p>
-                  <p className="mt-1 text-xs text-gray-500">{formatBytes(latestSelectedDoc.size)} | Uploaded {formatDate(latestSelectedDoc.uploadedAt)}</p>
+                  <p className="mt-1 break-words font-semibold text-gray-950">{latestSelectedDoc.title}</p>
+                  <p className="mt-1 break-words text-xs text-gray-500">{formatBytes(latestSelectedDoc.size)} | Uploaded {formatDate(latestSelectedDoc.uploadedAt)}</p>
                 </div>
                 <StatusBadge status={latestSelectedDoc.verificationStatus || 'PENDING'} />
               </div>
@@ -535,7 +535,7 @@ export default function EvidencePage() {
                   type="file"
                   accept="application/pdf"
                   onChange={(event) => setUploadFile(event.target.files?.[0] || null)}
-                  className="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-teal-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+                  className="block w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs text-gray-900 file:mr-2 file:rounded-md file:border-0 file:bg-teal-700 file:px-2 file:py-2 file:text-xs file:font-semibold file:text-white sm:text-sm sm:file:mr-3 sm:file:px-3 sm:file:text-sm"
                 />
               </label>
             </div>
@@ -563,7 +563,7 @@ export default function EvidencePage() {
       <section className="pro-card overflow-hidden">
         <div className="flex flex-col justify-between gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-end">
           <div>
-            <h2 className="text-lg font-bold text-gray-950">Evidence Register</h2>
+            <h2 className="break-words text-lg font-bold text-gray-950">Evidence Register</h2>
             <p className="mt-1 text-sm text-gray-600">All documents currently attached to the active promotion application.</p>
           </div>
           <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">{data.documents.length} record(s)</span>
@@ -574,7 +574,7 @@ export default function EvidencePage() {
             <EmptyState title="No evidence uploaded yet" description="Select a required category and upload the first PDF evidence file to create your draft promotion application." />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="pro-scroll-x">
             <table className="w-full min-w-[860px] text-sm">
               <thead className="brand-table-head">
                 <tr>
@@ -591,7 +591,7 @@ export default function EvidencePage() {
                   <tr key={doc.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-5 py-4">
                       <p className="font-semibold text-gray-950">{doc.title}</p>
-                      <p className="mt-1 text-xs text-gray-500">{doc.fileName || formatBytes(doc.size)}</p>
+                      <p className="mt-1 break-words text-xs text-gray-500">{doc.fileName || formatBytes(doc.size)}</p>
                     </td>
                     <td className="px-5 py-4">
                       <p className="font-medium text-gray-800">{CATEGORY_INFO[doc.category].title}</p>
@@ -628,14 +628,14 @@ function PortfolioMetric({ code, label, value, detail, tone = 'teal' }: { code: 
       : 'border-teal-200 bg-teal-50 text-teal-800';
 
   return (
-    <div className="pro-tile p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{label}</p>
+    <div className="pro-tile min-w-0 p-4 sm:p-5">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-gray-500">{label}</p>
           <p className="mt-2 text-3xl font-semibold text-gray-950">{value}</p>
-          <p className="mt-1 text-xs text-gray-500">{detail}</p>
+          <p className="mt-1 break-words text-xs text-gray-500">{detail}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-black ${toneClass}`}>{code}</span>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-xs font-black ${toneClass}`}>{code}</span>
       </div>
     </div>
   );
@@ -643,9 +643,9 @@ function PortfolioMetric({ code, label, value, detail, tone = 'teal' }: { code: 
 
 function GuidanceTile({ title, value }: { title: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+    <div className="min-w-0 rounded-lg border border-gray-200 bg-gray-50 p-3">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{title}</p>
-      <p className="mt-1 text-sm font-semibold leading-6 text-gray-950">{value}</p>
+      <p className="mt-1 break-words text-sm font-semibold leading-6 text-gray-950">{value}</p>
     </div>
   );
 }

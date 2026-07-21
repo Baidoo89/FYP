@@ -269,8 +269,8 @@ export default function PromotionApplicationDetail({ application, role, children
   const verifiedPercent = completionPercent(stats);
 
   return (
-    <div className="space-y-5 print:space-y-3">
-      <section className="pro-card overflow-hidden print:shadow-none">
+    <div className="min-w-0 space-y-5 print:space-y-3">
+      <section className="pro-card max-w-full overflow-hidden print:shadow-none">
         <div className="border-b border-gray-200 bg-white px-5 py-5">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
             <div className="min-w-0">
@@ -301,7 +301,7 @@ export default function PromotionApplicationDetail({ application, role, children
           </div>
         </div>
 
-        <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <div className="border-b border-gray-200 p-5 lg:border-b-0 lg:border-r">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -313,7 +313,7 @@ export default function PromotionApplicationDetail({ application, role, children
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-100">
               <div className="h-full rounded-full bg-teal-700" style={{ width: `${Math.max(verifiedPercent, stats.verified ? 8 : 0)}%` }} />
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
               <MiniMetric label="Pending" value={stats.pending} tone="amber" />
               <MiniMetric label="Verified" value={stats.verified} tone="green" />
               <MiniMetric label="Correction" value={stats.correction} tone="amber" />
@@ -341,8 +341,8 @@ export default function PromotionApplicationDetail({ application, role, children
         </section>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="pro-card p-5 print:shadow-none">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <section className="pro-card min-w-0 p-5 print:shadow-none">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
               <h3 className="text-lg font-bold text-gray-950">Evidence Documents</h3>
@@ -355,19 +355,19 @@ export default function PromotionApplicationDetail({ application, role, children
               <EmptyLine message="No evidence documents have been uploaded yet." />
             ) : (
               documents.map((document) => (
-                <article key={document.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <article key={document.id} className="min-w-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-gray-950">{document.title}</p>
+                        <p className="break-words font-semibold text-gray-950">{document.title}</p>
                         <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-gray-600">
                           {label(document.category)}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">{fileMeta(document)}</p>
+                      <p className="mt-1 break-words text-xs text-gray-500">{fileMeta(document)}</p>
                       {document.verificationComment && <p className="mt-3 text-sm leading-6 text-gray-700">{document.verificationComment}</p>}
                     </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                       <StatusBadge status={document.verificationStatus || 'PENDING'} />
                       {document.fileUrl && (
                         <a href={document.fileUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
@@ -383,7 +383,7 @@ export default function PromotionApplicationDetail({ application, role, children
         </section>
 
         <div className="space-y-5">
-          <section className="pro-card p-5 print:shadow-none">
+          <section className="pro-card min-w-0 p-5 print:shadow-none">
             <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
               <div>
                 <h3 className="text-lg font-bold text-gray-950">Eligibility Recommendation</h3>
@@ -398,29 +398,29 @@ export default function PromotionApplicationDetail({ application, role, children
             )}
           </section>
 
-          <section className="pro-card p-5 print:shadow-none">
+          <section className="pro-card min-w-0 p-5 print:shadow-none">
             <h3 className="text-lg font-bold text-gray-950">Review Comments</h3>
             <div className="mt-4 space-y-3">
               {reviewComments.length === 0 ? (
                 <EmptyLine message="No review comments recorded yet." />
               ) : (
                 reviewComments.slice(0, 6).map((review, index) => (
-                  <article key={review.id || index} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                    <div className="flex items-start justify-between gap-3">
+                  <article key={review.id || index} className="min-w-0 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <p className="text-sm font-semibold text-gray-950">{review.reviewer?.name || 'Reviewer'}</p>
                         <p className="mt-0.5 text-xs text-gray-500">{label(review.reviewer?.role)} | {formatDate(review.createdAt)}</p>
                       </div>
                       {review.recommendation && <StatusBadge status={review.recommendation} />}
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-gray-700">{review.comment}</p>
+                    <p className="mt-2 break-words text-sm leading-6 text-gray-700">{review.comment}</p>
                   </article>
                 ))
               )}
             </div>
           </section>
 
-          <section className="pro-card p-5 print:shadow-none">
+          <section className="pro-card min-w-0 p-5 print:shadow-none">
             <h3 className="text-lg font-bold text-gray-950">Status History</h3>
             <div className="mt-4 space-y-3">
               {statusHistory.length === 0 ? (
@@ -444,9 +444,9 @@ export default function PromotionApplicationDetail({ application, role, children
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+    <div className="min-w-0 rounded-lg border border-gray-200 bg-gray-50 p-3">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">{label}</p>
-      <p className="mt-1 text-sm font-bold text-gray-950">{value}</p>
+      <p className="mt-1 break-words text-sm font-bold text-gray-950">{value}</p>
     </div>
   );
 }

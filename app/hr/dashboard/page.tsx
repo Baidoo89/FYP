@@ -120,7 +120,7 @@ export default function HrCommandCenterPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <div className="pro-scroll-x rounded-lg border border-slate-200">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
