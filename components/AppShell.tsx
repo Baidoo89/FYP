@@ -1,9 +1,10 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, ChevronDown, HelpCircle, Menu, Settings, UserRound } from 'lucide-react';
 import LogoutButton from './LogoutButton';
 import SidebarNavLink from './SidebarNavLink';
 import LecturerHeader from './LecturerHeader';
@@ -21,6 +22,13 @@ type NavItem = {
   icon: string;
   label: string;
   subtitle?: string;
+};
+
+type SessionUser = {
+  id: number;
+  name: string;
+  email: string;
+  department?: string | null;
 };
 
 const PORTAL_ROLE_STORAGE_KEY = 'gctu-portal-role';
@@ -57,7 +65,10 @@ export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sessionRole, setSessionRole] = useState<AuthRole | null>(getStoredPortalRole);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const isAuthPage =
     pathname === '/login' ||
     pathname.startsWith('/login/') ||
@@ -165,6 +176,7 @@ export default function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     setMobileOpen(false);
+    setProfileOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -187,6 +199,10 @@ export default function AppShell({ children }: AppShellProps) {
         const payload = await response.json();
         const role = payload?.role;
 
+        if (!cancelled && payload?.user) {
+          setSessionUser(payload.user);
+        }
+
         if (!cancelled && isAuthRole(role)) {
           setSessionRole(role);
           window.localStorage.setItem(PORTAL_ROLE_STORAGE_KEY, role);
@@ -202,6 +218,31 @@ export default function AppShell({ children }: AppShellProps) {
       cancelled = true;
     };
   }, [isAuthPage]);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setProfileOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [profileOpen]);
+
   useEffect(() => {
     if (isAuthPage) {
       setNotificationCount(0);
@@ -325,12 +366,14 @@ export default function AppShell({ children }: AppShellProps) {
                 </span>
               )}
             </a>
-            {!isLecturerNav && (
-              <div className="hidden rounded-full border border-brand-border bg-brand-background px-3 py-1.5 text-xs font-semibold text-brand-muted sm:block">
-                {isHrNav ? 'HR Panel' : rolePanelLabel(effectivePortalRole)}
-              </div>
-            )}
-            <div className="hidden sm:block"><LogoutButton /></div>
+            <HeaderProfileMenu
+              user={sessionUser}
+              role={effectivePortalRole}
+              open={profileOpen}
+              onToggle={() => setProfileOpen((previous) => !previous)}
+              onClose={() => setProfileOpen(false)}
+              menuRef={profileMenuRef}
+            />
           </div>
         </header>
 
@@ -345,9 +388,126 @@ export default function AppShell({ children }: AppShellProps) {
   );
 }
 
+
+function HeaderProfileMenu({
+  user,
+  role,
+  open,
+  onToggle,
+  onClose,
+  menuRef,
+}: {
+  user: SessionUser | null;
+  role: AuthRole | null;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  menuRef: RefObject<HTMLDivElement | null>;
+}) {
+  const displayName = user?.name || rolePanelLabel(role);
+  const roleText = rolePanelLabel(role);
+  const initials = initialsFor(displayName);
+  const profileUrl = profileHref(role);
+  const settingsUrl = settingsHref(role);
+  const helpUrl = helpHref(role);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex min-h-10 min-w-0 items-center gap-2 rounded-xl border border-brand-border bg-white px-1.5 py-1.5 text-left shadow-sm transition hover:border-brand-primary/25 hover:bg-brand-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 sm:px-2"
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary text-xs font-black text-white shadow-sm sm:h-9 sm:w-9">
+          {initials || <UserRound className="h-4 w-4" aria-hidden="true" />}
+        </span>
+        <span className="hidden min-w-0 lg:block">
+          <span className="block max-w-36 truncate text-sm font-semibold leading-4 text-brand-text">{displayName}</span>
+          <span className="mt-0.5 block max-w-36 truncate text-[11px] font-medium text-brand-muted">{user?.department || roleText}</span>
+        </span>
+        <ChevronDown className={`hidden h-4 w-4 shrink-0 text-brand-muted transition sm:block ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div role="menu" className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-brand-border bg-white shadow-[0_18px_48px_rgba(15,23,42,0.16)]">
+          <div className="border-b border-brand-border bg-brand-background px-4 py-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-primary text-sm font-black text-white">
+                {initials || <UserRound className="h-5 w-5" aria-hidden="true" />}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-brand-text">{displayName}</p>
+                <p className="mt-0.5 truncate text-xs text-brand-muted">{user?.email || roleText}</p>
+                <p className="mt-1 w-fit rounded-full border border-brand-border bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-brand-muted">{roleText}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-2">
+            <ProfileMenuLink href={profileUrl} label="Profile" detail="View staff account" icon={<UserRound className="h-4 w-4" aria-hidden="true" />} onClick={onClose} />
+            <ProfileMenuLink href={settingsUrl} label="Settings" detail="Account preferences" icon={<Settings className="h-4 w-4" aria-hidden="true" />} onClick={onClose} />
+            <ProfileMenuLink href={helpUrl} label="Help Centre" detail="Support and guidance" icon={<HelpCircle className="h-4 w-4" aria-hidden="true" />} onClick={onClose} />
+            <div className="mt-2 border-t border-brand-border pt-2">
+              <LogoutButton className="w-full justify-center border-transparent bg-brand-background shadow-none hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary" />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfileMenuLink({ href, label, detail, icon, onClick }: { href: string; label: string; detail: string; icon: ReactNode; onClick: () => void }) {
+  return (
+    <Link href={href} onClick={onClick} role="menuitem" className="flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-brand-text transition hover:bg-brand-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand-border bg-white text-brand-primary">{icon}</span>
+      <span className="min-w-0">
+        <span className="block font-semibold">{label}</span>
+        <span className="block truncate text-xs text-brand-muted">{detail}</span>
+      </span>
+    </Link>
+  );
+}
+
+function initialsFor(name?: string | null) {
+  return (name || '')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+function profileHref(role: AuthRole | null) {
+  if (role === 'LECTURER') return '/lecturer-portal/profile';
+  if (role === 'HR_ADMIN') return '/hr/dashboard';
+  if (role === 'SYSTEM_ADMIN') return '/system-admin/dashboard';
+  if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
+  if (role === 'HOD_DEAN') return '/hod/dashboard';
+  return '/dashboard';
+}
+
+function settingsHref(role: AuthRole | null) {
+  if (role === 'LECTURER') return '/lecturer-portal/settings';
+  if (role === 'SYSTEM_ADMIN') return '/system-admin/settings';
+  if (role === 'HR_ADMIN') return '/hr/dashboard';
+  if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
+  if (role === 'HOD_DEAN') return '/hod/dashboard';
+  return '/dashboard';
+}
+
+function helpHref(role: AuthRole | null) {
+  if (role === 'LECTURER') return '/lecturer-portal/help';
+  return '/notifications';
+}
 function rolePanelLabel(role: AuthRole | null) {
-  if (role === 'SYSTEM_ADMIN') return 'System Panel';
-  if (role === 'COMMITTEE_REVIEWER') return 'Review Panel';
-  if (role === 'HOD_DEAN') return 'Department Panel';
-  return 'Control Panel';
+  if (role === 'LECTURER') return 'Lecturer';
+  if (role === 'HR_ADMIN') return 'HR Admin';
+  if (role === 'SYSTEM_ADMIN') return 'System Admin';
+  if (role === 'COMMITTEE_REVIEWER') return 'Committee Reviewer';
+  if (role === 'HOD_DEAN') return 'HOD / Dean';
+  return 'Staff Portal';
 }
