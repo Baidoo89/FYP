@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { Bell, BriefcaseBusiness, CheckCircle2, ChevronRight, Clock3, FileText, MessageSquareText, RotateCcw, UploadCloud, UserRound } from 'lucide-react';
+import { Bell, BriefcaseBusiness, CheckCircle2, ChevronRight, Clock3, FileText, MessageSquareText, RotateCcw, UploadCloud } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PrintSummaryButton } from '../../components/enterprise-ui';
 import { RecentActivity } from '../../components/lecturer-dashboard/DashboardComponents';
@@ -183,6 +183,10 @@ function nextActionFor(data: DashboardData) {
   };
 }
 
+function actionNeedsAttention(action: ReturnType<typeof nextActionFor>) {
+  return ['Start Promotion Request', 'Correct Returned Evidence', 'Complete Your Draft'].includes(action.title);
+}
+
 export default function LecturerDashboardOverview() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -251,6 +255,8 @@ export default function LecturerDashboardOverview() {
             <div className="grid grid-cols-2 gap-3">
               <ApplicationFact label="Promotion Cycle" value={PROMOTION_CYCLE} />
               <ApplicationFact label="Current Stage" value={request ? formatEnum(request.status) : 'Not Started'} />
+              <ApplicationFact label="Current Rank" value={formatEnum(request?.currentRank || data.user.currentRank)} />
+              <ApplicationFact label="Applying For" value={request ? formatEnum(request.targetRank) : 'Not selected'} />
               <ApplicationFact label="Application Status" value={formatEnum(eligibilityStatus)} />
               <ApplicationFact label="Last Updated" value={formatDate(request?.updatedAt)} />
             </div>
@@ -264,6 +270,8 @@ export default function LecturerDashboardOverview() {
         <MetricCard label="Pending" value={data.documentStats.pendingCount} detail="Awaiting review" icon={Clock3} tone="amber" />
         <MetricCard label="Returned" value={data.documentStats.returnedCount} detail="Needs correction" icon={RotateCcw} tone="rose" />
       </section>
+
+      {nextAction && actionNeedsAttention(nextAction) && <ActionNotificationBanner action={nextAction} />}
 
       <section className="grid min-w-0 max-w-full gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] 2xl:items-stretch">
         <div className="min-w-0">
@@ -418,6 +426,33 @@ function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> 
       </div>
       <Link href={action.href} className="mt-4 inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 2xl:mt-auto">
         {action.label}
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </Link>
+    </section>
+  );
+}
+
+function ActionNotificationBanner({ action }: { action: ReturnType<typeof nextActionFor> }) {
+  const Icon = action.icon;
+  const toneClass = {
+    blue: 'border-brand-primary/20 bg-brand-primarySoft text-brand-primary',
+    amber: 'border-amber-200 bg-amber-50 text-amber-900',
+    rose: 'border-rose-200 bg-rose-50 text-rose-900',
+  }[action.tone];
+
+  return (
+    <section role="status" aria-live="polite" className={`flex min-w-0 max-w-full flex-col gap-3 rounded-xl border px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between ${toneClass}`}>
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/70">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="break-words text-sm font-semibold">Action required: {action.title}</p>
+          <p className="mt-1 break-words text-xs leading-5 opacity-80">{action.detail}</p>
+        </div>
+      </div>
+      <Link href={action.href} className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 sm:w-auto">
+        Open
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </section>

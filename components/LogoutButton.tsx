@@ -32,7 +32,7 @@ export default function LogoutButton({ className }: { className?: string }) {
         className
       )}
     >
-      {loading ? 'Signing out...' : 'Logout'}
+      {loading ? 'Signing out...' : 'Sign Out'}
     </button>
   );
 }

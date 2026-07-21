@@ -1,5 +1,8 @@
 'use client';
 
+import type { LucideIcon } from 'lucide-react';
+import { Award, BookOpenCheck, FileText, FlaskConical, GraduationCap, Handshake, Newspaper } from 'lucide-react';
+
 interface AcademicHeaderProps {
   name: string;
   staffId: string;
@@ -105,6 +108,19 @@ function statusTone(status: string) {
   return 'border-amber-200 bg-amber-50 text-amber-800';
 }
 
+function categoryIconFor(category: string): LucideIcon {
+  const normalized = category.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+
+  if (normalized.includes('TEACH')) return BookOpenCheck;
+  if (normalized.includes('RESEARCH')) return FlaskConical;
+  if (normalized.includes('PUBLICATION')) return Newspaper;
+  if (normalized.includes('SERVICE')) return Handshake;
+  if (normalized.includes('QUALIFICATION')) return GraduationCap;
+  if (normalized.includes('PROFESSIONAL')) return Award;
+
+  return FileText;
+}
+
 export function RecentActivity({ documents }: RecentActivityProps) {
   return (
     <div className="pro-card min-w-0 max-w-full p-5 sm:p-6">
@@ -124,19 +140,25 @@ export function RecentActivity({ documents }: RecentActivityProps) {
             No recent activity yet.
           </div>
         ) : (
-          documents.map((doc, idx) => (
-            <div key={idx} className="flex min-w-0 items-start gap-3 rounded-lg border border-slate-200 bg-white p-3">
-              <span className="pro-code-badge shrink-0">EV</span>
-              <div className="min-w-0 flex-1">
-                <p className="break-words font-semibold text-slate-950">{doc.title}</p>
-                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span className="max-w-full break-words rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 font-semibold text-brand-primary">{doc.category}</span>
-                  <span className={`max-w-full break-words rounded-full border px-2 py-0.5 font-semibold ${statusTone(doc.verificationStatus)}`}>{doc.verificationStatus}</span>
-                  <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+          documents.map((doc, idx) => {
+            const CategoryIcon = categoryIconFor(doc.category);
+
+            return (
+              <div key={idx} className="flex min-w-0 items-start gap-3 rounded-lg border border-slate-200 bg-white p-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-primary/15 bg-brand-primarySoft text-brand-primary" aria-label={`${doc.category} evidence`}>
+                  <CategoryIcon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words font-semibold text-slate-950">{doc.title}</p>
+                  <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span className="max-w-full break-words rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 font-semibold text-brand-primary">{doc.category}</span>
+                    <span className={`max-w-full break-words rounded-full border px-2 py-0.5 font-semibold ${statusTone(doc.verificationStatus)}`}>{doc.verificationStatus}</span>
+                    <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

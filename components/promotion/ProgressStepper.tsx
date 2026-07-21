@@ -58,7 +58,8 @@ export default function ProgressStepper({ currentStep, steps, status }: Progress
         {status && <span className="w-fit max-w-full whitespace-normal rounded-full bg-gray-100 px-3 py-1 text-xs font-bold uppercase leading-4 tracking-[0.12em] text-gray-600">{status.replace(/_/g, ' ')}</span>}
       </div>
 
-      <div className="pro-scroll-x pb-2">
+      <p className="mb-2 text-[11px] font-semibold text-gray-500 sm:hidden">Swipe horizontally to view all stages.</p>
+      <div className="pro-scroll-x snap-x snap-mandatory pb-2" role="region" aria-label="Promotion workflow timeline" tabIndex={0}>
         <div className="grid min-w-[660px] sm:min-w-[720px]" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
           {steps.map((step, index) => {
             const stepNumber = index + 1;
@@ -67,7 +68,7 @@ export default function ProgressStepper({ currentStep, steps, status }: Progress
             const isLast = index === steps.length - 1;
 
             return (
-              <div key={step} className="relative flex min-w-0 flex-col items-center text-center">
+              <div key={step} className="relative flex min-w-0 snap-center flex-col items-center text-center">
                 {!isLast && (
                   <div className={`absolute left-1/2 top-5 h-0.5 w-full ${styles.line}`} aria-hidden="true" />
                 )}
