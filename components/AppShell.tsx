@@ -282,6 +282,10 @@ export default function AppShell({ children }: AppShellProps) {
           <p className="mt-1 leading-5">Contact support for account, evidence, and workflow assistance.</p>
         </div>
 
+        <div className="mx-4 mt-3 lg:hidden">
+          <LogoutButton className="w-full border-white/10 bg-white/10 text-white hover:border-white/20 hover:bg-white/15 hover:text-white" />
+        </div>
+
         <div className="mt-4 border-t border-white/10 p-4 text-xs text-blue-50/55">
           <p>GCTU Promotion System v1.0</p>
           <p>2026 GCTU. All rights reserved.</p>
@@ -326,7 +330,7 @@ export default function AppShell({ children }: AppShellProps) {
                 {isHrNav ? 'HR Panel' : rolePanelLabel(effectivePortalRole)}
               </div>
             )}
-            <LogoutButton />
+            <div className="hidden sm:block"><LogoutButton /></div>
           </div>
         </header>
 

@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
+import { Bell, BriefcaseBusiness, CheckCircle2, ChevronRight, Clock3, FileText, MessageSquareText, RotateCcw, UploadCloud, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PrintSummaryButton } from '../../components/enterprise-ui';
 import { RecentActivity } from '../../components/lecturer-dashboard/DashboardComponents';
@@ -59,6 +61,7 @@ interface DashboardData {
 }
 
 const WORKFLOW_STEPS = ['Draft', 'Submitted', 'Department Review', 'HR Verification', 'Committee Review', 'Recommendation', 'Completed'];
+const PROMOTION_CYCLE = '2026 Academic Promotion';
 
 const workflowStepByStatus: Record<string, number> = {
   DRAFT: 1,
@@ -91,6 +94,15 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat('en-GH', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
 }
 
+function initialsFor(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
 
 function nextActionFor(data: DashboardData) {
   const request = data.activeRequest;
@@ -101,7 +113,8 @@ function nextActionFor(data: DashboardData) {
       detail: 'Create your promotion application and begin uploading required evidence.',
       href: '/lecturer-portal/application',
       label: 'Create Request',
-      tone: 'green' as const,
+      tone: 'blue' as const,
+      icon: BriefcaseBusiness,
     };
   }
 
@@ -112,6 +125,7 @@ function nextActionFor(data: DashboardData) {
       href: '/lecturer-portal/evidence',
       label: 'Fix Evidence',
       tone: 'amber' as const,
+      icon: RotateCcw,
     };
   }
 
@@ -121,7 +135,8 @@ function nextActionFor(data: DashboardData) {
       detail: 'Upload the required evidence and submit the request for department review.',
       href: '/lecturer-portal/evidence',
       label: 'Upload Evidence',
-      tone: 'green' as const,
+      tone: 'blue' as const,
+      icon: UploadCloud,
     };
   }
 
@@ -132,6 +147,7 @@ function nextActionFor(data: DashboardData) {
       href: '/lecturer-portal/application',
       label: 'Track Application',
       tone: 'blue' as const,
+      icon: Clock3,
     };
   }
 
@@ -142,16 +158,18 @@ function nextActionFor(data: DashboardData) {
       href: '/lecturer-portal/evidence',
       label: 'View Evidence',
       tone: 'blue' as const,
+      icon: Clock3,
     };
   }
 
   if (request.status === 'UNDER_COMMITTEE_REVIEW' || request.status === 'ELIGIBLE' || request.status === 'REQUIRES_FURTHER_REVIEW') {
     return {
-      title: 'Committee Review Stage',
+      title: 'Await Committee Decision',
       detail: 'Your verified application is being considered for recommendation.',
       href: '/lecturer-portal/application',
       label: 'View Details',
       tone: 'blue' as const,
+      icon: CheckCircle2,
     };
   }
 
@@ -160,7 +178,8 @@ function nextActionFor(data: DashboardData) {
     detail: 'Open your application summary for the latest administrative outcome and records.',
     href: '/lecturer-portal/application',
     label: 'Open Summary',
-    tone: request.status === 'REJECTED' || request.status === 'NOT_RECOMMENDED' ? 'rose' as const : 'green' as const,
+    tone: request.status === 'REJECTED' || request.status === 'NOT_RECOMMENDED' ? 'rose' as const : 'blue' as const,
+    icon: BriefcaseBusiness,
   };
 }
 
@@ -206,55 +225,50 @@ export default function LecturerDashboardOverview() {
   const currentStep = request ? workflowStepByStatus[request.status] || 1 : 1;
   const rankPath = request ? `${formatEnum(request.currentRank)} to ${formatEnum(request.targetRank)}` : `${formatEnum(data.user.currentRank)} promotion pathway`;
   const eligibilityStatus = request?.eligibilityStatus || 'NOT_CALCULATED';
+  const initials = initialsFor(data.user.name) || 'GU';
 
   return (
-    <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-2xl border border-brand-primary/20 bg-[linear-gradient(135deg,#183A72_0%,#102A54_60%,#0B1F3E_100%)] p-5 text-white shadow-[0_18px_48px_rgba(24,58,114,0.22)] sm:p-6">
-        <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-center">
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/95 p-1 shadow-lg">
-              <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
+    <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-xl border border-brand-primary/20 bg-[linear-gradient(135deg,#183A72_0%,#102A54_62%,#0B1F3E_100%)] p-4 text-white shadow-[0_14px_36px_rgba(24,58,114,0.18)] sm:p-5">
+        <div className="relative z-10 grid gap-4 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-center">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/15 text-base font-black text-white shadow-sm sm:h-16 sm:w-16 sm:text-lg">
+              {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-50/80">Digital Staff Promotion Support System</p>
-              <h1 className="mt-2 break-words text-2xl font-semibold tracking-tight sm:text-3xl">Welcome back, {data.user.name}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-50/85">
-                <span>{formatEnum(data.user.currentRank)}</span>
-                <span className="h-1 w-1 rounded-full bg-blue-100/70" />
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-50/75">Welcome back</p>
+              <h1 className="mt-1 break-words text-xl font-semibold tracking-tight sm:text-2xl">{data.user.name}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-50/85">
                 <span>{data.user.department || 'Department not assigned'}</span>
-                <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white">Lecturer</span>
+                <span className="h-1 w-1 rounded-full bg-blue-100/70" />
+                <span>{formatEnum(data.user.currentRank)}</span>
+                <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white">Lecturer</span>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/15 bg-white/10 p-4 shadow-inner backdrop-blur">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-50/75">Current Application</p>
-                <p className="mt-2 text-xl font-semibold">{request ? rankPath : 'No active request'}</p>
-                <p className="mt-1 text-xs text-blue-50/75">{request ? `Updated ${formatDate(request.updatedAt)}` : 'Create a request when you are ready to apply.'}</p>
-              </div>
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white text-sm font-black text-brand-primary">
-                {request?.progressPercentage ?? 0}%
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {request ? <StatusBadge status={request.status} /> : <StatusBadge status="DRAFT" label="Not Started" />}
-              <StatusBadge status={eligibilityStatus} />
+          <div className="rounded-lg border border-white/15 bg-white/10 p-3 shadow-inner backdrop-blur sm:p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <ApplicationFact label="Promotion Cycle" value={PROMOTION_CYCLE} />
+              <ApplicationFact label="Current Stage" value={request ? formatEnum(request.status) : 'Not Started'} />
+              <ApplicationFact label="Application Status" value={formatEnum(eligibilityStatus)} />
+              <ApplicationFact label="Last Updated" value={formatDate(request?.updatedAt)} />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Uploaded Documents" value={data.documentStats.totalDocuments} detail="Evidence in portfolio" code="DOC" />
-        <MetricCard label="Verified Documents" value={data.documentStats.verifiedCount} detail="Approved by HR" code="OK" tone="green" />
-        <MetricCard label="Pending Verification" value={data.documentStats.pendingCount} detail="Awaiting HR review" code="PN" tone="amber" />
-        <MetricCard label="Returned Documents" value={data.documentStats.returnedCount} detail="Needs correction" code="RT" tone="rose" />
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <MetricCard label="Documents" value={data.documentStats.totalDocuments} detail="Total uploaded" icon={FileText} />
+        <MetricCard label="Verified" value={data.documentStats.verifiedCount} detail="Approved by HR" icon={CheckCircle2} tone="green" />
+        <MetricCard label="Pending" value={data.documentStats.pendingCount} detail="Awaiting review" icon={Clock3} tone="amber" />
+        <MetricCard label="Returned" value={data.documentStats.returnedCount} detail="Needs correction" icon={RotateCcw} tone="rose" />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
-        <div className="space-y-6">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
+        <div className="space-y-5">
+          {nextAction && <div className="xl:hidden"><NextActionPanel action={nextAction} /></div>}
+
           {request ? (
             <ProgressStepper currentStep={currentStep} steps={WORKFLOW_STEPS} status={request.status} />
           ) : (
@@ -265,8 +279,8 @@ export default function LecturerDashboardOverview() {
           <RecentActivity documents={data.recentDocuments} />
         </div>
 
-        <aside className="space-y-6">
-          {nextAction && <NextActionPanel action={nextAction} />}
+        <aside className="space-y-5">
+          {nextAction && <div className="hidden xl:block"><NextActionPanel action={nextAction} /></div>}
           <EligibilityPanel request={request} />
           <FeedbackPanel feedback={data.recentFeedback} />
           <QuickActionPanel unreadNotifications={data.documentStats.unreadNotifications} />
@@ -276,13 +290,22 @@ export default function LecturerDashboardOverview() {
   );
 }
 
+function ApplicationFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-50/60">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-5 text-white">{value}</p>
+    </div>
+  );
+}
+
 function LoadingDashboard() {
   return (
     <div className="space-y-5">
-      <div className="h-40 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (
-          <div key={item} className="h-28 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
+          <div key={item} className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
         ))}
       </div>
       <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
@@ -290,23 +313,25 @@ function LoadingDashboard() {
   );
 }
 
-function MetricCard({ label, value, detail, code, tone = 'slate' }: { label: string; value: number; detail: string; code: string; tone?: 'slate' | 'green' | 'amber' | 'rose' }) {
+function MetricCard({ label, value, detail, icon: Icon, tone = 'slate' }: { label: string; value: number; detail: string; icon: LucideIcon; tone?: 'slate' | 'green' | 'amber' | 'rose' }) {
   const toneClass = {
-    slate: 'border-slate-200 bg-slate-100 text-slate-700',
-    green: 'border-brand-primary/25 bg-brand-primarySoft text-brand-primary',
-    amber: 'border-amber-200 bg-amber-50 text-amber-900',
+    slate: 'border-brand-primary/20 bg-brand-primarySoft text-brand-primary',
+    green: 'border-green-200 bg-green-50 text-green-700',
+    amber: 'border-amber-200 bg-amber-50 text-amber-800',
     rose: 'border-rose-200 bg-rose-50 text-rose-800',
   }[tone];
 
   return (
-    <article className="pro-tile p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{value}</p>
-          <p className="mt-1 text-xs text-slate-500">{detail}</p>
+    <article className="pro-tile p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">{value}</p>
+          <p className="mt-0.5 truncate text-xs text-slate-500">{detail}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-black ${toneClass}`}>{code}</span>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${toneClass}`}>
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
       </div>
     </article>
   );
@@ -314,7 +339,7 @@ function MetricCard({ label, value, detail, code, tone = 'slate' }: { label: str
 
 function NoRequestPanel() {
   return (
-    <section className="pro-card p-6">
+    <section className="pro-card p-5">
       <div className="max-w-2xl">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">Promotion Workflow</p>
         <h2 className="mt-2 text-xl font-semibold text-slate-950">No active promotion request yet</h2>
@@ -370,20 +395,28 @@ function SummaryFact({ label, value }: { label: string; value: string }) {
 }
 
 function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> }) {
+  const Icon = action.icon;
   const toneClass = {
-    green: 'border-brand-primary/25 bg-brand-primarySoft text-brand-primary',
+    blue: 'border-brand-primary/25 bg-brand-primarySoft text-brand-primary',
     amber: 'border-amber-200 bg-amber-50 text-amber-900',
-    blue: 'border-sky-200 bg-sky-50 text-sky-900',
     rose: 'border-rose-200 bg-rose-50 text-rose-900',
   }[action.tone];
 
   return (
-    <section className={`rounded-xl border p-5 shadow-sm ${toneClass}`}>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-75">Next Required Action</p>
-      <h2 className="mt-2 text-lg font-semibold">{action.title}</h2>
-      <p className="mt-2 text-sm leading-6 opacity-80">{action.detail}</p>
-      <Link href={action.href} className="mt-4 inline-flex w-full justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5">
+    <section className={`rounded-xl border p-4 shadow-sm sm:p-5 ${toneClass}`}>
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/70">
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-75">Next Required Action</p>
+          <h2 className="mt-1 text-lg font-semibold">{action.title}</h2>
+          <p className="mt-1 text-sm leading-6 opacity-80">{action.detail}</p>
+        </div>
+      </div>
+      <Link href={action.href} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5">
         {action.label}
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </section>
   );
@@ -402,7 +435,7 @@ function EligibilityPanel({ request }: { request: DashboardData['activeRequest']
       <p className="mt-3 text-sm leading-6 text-slate-600">
         {request?.eligibilityReason || 'Eligibility will be calculated after the required evidence has been verified by HR.'}
       </p>
-      <Link href="/lecturer-portal/eligibility" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primary">
+      <Link href="/lecturer-portal/eligibility" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primaryDark">
         View eligibility details
       </Link>
     </section>
@@ -437,7 +470,7 @@ function FeedbackPanel({ feedback }: { feedback: DashboardData['recentFeedback']
         )}
       </div>
 
-      <Link href="/lecturer-portal/queries" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primary">
+      <Link href="/lecturer-portal/queries" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primaryDark">
         Open feedback inbox
       </Link>
     </section>
@@ -446,25 +479,33 @@ function FeedbackPanel({ feedback }: { feedback: DashboardData['recentFeedback']
 
 function QuickActionPanel({ unreadNotifications }: { unreadNotifications: number }) {
   const links = [
-    { href: '/lecturer-portal/evidence', label: 'Upload Evidence', detail: 'Add or replace promotion documents' },
-    { href: '/lecturer-portal/application', label: 'Track Application', detail: 'View workflow and status history' },
-    { href: '/lecturer-portal/queries', label: 'View Feedback', detail: 'Read HR comments and corrections' },
-    { href: '/lecturer-portal/notifications', label: 'Notifications', detail: `${unreadNotifications} unread update(s)` },
+    { href: '/lecturer-portal/evidence', label: 'Upload Evidence', detail: 'Add or replace promotion documents', icon: UploadCloud },
+    { href: '/lecturer-portal/application', label: 'Track Application', detail: 'View workflow and status history', icon: BriefcaseBusiness },
+    { href: '/lecturer-portal/queries', label: 'View Feedback', detail: 'Read HR comments and corrections', icon: MessageSquareText },
+    { href: '/lecturer-portal/notifications', label: 'Notifications', detail: `${unreadNotifications} unread update(s)`, icon: Bell },
   ];
 
   return (
     <section className="pro-card p-5">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Quick Actions</p>
       <div className="mt-4 grid gap-2">
-        {links.map((link) => (
-          <Link key={link.href} href={link.href} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
-            <span>
-              <span className="block">{link.label}</span>
-              <span className="mt-0.5 block text-xs font-normal text-slate-500">{link.detail}</span>
-            </span>
-            <span className="text-lg leading-none">{'>'}</span>
-          </Link>
-        ))}
+        {links.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Link key={link.href} href={link.href} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
+              <span className="flex min-w-0 items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand-primary/20 bg-white text-brand-primary">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block">{link.label}</span>
+                  <span className="mt-0.5 block text-xs font-normal text-slate-500">{link.detail}</span>
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

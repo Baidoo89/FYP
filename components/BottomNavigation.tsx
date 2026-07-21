@@ -12,7 +12,7 @@ type BottomNavigationProps = {
 const lecturerItems = [
   { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },
-  { href: '/lecturer-portal/application', label: 'Applications', icon: BriefcaseBusiness },
+  { href: '/lecturer-portal/application', label: 'My Application', icon: BriefcaseBusiness },
   { href: '/lecturer-portal/notifications', label: 'Notifications', icon: Bell },
   { href: '/lecturer-portal/profile', label: 'Profile', icon: UserRound },
 ];
