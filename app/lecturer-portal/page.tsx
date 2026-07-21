@@ -1,24 +1,32 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { PrintSummaryButton } from '../../components/enterprise-ui';
+import { RecentActivity } from '../../components/lecturer-dashboard/DashboardComponents';
 import ProgressStepper from '../../components/promotion/ProgressStepper';
-import { PromotionReadinessGauge, RecentActivity } from '../../components/lecturer-dashboard/DashboardComponents';
+import StatusBadge from '../../components/promotion/StatusBadge';
 
 interface DashboardData {
   user: {
     name: string;
     email: string;
-    staffId: string;
-    currentRank: string;
-    department: string;
+    staffId: string | null;
+    currentRank: string | null;
+    department: string | null;
   };
   activeRequest: {
     id: number;
+    currentRank: string;
     targetRank: string;
     status: string;
+    eligibilityStatus: string;
+    eligibilityReason: string | null;
+    totalScore: number | null;
     progressPercentage: number;
     submittedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
     latestDocument: {
       title: string;
       verificationStatus: string;
@@ -28,6 +36,8 @@ interface DashboardData {
     totalDocuments: number;
     verifiedCount: number;
     pendingCount: number;
+    returnedCount: number;
+    unreadNotifications: number;
   };
   recentDocuments: Array<{
     id: number;
@@ -36,7 +46,122 @@ interface DashboardData {
     verificationStatus: string;
     uploadedAt: string;
   }>;
+  recentFeedback: Array<{
+    id: number;
+    title: string;
+    category: string;
+    verificationStatus: string;
+    comment: string | null;
+    updatedAt: string;
+    verifiedAt: string | null;
+  }>;
   accountCreated: string;
+}
+
+const WORKFLOW_STEPS = ['Draft', 'Submitted', 'Department Review', 'HR Verification', 'Committee Review', 'Recommendation', 'Completed'];
+
+const workflowStepByStatus: Record<string, number> = {
+  DRAFT: 1,
+  SUBMITTED: 2,
+  UNDER_DEPARTMENT_REVIEW: 3,
+  RETURNED_FOR_CORRECTION: 3,
+  UNDER_HR_VERIFICATION: 4,
+  UNDER_REVIEW: 4,
+  UNDER_COMMITTEE_REVIEW: 5,
+  ELIGIBLE: 5,
+  NOT_ELIGIBLE: 5,
+  REQUIRES_FURTHER_REVIEW: 5,
+  RECOMMENDED: 6,
+  NOT_RECOMMENDED: 6,
+  APPROVED_BY_AUTHORITY: 6,
+  APPROVED: 7,
+  REJECTED: 7,
+  COMPLETED: 7,
+};
+
+function formatEnum(value?: string | null) {
+  if (!value) return 'Not set';
+  return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return 'Not recorded';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not recorded';
+  return new Intl.DateTimeFormat('en-GH', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+}
+
+
+function nextActionFor(data: DashboardData) {
+  const request = data.activeRequest;
+
+  if (!request) {
+    return {
+      title: 'Start Promotion Request',
+      detail: 'Create your promotion application and begin uploading required evidence.',
+      href: '/lecturer-portal/application',
+      label: 'Create Request',
+      tone: 'green' as const,
+    };
+  }
+
+  if (request.status === 'RETURNED_FOR_CORRECTION' || data.documentStats.returnedCount > 0) {
+    return {
+      title: 'Correct Returned Evidence',
+      detail: 'Review HR comments, replace returned files, then resubmit your application.',
+      href: '/lecturer-portal/evidence',
+      label: 'Fix Evidence',
+      tone: 'amber' as const,
+    };
+  }
+
+  if (request.status === 'DRAFT') {
+    return {
+      title: 'Complete Your Draft',
+      detail: 'Upload the required evidence and submit the request for department review.',
+      href: '/lecturer-portal/evidence',
+      label: 'Upload Evidence',
+      tone: 'green' as const,
+    };
+  }
+
+  if (request.status === 'SUBMITTED' || request.status === 'UNDER_DEPARTMENT_REVIEW') {
+    return {
+      title: 'Department Review In Progress',
+      detail: 'Your application is with the department office. Track the workflow for updates.',
+      href: '/lecturer-portal/application',
+      label: 'Track Application',
+      tone: 'blue' as const,
+    };
+  }
+
+  if (request.status === 'UNDER_HR_VERIFICATION' || request.status === 'UNDER_REVIEW') {
+    return {
+      title: 'HR Verification In Progress',
+      detail: 'HR is checking your submitted evidence. You will be notified if corrections are required.',
+      href: '/lecturer-portal/evidence',
+      label: 'View Evidence',
+      tone: 'blue' as const,
+    };
+  }
+
+  if (request.status === 'UNDER_COMMITTEE_REVIEW' || request.status === 'ELIGIBLE' || request.status === 'REQUIRES_FURTHER_REVIEW') {
+    return {
+      title: 'Committee Review Stage',
+      detail: 'Your verified application is being considered for recommendation.',
+      href: '/lecturer-portal/application',
+      label: 'View Details',
+      tone: 'blue' as const,
+    };
+  }
+
+  return {
+    title: 'Review Final Outcome',
+    detail: 'Open your application summary for the latest administrative outcome and records.',
+    href: '/lecturer-portal/application',
+    label: 'Open Summary',
+    tone: request.status === 'REJECTED' || request.status === 'NOT_RECOMMENDED' ? 'rose' as const : 'green' as const,
+  };
 }
 
 export default function LecturerDashboardOverview() {
@@ -47,7 +172,7 @@ export default function LecturerDashboardOverview() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const response = await fetch('/api/lecturer/dashboard');
+        const response = await fetch('/api/lecturer/dashboard', { cache: 'no-store' });
         const payload = await response.json();
 
         if (!response.ok || !payload.success) {
@@ -65,176 +190,282 @@ export default function LecturerDashboardOverview() {
     loadDashboard();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 shadow-sm">
-          Loading your dashboard...
-        </div>
-      </div>
-    );
-  }
+  const nextAction = useMemo(() => (data ? nextActionFor(data) : null), [data]);
+
+  if (loading) return <LoadingDashboard />;
 
   if (error || !data) {
     return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center font-medium text-slate-900 shadow-sm">
-          {error || 'Failed to load dashboard'}
-        </div>
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm font-semibold text-amber-900 shadow-sm">
+        {error || 'Failed to load lecturer dashboard.'}
       </div>
     );
   }
 
-  const workflowStepByStatus: Record<string, number> = {
-    DRAFT: 1,
-    SUBMITTED: 2,
-    UNDER_DEPARTMENT_REVIEW: 3,
-    RETURNED_FOR_CORRECTION: 3,
-    UNDER_HR_VERIFICATION: 4,
-    UNDER_REVIEW: 4,
-    UNDER_COMMITTEE_REVIEW: 5,
-    REQUIRES_FURTHER_REVIEW: 5,
-    RECOMMENDED: 6,
-    NOT_RECOMMENDED: 6,
-    APPROVED: 7,
-    APPROVED_BY_AUTHORITY: 7,
-    COMPLETED: 7,
-    REJECTED: 6,
-  };
-  const currentStep = data.activeRequest ? workflowStepByStatus[data.activeRequest.status] || 1 : 1;
-  const initials = data.user.name
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-  const eligibilityLabel = data.activeRequest?.status === 'REJECTED'
-    ? 'Requires Review'
-    : data.activeRequest?.status === 'APPROVED'
-      ? 'Approved'
-      : data.activeRequest
-        ? 'In Progress'
-        : 'Not Started';
-  const eligibilityTone = data.activeRequest?.status === 'REJECTED'
-    ? 'border-amber-200 bg-amber-50 text-amber-950'
-    : 'border-blue-100 bg-white text-slate-950';
+  const request = data.activeRequest;
+  const currentStep = request ? workflowStepByStatus[request.status] || 1 : 1;
+  const rankPath = request ? `${formatEnum(request.currentRank)} to ${formatEnum(request.targetRank)}` : `${formatEnum(data.user.currentRank)} promotion pathway`;
+  const eligibilityStatus = request?.eligibilityStatus || 'NOT_CALCULATED';
 
   return (
     <div className="space-y-6">
-      <section id="home" className="pro-hero px-5 py-6 sm:px-6 sm:py-7">
-        <div className="relative z-10 grid gap-5 lg:grid-cols-[1.25fr_0.8fr] lg:items-center">
+      <section className="relative overflow-hidden rounded-2xl border border-emerald-900/15 bg-[linear-gradient(135deg,#063d33_0%,#075f4d_58%,#0f766e_100%)] p-5 text-white shadow-[0_18px_48px_rgba(6,78,59,0.22)] sm:p-6">
+        <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-center">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-white text-xl font-black text-blue-900 shadow-xl">
-              {initials || 'GP'}
-              <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-50 text-[10px] font-black text-emerald-800">
-                OK
-              </span>
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/95 p-1 shadow-lg">
+              <img src="/gctu-logo.jpg" alt="GCTU logo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-600">Welcome back,</p>
-              <h1 className="mt-1 break-words text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{data.user.name}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
-                <span>{data.user.currentRank || 'Lecturer'}</span>
-                <span className="h-1 w-1 rounded-full bg-blue-300" />
-                <span>{data.user.department || 'Not Assigned'}</span>
-                <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-blue-800">Lecturer</span>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-50/80">Digital Staff Promotion Support System</p>
+              <h1 className="mt-2 break-words text-2xl font-semibold tracking-tight sm:text-3xl">Welcome back, {data.user.name}</h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-50/85">
+                <span>{formatEnum(data.user.currentRank)}</span>
+                <span className="h-1 w-1 rounded-full bg-emerald-100/70" />
+                <span>{data.user.department || 'Department not assigned'}</span>
+                <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white">Lecturer</span>
               </div>
             </div>
           </div>
 
-          <div className={`rounded-xl border p-4 shadow-inner ${eligibilityTone}`}>
-            <div className="flex items-center justify-between gap-4">
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4 shadow-inner backdrop-blur">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-800">Eligibility Status</p>
-                <p className="mt-2 text-2xl font-semibold">{eligibilityLabel}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {data.activeRequest?.submittedAt ? `Submitted ${new Date(data.activeRequest.submittedAt).toLocaleDateString()}` : 'Create an application to begin tracking.'}
-                </p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-50/75">Current Application</p>
+                <p className="mt-2 text-xl font-semibold">{request ? rankPath : 'No active request'}</p>
+                <p className="mt-1 text-xs text-emerald-50/75">{request ? `Updated ${formatDate(request.updatedAt)}` : 'Create a request when you are ready to apply.'}</p>
               </div>
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-50 text-lg font-black text-blue-900 ring-1 ring-blue-100">
-                {data.activeRequest?.progressPercentage ?? 0}%
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white text-sm font-black text-emerald-900">
+                {request?.progressPercentage ?? 0}%
               </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {request ? <StatusBadge status={request.status} /> : <StatusBadge status="DRAFT" label="Not Started" />}
+              <StatusBadge status={eligibilityStatus} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Promotion Readiness Gauge */}
-      {data.activeRequest && (
-        <PromotionReadinessGauge
-          percentage={data.activeRequest.progressPercentage}
-          targetRank={data.activeRequest.targetRank}
-          status={data.activeRequest.status}
-        />
-      )}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Uploaded Documents" value={data.documentStats.totalDocuments} detail="Evidence in portfolio" code="DOC" />
+        <MetricCard label="Verified Documents" value={data.documentStats.verifiedCount} detail="Approved by HR" code="OK" tone="green" />
+        <MetricCard label="Pending Verification" value={data.documentStats.pendingCount} detail="Awaiting HR review" code="PN" tone="amber" />
+        <MetricCard label="Returned Documents" value={data.documentStats.returnedCount} detail="Needs correction" code="RT" tone="rose" />
+      </section>
 
-      {/* Career Stepper */}
-      {data.activeRequest && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">Your Promotion Journey</h3>
-          <p className="mt-1 text-sm text-slate-600">Current stage: {data.activeRequest.status}</p>
-          <div className="mt-6">
-            <ProgressStepper
-              currentStep={currentStep}
-              steps={['Draft', 'Submitted', 'Department Review', 'HR Verification', 'Committee Review', 'Recommendation', 'Completed']}
-              status={data.activeRequest.status}
-            />
-          </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
+        <div className="space-y-6">
+          {request ? (
+            <ProgressStepper currentStep={currentStep} steps={WORKFLOW_STEPS} status={request.status} />
+          ) : (
+            <NoRequestPanel />
+          )}
+
+          <CurrentApplicationCard request={request} rankPath={rankPath} />
+          <RecentActivity documents={data.recentDocuments} />
         </div>
-      )}
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatTile code="DOC" label="Total Documents" value={data.documentStats.totalDocuments} />
-        <StatTile code="OK" label="Verified" value={data.documentStats.verifiedCount} />
-        <StatTile code="PN" label="Pending Review" value={data.documentStats.pendingCount} tone="amber" />
-      </div>
-
-      {/* Recent Activity */}
-      <RecentActivity documents={data.recentDocuments} />
-
-      {/* Quick Action Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/lecturer-portal/evidence" className="pro-action block p-5">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Upload</div>
-          <div className="mt-2 text-lg font-semibold text-slate-950">Evidence</div>
-          <div className="mt-2 text-sm leading-6 text-slate-700">Submit research, teaching, and service documents.</div>
-        </Link>
-
-        <Link href="/lecturer-portal/application" className="pro-action block p-5">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">View</div>
-          <div className="mt-2 text-lg font-semibold text-slate-950">Application</div>
-          <div className="mt-2 text-sm leading-6 text-slate-700/85">Check your promotion status and scores.</div>
-        </Link>
-
-        <Link href="/lecturer-portal/queries" className="pro-action block p-5">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Inbox</div>
-          <div className="mt-2 text-lg font-semibold text-slate-950">HR Feedback</div>
-          <div className="mt-2 text-sm leading-6 text-slate-700">Review flagged documents and HR comments.</div>
-        </Link>
-
-        <Link href="/lecturer-portal/profile" className="pro-action block p-5">
-          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Profile</div>
-          <div className="mt-2 text-lg font-semibold text-slate-950">Account Settings</div>
-          <div className="mt-2 text-sm leading-6 text-slate-700">View your official academic profile.</div>
-        </Link>
+        <aside className="space-y-6">
+          {nextAction && <NextActionPanel action={nextAction} />}
+          <EligibilityPanel request={request} />
+          <FeedbackPanel feedback={data.recentFeedback} />
+          <QuickActionPanel unreadNotifications={data.documentStats.unreadNotifications} />
+        </aside>
       </div>
     </div>
   );
 }
 
-function StatTile({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' }) {
-  const toneClass = tone === 'amber' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-teal-50 text-teal-800 border-teal-200';
+function LoadingDashboard() {
   return (
-    <div className="pro-tile p-5">
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-5">
+      <div className="h-40 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((item) => (
+          <div key={item} className="h-28 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
+        ))}
+      </div>
+      <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white shadow-sm" />
+    </div>
+  );
+}
+
+function MetricCard({ label, value, detail, code, tone = 'slate' }: { label: string; value: number; detail: string; code: string; tone?: 'slate' | 'green' | 'amber' | 'rose' }) {
+  const toneClass = {
+    slate: 'border-slate-200 bg-slate-100 text-slate-700',
+    green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    amber: 'border-amber-200 bg-amber-50 text-amber-900',
+    rose: 'border-rose-200 bg-rose-50 text-rose-800',
+  }[tone];
+
+  return (
+    <article className="pro-tile p-5">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{value}</p>
+          <p className="mt-1 text-xs text-slate-500">{detail}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-black ${toneClass}`}>{code}</span>
       </div>
+    </article>
+  );
+}
+
+function NoRequestPanel() {
+  return (
+    <section className="pro-card p-6">
+      <div className="max-w-2xl">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Promotion Workflow</p>
+        <h2 className="mt-2 text-xl font-semibold text-slate-950">No active promotion request yet</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Create a request when your promotion cycle is ready. The workflow tracker will appear here after the request is created.</p>
+        <Link href="/lecturer-portal/application" className="mt-4 inline-flex rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-800">
+          Start Request
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function CurrentApplicationCard({ request, rankPath }: { request: DashboardData['activeRequest']; rankPath: string }) {
+  return (
+    <section className="pro-card p-5 sm:p-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Application Summary</p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-950">{request ? rankPath : 'Promotion request not started'}</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            {request ? `Application PR-${String(request.id).padStart(5, '0')} last updated ${formatDate(request.updatedAt)}.` : 'Your application details will appear here once a request is created.'}
+          </p>
+        </div>
+        {request && <StatusBadge status={request.status} />}
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <SummaryFact label="Submitted" value={formatDate(request?.submittedAt)} />
+        <SummaryFact label="Total Score" value={request?.totalScore == null ? 'Pending' : `${Math.round(request.totalScore)}%`} />
+        <SummaryFact label="Latest Evidence" value={request?.latestDocument?.title || 'No upload yet'} />
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Link href="/lecturer-portal/application" className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800">
+          Track Application
+        </Link>
+        <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">
+          Evidence Portfolio
+        </Link>
+        <PrintSummaryButton />
+      </div>
+    </section>
+  );
+}
+
+function SummaryFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-2 truncate text-sm font-semibold text-slate-950">{value}</p>
     </div>
+  );
+}
+
+function NextActionPanel({ action }: { action: ReturnType<typeof nextActionFor> }) {
+  const toneClass = {
+    green: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    amber: 'border-amber-200 bg-amber-50 text-amber-900',
+    blue: 'border-sky-200 bg-sky-50 text-sky-900',
+    rose: 'border-rose-200 bg-rose-50 text-rose-900',
+  }[action.tone];
+
+  return (
+    <section className={`rounded-xl border p-5 shadow-sm ${toneClass}`}>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-75">Next Required Action</p>
+      <h2 className="mt-2 text-lg font-semibold">{action.title}</h2>
+      <p className="mt-2 text-sm leading-6 opacity-80">{action.detail}</p>
+      <Link href={action.href} className="mt-4 inline-flex w-full justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5">
+        {action.label}
+      </Link>
+    </section>
+  );
+}
+
+function EligibilityPanel({ request }: { request: DashboardData['activeRequest'] }) {
+  return (
+    <section className="pro-card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Eligibility Status</p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-950">{formatEnum(request?.eligibilityStatus || 'NOT_CALCULATED')}</h2>
+        </div>
+        <StatusBadge status={request?.eligibilityStatus || 'NOT_CALCULATED'} />
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">
+        {request?.eligibilityReason || 'Eligibility will be calculated after the required evidence has been verified by HR.'}
+      </p>
+      <Link href="/lecturer-portal/eligibility" className="mt-4 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-900">
+        View eligibility details
+      </Link>
+    </section>
+  );
+}
+
+function FeedbackPanel({ feedback }: { feedback: DashboardData['recentFeedback'] }) {
+  return (
+    <section className="pro-card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Recent Feedback</p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-950">HR remarks and corrections</h2>
+        </div>
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{feedback.length}</span>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {feedback.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">No correction feedback at the moment.</div>
+        ) : (
+          feedback.map((item) => (
+            <div key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={item.verificationStatus} />
+                <span className="text-xs font-medium text-slate-500">{formatDate(item.updatedAt)}</span>
+              </div>
+              <p className="mt-2 text-sm font-semibold text-slate-950">{item.title}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">{item.comment || 'HR reviewed this document and left a verification update.'}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      <Link href="/lecturer-portal/queries" className="mt-4 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-900">
+        Open feedback inbox
+      </Link>
+    </section>
+  );
+}
+
+function QuickActionPanel({ unreadNotifications }: { unreadNotifications: number }) {
+  const links = [
+    { href: '/lecturer-portal/evidence', label: 'Upload Evidence', detail: 'Add or replace promotion documents' },
+    { href: '/lecturer-portal/application', label: 'Track Application', detail: 'View workflow and status history' },
+    { href: '/lecturer-portal/queries', label: 'View Feedback', detail: 'Read HR comments and corrections' },
+    { href: '/lecturer-portal/notifications', label: 'Notifications', detail: `${unreadNotifications} unread update(s)` },
+  ];
+
+  return (
+    <section className="pro-card p-5">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Quick Actions</p>
+      <div className="mt-4 grid gap-2">
+        {links.map((link) => (
+          <Link key={link.href} href={link.href} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">
+            <span>
+              <span className="block">{link.label}</span>
+              <span className="mt-0.5 block text-xs font-normal text-slate-500">{link.detail}</span>
+            </span>
+            <span className="text-lg leading-none">{'>'}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

@@ -1,6 +1,54 @@
+import { RequestStatus, VerificationStatus, type Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { getAuthSession } from '../../../../lib/auth';
+
+const requestSelect = {
+  id: true,
+  targetRank: true,
+  currentRank: true,
+  status: true,
+  eligibilityStatus: true,
+  eligibilityReason: true,
+  submittedAt: true,
+  totalScore: true,
+  createdAt: true,
+  updatedAt: true,
+  documents: {
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      verificationStatus: true,
+      uploadedAt: true,
+    },
+    orderBy: { uploadedAt: 'desc' },
+    take: 1,
+  },
+} satisfies Prisma.PromotionRequestSelect;
+
+function progressForStatus(status: RequestStatus, submittedAt: Date | null) {
+  const progressByStatus: Record<RequestStatus, number> = {
+    DRAFT: 10,
+    SUBMITTED: 22,
+    UNDER_DEPARTMENT_REVIEW: 35,
+    UNDER_REVIEW: 48,
+    RETURNED_FOR_CORRECTION: 38,
+    UNDER_HR_VERIFICATION: 56,
+    UNDER_COMMITTEE_REVIEW: 74,
+    ELIGIBLE: 82,
+    NOT_ELIGIBLE: 82,
+    REQUIRES_FURTHER_REVIEW: 78,
+    RECOMMENDED: 88,
+    NOT_RECOMMENDED: 88,
+    APPROVED_BY_AUTHORITY: 95,
+    APPROVED: 100,
+    REJECTED: 100,
+    COMPLETED: 100,
+  };
+
+  return progressByStatus[status] ?? (submittedAt ? 25 : 10);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +61,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch lecturer with onboarding data
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
       select: {
@@ -35,46 +82,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch active promotion request
-    const activeRequest = await prisma.promotionRequest.findFirst({
-      where: {
-        lecturerId: session.userId,
-        status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'] },
-      },
-      orderBy: { submittedAt: 'desc' },
-      select: {
-        id: true,
-        targetRank: true,
-        status: true,
-        currentRank: true,
-        submittedAt: true,
-        totalScore: true,
-        eligibilityStatus: true,
-        documents: {
-          select: {
-            id: true,
-            title: true,
-            category: true,
-            verificationStatus: true,
-            uploadedAt: true,
-          },
-          orderBy: { uploadedAt: 'desc' },
-          take: 1,
+    const activeRequest =
+      (await prisma.promotionRequest.findFirst({
+        where: {
+          lecturerId: session.userId,
+          status: { notIn: [RequestStatus.COMPLETED] },
         },
-      },
-    });
+        orderBy: { updatedAt: 'desc' },
+        select: requestSelect,
+      })) ||
+      (await prisma.promotionRequest.findFirst({
+        where: { lecturerId: session.userId },
+        orderBy: { updatedAt: 'desc' },
+        select: requestSelect,
+      }));
 
-    // Calculate progress percentage
-    let progressPercentage = 0;
-    if (activeRequest) {
-      if (activeRequest.status === 'APPROVED') progressPercentage = 100;
-      else if (activeRequest.status === 'REJECTED') progressPercentage = 0;
-      else if (activeRequest.status === 'UNDER_REVIEW') progressPercentage = 75;
-      else if (activeRequest.submittedAt) progressPercentage = 50;
-      else progressPercentage = 25;
-    }
-
-    // Fetch recent documents (last 3)
     const recentDocuments = await prisma.document.findMany({
       where: { request: { lecturerId: session.userId } },
       select: {
@@ -85,24 +107,53 @@ export async function GET(request: NextRequest) {
         uploadedAt: true,
       },
       orderBy: { uploadedAt: 'desc' },
-      take: 3,
+      take: 4,
     });
 
-    const [totalDocuments, verifiedCount, pendingCount] = await Promise.all([
+    const [totalDocuments, verifiedCount, pendingCount, returnedCount, unreadNotifications, recentFeedback] = await Promise.all([
       prisma.document.count({
         where: { request: { lecturerId: session.userId } },
       }),
       prisma.document.count({
         where: {
           request: { lecturerId: session.userId },
-          verificationStatus: 'VERIFIED',
+          verificationStatus: VerificationStatus.VERIFIED,
         },
       }),
       prisma.document.count({
         where: {
           request: { lecturerId: session.userId },
-          verificationStatus: 'PENDING',
+          verificationStatus: VerificationStatus.PENDING,
         },
+      }),
+      prisma.document.count({
+        where: {
+          request: { lecturerId: session.userId },
+          verificationStatus: { in: [VerificationStatus.REJECTED, VerificationStatus.REQUIRES_CORRECTION] },
+        },
+      }),
+      prisma.notification.count({
+        where: { userId: session.userId, isRead: false },
+      }),
+      prisma.document.findMany({
+        where: {
+          request: { lecturerId: session.userId },
+          OR: [
+            { verificationStatus: { in: [VerificationStatus.REJECTED, VerificationStatus.REQUIRES_CORRECTION] } },
+            { verificationComment: { not: null } },
+          ],
+        },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          verificationStatus: true,
+          verificationComment: true,
+          updatedAt: true,
+          verifiedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 3,
       }),
     ]);
 
@@ -120,10 +171,16 @@ export async function GET(request: NextRequest) {
           activeRequest: activeRequest
             ? {
                 id: activeRequest.id,
+                currentRank: activeRequest.currentRank,
                 targetRank: activeRequest.targetRank,
                 status: activeRequest.status,
-                progressPercentage,
+                eligibilityStatus: activeRequest.eligibilityStatus,
+                eligibilityReason: activeRequest.eligibilityReason,
+                totalScore: activeRequest.totalScore,
+                progressPercentage: progressForStatus(activeRequest.status, activeRequest.submittedAt),
                 submittedAt: activeRequest.submittedAt,
+                createdAt: activeRequest.createdAt,
+                updatedAt: activeRequest.updatedAt,
                 latestDocument: activeRequest.documents[0] || null,
               }
             : null,
@@ -131,8 +188,19 @@ export async function GET(request: NextRequest) {
             totalDocuments,
             verifiedCount,
             pendingCount,
+            returnedCount,
+            unreadNotifications,
           },
           recentDocuments,
+          recentFeedback: recentFeedback.map((item) => ({
+            id: item.id,
+            title: item.title,
+            category: item.category,
+            verificationStatus: item.verificationStatus,
+            comment: item.verificationComment,
+            updatedAt: item.updatedAt,
+            verifiedAt: item.verifiedAt,
+          })),
           accountCreated: user.createdAt,
         },
       },

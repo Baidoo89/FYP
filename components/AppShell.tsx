@@ -107,7 +107,7 @@ export default function AppShell({ children }: AppShellProps) {
         { href: '/lecturer-portal/applications', icon: 'AP', label: 'My Applications', subtitle: 'Status history' },
         { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback & Remarks', subtitle: 'HR comments' },
         { href: '/lecturer-portal/eligibility', icon: 'EL', label: 'Eligibility Status', subtitle: 'Criteria outcome' },
-        { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
+        { href: '/lecturer-portal/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
         { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Academic record' },
         { href: '/lecturer-portal/help', icon: 'HC', label: 'Help Center', subtitle: 'Support' },
         { href: '/lecturer-portal/settings', icon: 'SE', label: 'Settings', subtitle: 'Account' },
@@ -247,7 +247,7 @@ export default function AppShell({ children }: AppShellProps) {
 
       <nav
         className={[
-          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-[#06172f] bg-[linear-gradient(180deg,#0b2d5b_0%,#071f3f_56%,#06172f_100%)] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto border-r border-[#032b28] bg-[linear-gradient(180deg,#064e3b_0%,#064033_56%,#032b28_100%)] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
       >
@@ -263,7 +263,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
           <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-yellow-100">{portalTitle}</p>
-            <p className="mt-1 text-sm text-blue-100/80">{portalSubtitle}</p>
+            <p className="mt-1 text-sm text-emerald-50/80">{portalSubtitle}</p>
           </div>
         </div>
 
@@ -275,12 +275,12 @@ export default function AppShell({ children }: AppShellProps) {
           ))}
         </ul>
 
-        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-blue-100/80">
+        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-emerald-50/80">
           <p className="font-semibold text-white">Need help?</p>
           <p className="mt-1 leading-5">Contact support for account, evidence, and workflow assistance.</p>
         </div>
 
-        <div className="mt-4 border-t border-white/10 p-4 text-xs text-blue-100/55">
+        <div className="mt-4 border-t border-white/10 p-4 text-xs text-emerald-50/55">
           <p>GCTU Promotion System v1.0</p>
           <p>2026 GCTU. All rights reserved.</p>
         </div>
@@ -301,7 +301,7 @@ export default function AppShell({ children }: AppShellProps) {
               <LecturerHeader />
             ) : (
               <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-800">{portalTitle}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-800">{portalTitle}</p>
                 <h2 className="truncate text-base font-semibold text-slate-950 md:text-lg">{portalSubtitle}</h2>
               </div>
             )}
@@ -311,7 +311,7 @@ export default function AppShell({ children }: AppShellProps) {
               Search anything...
             </div>
             <ThemeToggle compact />
-            <a href="/notifications" className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex" aria-label={`${notificationCount} unread notifications`}>
+            <a href={isLecturerNav ? "/lecturer-portal/notifications" : "/notifications"} className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex" aria-label={`${notificationCount} unread notifications`}>
               NT
               {notificationCount > 0 && (
                 <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-black text-white ring-2 ring-white">
