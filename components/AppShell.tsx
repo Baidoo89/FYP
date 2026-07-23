@@ -153,13 +153,13 @@ export default function AppShell({ children }: AppShellProps) {
         : isCommitteeNav
           ? [
               { href: '/committee/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Assigned work' },
-              { href: '/committee/review', icon: 'AS', label: 'Assigned Applications', subtitle: 'Review queue' },
-              { href: '/committee/review', icon: 'RC', label: 'Review Cases', subtitle: 'Evidence review' },
-              { href: '/committee/review', icon: 'RM', label: 'Recommendations', subtitle: 'Decisions' },
+              { href: '/committee/review?segment=pending', icon: 'RQ', label: 'Review Queue', subtitle: 'Pending decisions' },
+              { href: '/committee/review?segment=all', icon: 'AP', label: 'Applications', subtitle: 'Committee files' },
+              { href: '/committee/review?segment=decided', icon: 'RM', label: 'Recommendations', subtitle: 'Decisions' },
               { href: '/analytics', icon: 'ER', label: 'Eligibility Reports', subtitle: 'Outcomes' },
-              { href: '/committee/review', icon: 'RH', label: 'Review History', subtitle: 'Audit trail' },
+              { href: '/audit', icon: 'AU', label: 'Audit Trail', subtitle: 'Review history' },
               { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-              { href: '/committee/dashboard', icon: 'PF', label: 'Profile', subtitle: 'Account' },
+              { href: '/committee/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
             ]
           : isHodNav
             ? [
@@ -487,7 +487,7 @@ function profileHref(role: AuthRole | null) {
   if (role === 'LECTURER') return '/lecturer-portal/profile';
   if (role === 'HR_ADMIN') return '/hr/profile';
   if (role === 'SYSTEM_ADMIN') return '/system-admin/dashboard';
-  if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
+  if (role === 'COMMITTEE_REVIEWER') return '/committee/profile';
   if (role === 'HOD_DEAN') return '/hod/profile';
   return '/dashboard';
 }
@@ -496,7 +496,7 @@ function settingsHref(role: AuthRole | null) {
   if (role === 'LECTURER') return '/lecturer-portal/settings';
   if (role === 'SYSTEM_ADMIN') return '/system-admin/settings';
   if (role === 'HR_ADMIN') return '/hr/profile';
-  if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
+  if (role === 'COMMITTEE_REVIEWER') return '/committee/profile';
   if (role === 'HOD_DEAN') return '/hod/profile';
   return '/dashboard';
 }

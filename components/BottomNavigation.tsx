@@ -33,6 +33,13 @@ const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
     { href: '/notifications', label: 'Notifications', icon: Bell },
     { href: '/hr/profile', label: 'Profile', icon: UserRound },
   ],
+  COMMITTEE_REVIEWER: [
+    { href: '/committee/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/committee/review?segment=pending', label: 'Review Queue', icon: ClipboardList, key: 'review-queue' },
+    { href: '/committee/review?segment=all', label: 'Applications', icon: BriefcaseBusiness, key: 'applications' },
+    { href: '/notifications', label: 'Notifications', icon: Bell },
+    { href: '/committee/profile', label: 'Profile', icon: UserRound },
+  ],
   HOD_DEAN: [
     { href: '/hod/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/hod/applications?segment=active', label: 'Review Queue', icon: ClipboardList, key: 'review-queue' },
@@ -49,7 +56,7 @@ function normalizedPath(href: string) {
 function isActive(role: PortalRole | null, item: BottomNavItem, pathname: string, segment: string | null) {
   const path = normalizedPath(item.href);
 
-  if (role === 'HOD_DEAN' && path === '/hod/applications') {
+  if ((role === 'HOD_DEAN' && path === '/hod/applications') || (role === 'COMMITTEE_REVIEWER' && path === '/committee/review')) {
     if (item.key === 'applications') return pathname === path && segment === 'all';
     return pathname === path && segment !== 'all';
   }
