@@ -61,6 +61,7 @@ const iconMap = {
   RL: ShieldCheck,
   RM: ClipboardCheck,
   RP: ScrollText,
+  RQ: ClipboardList,
   RR: ClipboardList,
   SE: Settings,
   SR: UsersRound,

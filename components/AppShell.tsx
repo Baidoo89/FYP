@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode, RefObject } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Bell, ChevronDown, HelpCircle, Menu, Settings, UserRound } from 'lucide-react';
@@ -310,13 +310,15 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         </div>
 
-        <ul className="space-y-1 px-3 py-4">
-          {navItems.map((item) => (
-            <SidebarNavLink key={`${item.href}-${item.label}`} href={item.href} icon={item.icon} subtitle={item.subtitle} onNavigate={() => setMobileOpen(false)}>
-              {item.label}
-            </SidebarNavLink>
-          ))}
-        </ul>
+        <Suspense fallback={<div className="px-3 py-4" aria-hidden="true" />}>
+          <ul className="space-y-1 px-3 py-4">
+            {navItems.map((item) => (
+              <SidebarNavLink key={`${item.href}-${item.label}`} href={item.href} icon={item.icon} subtitle={item.subtitle} onNavigate={() => setMobileOpen(false)}>
+                {item.label}
+              </SidebarNavLink>
+            ))}
+          </ul>
+        </Suspense>
 
         <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-blue-50/80">
           <p className="font-semibold text-white">Need help?</p>
@@ -378,13 +380,19 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-24 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-24 lg:pb-6">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-24 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-24 lg:pb-6">
+          <Suspense fallback={<div className="pro-card p-5 text-sm font-semibold text-brand-muted">Loading workspace...</div>}>
+            {children}
+          </Suspense>
+        </main>
 
         <footer className="border-t border-brand-border bg-white px-4 py-4 pb-20 text-center text-xs text-brand-muted md:px-8 lg:pb-4">
           <p>&copy; 2026 Ghana Communication Technology University</p>
           <p className="mt-1">Digital Staff Promotion Support System | Version 1.0</p>
         </footer>
-        <BottomNavigation role={effectivePortalRole} />
+        <Suspense fallback={null}>
+          <BottomNavigation role={effectivePortalRole} />
+        </Suspense>
       </div>
     </div>
   );
