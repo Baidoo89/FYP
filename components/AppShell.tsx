@@ -391,7 +391,7 @@ export default function AppShell({ children }: AppShellProps) {
           <p className="mt-1">Digital Staff Promotion Support System | Version 1.0</p>
         </footer>
         <Suspense fallback={null}>
-          <BottomNavigation role={effectivePortalRole} />
+          <BottomNavigation role={effectivePortalRole} notificationCount={notificationCount} />
         </Suspense>
       </div>
     </div>

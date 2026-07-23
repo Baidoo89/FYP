@@ -9,6 +9,7 @@ type PortalRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 
 
 type BottomNavigationProps = {
   role: PortalRole | null;
+  notificationCount?: number;
 };
 
 type BottomNavItem = {
@@ -64,7 +65,7 @@ function isActive(role: PortalRole | null, item: BottomNavItem, pathname: string
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
-export default function BottomNavigation({ role }: BottomNavigationProps) {
+export default function BottomNavigation({ role, notificationCount = 0 }: BottomNavigationProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const items = role ? itemsByRole[role] : null;
@@ -79,9 +80,13 @@ export default function BottomNavigation({ role }: BottomNavigationProps) {
         {items.map((item) => {
           const active = isActive(role, item, pathname, segment);
           const Icon = item.icon;
+          const badge = item.label === 'Notifications' && notificationCount > 0 ? (notificationCount > 9 ? '9+' : String(notificationCount)) : null;
           return (
-            <Link key={`${item.href}-${item.label}`} href={item.href} aria-current={active ? 'page' : undefined} className={cn('flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold text-brand-muted transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2', active && 'bg-brand-primarySoft text-brand-primary')}>
-              <Icon className="h-5 w-5" aria-hidden="true" />
+            <Link key={`${item.href}-${item.label}`} href={item.href} aria-current={active ? 'page' : undefined} className={cn('relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold text-brand-muted transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2', active && 'bg-brand-primarySoft text-brand-primary')}>
+              <span className="relative">
+                <Icon className="h-5 w-5" aria-hidden="true" />
+                {badge && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">{badge}</span>}
+              </span>
               <span className="block w-full min-w-0 truncate text-center leading-3">{item.label}</span>
             </Link>
           );

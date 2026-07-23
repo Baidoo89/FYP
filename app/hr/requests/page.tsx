@@ -15,6 +15,9 @@ type PromotionRequest = PromotionApplicationDetailRecord & {
 
 type QueueSegment = 'all' | 'hr-work' | 'returned' | 'committee' | 'final' | 'completed';
 
+const queueSegments: QueueSegment[] = ['all', 'hr-work', 'returned', 'committee', 'final', 'completed'];
+const eligibilityStatuses = ['NOT_CALCULATED', 'ELIGIBLE', 'NOT_ELIGIBLE', 'INCOMPLETE_APPLICATION', 'REQUIRES_FURTHER_REVIEW', 'NEEDS_REVIEW'];
+
 type WorkflowAction = {
   status: string;
   label: string;
@@ -130,6 +133,7 @@ export default function MasterQueuePage() {
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [eligibilityFilter, setEligibilityFilter] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [segment, setSegment] = useState<QueueSegment>('hr-work');
   const [loading, setLoading] = useState(true);
@@ -173,9 +177,23 @@ export default function MasterQueuePage() {
   };
 
   useEffect(() => {
-    const requestId = typeof window === 'undefined'
-      ? null
-      : Number(new URLSearchParams(window.location.search).get('request') || new URLSearchParams(window.location.search).get('requestId'));
+    const params = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search);
+    const segmentParam = params?.get('segment') || null;
+    const statusParam = params?.get('status') || null;
+    const eligibilityParam = params?.get('eligibility') || null;
+    const requestId = Number(params?.get('request') || params?.get('requestId'));
+
+    if (segmentParam && queueSegments.includes(segmentParam as QueueSegment)) {
+      setSegment(segmentParam as QueueSegment);
+    }
+
+    if (statusParam && statuses.includes(statusParam)) {
+      setStatusFilter(statusParam);
+    }
+
+    if (eligibilityParam && eligibilityStatuses.includes(eligibilityParam)) {
+      setEligibilityFilter(eligibilityParam);
+    }
 
     loadRequests(Number.isInteger(requestId) && requestId > 0 ? requestId : null);
   }, []);
@@ -185,6 +203,15 @@ export default function MasterQueuePage() {
 
     if (statusFilter) {
       filtered = filtered.filter((request) => request.status === statusFilter);
+    }
+
+    if (eligibilityFilter) {
+      filtered = filtered.filter((request) => {
+        if (eligibilityFilter === 'NOT_ELIGIBLE') {
+          return ['NOT_ELIGIBLE', 'INCOMPLETE_APPLICATION'].includes(request.eligibilityStatus || '');
+        }
+        return request.eligibilityStatus === eligibilityFilter;
+      });
     }
 
     if (searchTerm.trim()) {
@@ -199,7 +226,7 @@ export default function MasterQueuePage() {
     }
 
     return filtered;
-  }, [requests, searchTerm, statusFilter, segment]);
+  }, [requests, searchTerm, statusFilter, eligibilityFilter, segment]);
 
   const selectedRequest = filteredRequests.find((request) => request.id === selectedId)
     || requests.find((request) => request.id === selectedId)
@@ -271,7 +298,7 @@ export default function MasterQueuePage() {
       {error && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
 
       <section className="pro-card p-4 sm:p-5">
-        <div className="grid gap-3 xl:grid-cols-[1fr_18rem_18rem_auto] xl:items-end">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_14rem_14rem_14rem_auto] xl:items-end">
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Search</span>
             <input
@@ -302,6 +329,15 @@ export default function MasterQueuePage() {
               <option value="committee">Committee review</option>
               <option value="final">Final decisions</option>
               <option value="completed">Completed</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Eligibility</span>
+            <select value={eligibilityFilter} onChange={(event) => setEligibilityFilter(event.target.value)} className="brand-input">
+              <option value="">All outcomes</option>
+              {eligibilityStatuses.map((status) => (
+                <option key={status} value={status}>{formatLabel(status)}</option>
+              ))}
             </select>
           </label>
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
