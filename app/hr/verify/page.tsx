@@ -35,6 +35,8 @@ type PromotionRequest = PromotionApplicationDetailRecord & {
 type VerificationDecision = 'VERIFIED' | 'REQUIRES_CORRECTION' | 'REJECTED';
 type QueueSegment = 'pending' | 'returned' | 'committee' | 'completed' | 'all';
 
+const queueSegments: QueueSegment[] = ['pending', 'returned', 'committee', 'completed', 'all'];
+
 const decisionConfig: Record<VerificationDecision, { label: string; description: string; className: string; defaultComment: string; code: string }> = {
   VERIFIED: {
     label: 'Verify Document',
@@ -81,6 +83,10 @@ function formatFileSize(value?: number | null) {
   if (!value) return 'Unknown size';
   if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isQueueSegment(value: string | null): value is QueueSegment {
+  return Boolean(value && queueSegments.includes(value as QueueSegment));
 }
 
 function queueMatches(request: PromotionRequest, segment: QueueSegment) {
@@ -181,7 +187,7 @@ export default function VerificationWorkspacePage() {
 
     try {
       const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-      const requestIdParam = params.get('requestId');
+      const requestIdParam = params.get('requestId') || params.get('request');
       const targetRequestId = preferredRequestId || (requestIdParam ? Number(requestIdParam) : null);
 
       const response = await fetch('/api/promotion-requests?scope=hr', { cache: 'no-store' });
@@ -220,6 +226,13 @@ export default function VerificationWorkspacePage() {
   }
 
   useEffect(() => {
+    const params = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search);
+    const segmentParam = params?.get('segment') || null;
+
+    if (isQueueSegment(segmentParam)) {
+      setQueueSegment(segmentParam);
+    }
+
     loadRequests();
   }, []);
 
@@ -227,6 +240,13 @@ export default function VerificationWorkspacePage() {
     if (!selectedRequest || !selectedDocument) return;
 
     const comment = verificationComment.trim() || decisionConfig[decision].defaultComment;
+    const confirmMessage = decision === 'VERIFIED'
+      ? 'Verify this document and continue HR workflow processing?'
+      : decision === 'REQUIRES_CORRECTION'
+        ? 'Return this document to the lecturer for correction?'
+        : 'Reject this document? This decision will be recorded in audit history.';
+
+    if (!window.confirm(confirmMessage)) return;
 
     if ((decision === 'REQUIRES_CORRECTION' || decision === 'REJECTED') && comment.length < 8) {
       setError('Please provide a clear verification comment before returning or rejecting evidence.');
@@ -284,24 +304,24 @@ export default function VerificationWorkspacePage() {
   const verificationDisabled = !selectedRequest || !selectedDocument || finalStatuses.has(selectedRequest.status) || selectedRequest.status !== 'UNDER_HR_VERIFICATION';
 
   return (
-    <div className="space-y-6">
-      <section className="pro-hero px-6 py-8">
-        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="min-w-0 max-w-full space-y-5 overflow-x-hidden">
+      <section className="relative overflow-hidden rounded-xl border border-brand-primary/15 bg-white p-5 shadow-sm sm:p-6">
+        <div className="absolute inset-x-0 top-0 h-1 bg-brand-primary" aria-hidden="true" />
+        <div className="relative z-10 flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">HR Document Verification</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Verification Workspace</h1>
+            <h1 className="mt-3 break-words text-2xl font-semibold tracking-tight text-gray-950 sm:text-3xl">Verification Workspace</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
               Verify promotion evidence, request corrections, reject invalid documents, and trigger eligibility routing only after required evidence is verified.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/hr/requests" className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-950">Master queue</a>
-            <a href="/analytics" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Reports</a>
+            <a href="/hr/requests" className="inline-flex min-h-10 items-center justify-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">Master Queue</a>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-6">
         <Metric code="AP" label="Applications" value={metrics.applications} tone="blue" />
         <Metric code="PD" label="Pending" value={metrics.pending} tone="amber" />
         <Metric code="VF" label="Verified" value={metrics.verified} tone="green" />
@@ -310,11 +330,11 @@ export default function VerificationWorkspacePage() {
         <Metric code="CM" label="Committee" value={metrics.committee} tone="blue" />
       </section>
 
-      {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{message}</div>}
-      {error && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
+      {message && <div role="status" aria-live="polite" className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{message}</div>}
+      {error && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
 
-      <section className="grid gap-6 xl:grid-cols-[0.82fr_1.68fr]">
-        <aside className="pro-card overflow-hidden">
+      <section className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(19rem,0.82fr)_minmax(0,1.68fr)]">
+        <aside className="pro-card min-w-0 overflow-hidden">
           <div className="border-b border-gray-200 p-5">
             <h2 className="text-lg font-bold text-gray-950">Verification Queue</h2>
             <p className="mt-1 text-sm text-gray-600">Select an application and document to verify.</p>
@@ -349,13 +369,13 @@ export default function VerificationWorkspacePage() {
                       key={request.id}
                       type="button"
                       onClick={() => selectRequest(request)}
-                      className={`block w-full p-5 text-left transition hover:bg-gray-50 ${selectedRequestId === request.id ? 'bg-blue-50/70' : ''}`}
+                      className={`block w-full p-4 text-left transition hover:bg-gray-50 sm:p-5 ${selectedRequestId === request.id ? 'bg-brand-primarySoft' : ''}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{applicationCode(request.id)}</p>
-                          <p className="mt-2 truncate font-semibold text-gray-950">{request.lecturerName}</p>
-                          <p className="mt-1 truncate text-xs text-gray-500">{request.department}</p>
+                          <p className="mt-2 break-words font-semibold text-gray-950">{request.lecturerName}</p>
+                          <p className="mt-1 break-words text-xs text-gray-500">{request.department}</p>
                           <p className="mt-1 text-xs font-medium text-gray-600">{label(request.currentRank)} to {label(request.targetRank)}</p>
                         </div>
                         <StatusBadge status={request.status} />
@@ -374,7 +394,7 @@ export default function VerificationWorkspacePage() {
           </div>
         </aside>
 
-        <div className="space-y-6">
+        <div className="min-w-0 max-w-full space-y-5 overflow-x-hidden">
           {!selectedRequest ? (
             <div className="pro-card p-6"><EmptyState title="Select an application" description="Choose an application from the verification queue to inspect its evidence." /></div>
           ) : (
@@ -398,7 +418,7 @@ export default function VerificationWorkspacePage() {
                           key={document.id}
                           type="button"
                           onClick={() => selectDocument(document)}
-                          className={`w-full rounded-lg border p-3 text-left transition ${selectedDocumentId === document.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'}`}
+                          className={`w-full rounded-lg border p-3 text-left transition ${selectedDocumentId === document.id ? 'border-brand-primary bg-brand-primarySoft' : 'border-gray-200 bg-white hover:border-brand-primary/25 hover:bg-brand-primarySoft'}`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>

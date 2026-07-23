@@ -26,6 +26,13 @@ const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
     { href: '/lecturer-portal/notifications', label: 'Notifications', icon: Bell },
     { href: '/lecturer-portal/profile', label: 'Profile', icon: UserRound },
   ],
+  HR_ADMIN: [
+    { href: '/hr/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/hr/verify?segment=pending', label: 'Verify', icon: ClipboardList },
+    { href: '/hr/requests', label: 'Applications', icon: BriefcaseBusiness },
+    { href: '/notifications', label: 'Notifications', icon: Bell },
+    { href: '/hr/profile', label: 'Profile', icon: UserRound },
+  ],
   HOD_DEAN: [
     { href: '/hod/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/hod/applications?segment=active', label: 'Review Queue', icon: ClipboardList, key: 'review-queue' },

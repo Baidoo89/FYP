@@ -240,28 +240,26 @@ export default function MasterQueuePage() {
   const returnedCount = requests.filter((request) => segmentMatches(request, 'returned')).length;
 
   return (
-    <div className="space-y-6">
-      <section className="pro-hero px-6 py-8">
-        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="min-w-0 max-w-full space-y-5 overflow-x-hidden">
+      <section className="relative overflow-hidden rounded-xl border border-brand-primary/15 bg-white p-5 shadow-sm sm:p-6">
+        <div className="absolute inset-x-0 top-0 h-1 bg-brand-primary" aria-hidden="true" />
+        <div className="relative z-10 flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">Queue Management</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">HR Master Queue</h1>
+            <h1 className="mt-3 break-words text-2xl font-semibold tracking-tight text-gray-950 sm:text-3xl">HR Master Queue</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
               Control verification, committee routing, authority approval, and final administrative close-out from one shared application workspace.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/hr/verify" className="inline-flex w-fit rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-900">
-              Verification workspace
-            </a>
-            <a href="/analytics" className="inline-flex w-fit rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">
-              Reports
+            <a href="/hr/verify?segment=pending" className="inline-flex min-h-10 w-fit items-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
+              Verification Workspace
             </a>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-5">
         <QueueMetric code="ALL" label="All requests" value={requests.length} />
         <QueueMetric code="HR" label="Active HR work" value={hrWorkCount} tone="amber" />
         <QueueMetric code="RET" label="Returned" value={returnedCount} tone="rose" />
@@ -269,8 +267,8 @@ export default function MasterQueuePage() {
         <QueueMetric code="DONE" label="Completed" value={completedCount} tone="slate" />
       </section>
 
-      {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{message}</div>}
-      {error && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
+      {message && <div role="status" aria-live="polite" className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{message}</div>}
+      {error && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
 
       <section className="pro-card p-4 sm:p-5">
         <div className="grid gap-3 xl:grid-cols-[1fr_18rem_18rem_auto] xl:items-end">
@@ -318,8 +316,8 @@ export default function MasterQueuePage() {
         <DecisionCard title="Final Authority" detail={`${finalCount} application(s) are ready for authority approval or close-out. Use final controls with a clear audit note.`} code="03" />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.82fr_1.68fr]">
-        <aside className="pro-card overflow-hidden">
+      <section className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(19rem,0.82fr)_minmax(0,1.68fr)]">
+        <aside className="pro-card min-w-0 overflow-hidden">
           <div className="border-b border-gray-200 p-5">
             <h2 className="text-lg font-bold text-gray-950">Promotion Queue</h2>
             <p className="mt-1 text-sm text-gray-600">Select an application to inspect details, evidence, history, and HR actions.</p>
@@ -341,13 +339,13 @@ export default function MasterQueuePage() {
                     key={request.id}
                     type="button"
                     onClick={() => setSelectedId(request.id)}
-                    className={`block w-full p-5 text-left transition hover:bg-gray-50 ${isSelected ? 'bg-teal-50/70' : ''}`}
+                    className={`block w-full p-4 text-left transition hover:bg-gray-50 sm:p-5 ${isSelected ? 'bg-brand-primarySoft' : ''}`}
                   >
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start xl:flex-col 2xl:flex-row">
                       <div className="min-w-0">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{applicationCode(request.id)}</p>
-                        <p className="mt-2 truncate font-semibold text-gray-950">{request.lecturerName}</p>
-                        <p className="mt-1 truncate text-sm text-gray-600">{request.department}</p>
+                        <p className="mt-2 break-words font-semibold text-gray-950">{request.lecturerName}</p>
+                        <p className="mt-1 break-words text-sm text-gray-600">{request.department}</p>
                         <p className="mt-1 text-xs text-gray-500">Submitted {formatDate(request.submittedAt)}</p>
                       </div>
                       <StatusBadge status={request.status} />

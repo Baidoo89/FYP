@@ -135,7 +135,7 @@ export default function AppShell({ children }: AppShellProps) {
           { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Analytics' },
           { href: '/hr/logs', icon: 'AU', label: 'Audit Logs', subtitle: 'Activity trail' },
           { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-          { href: '/hr/dashboard', icon: 'SE', label: 'Settings', subtitle: 'Preferences' },
+          { href: '/hr/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
         ]
       : isSystemAdminNav
         ? [
@@ -485,7 +485,7 @@ function initialsFor(name?: string | null) {
 
 function profileHref(role: AuthRole | null) {
   if (role === 'LECTURER') return '/lecturer-portal/profile';
-  if (role === 'HR_ADMIN') return '/hr/dashboard';
+  if (role === 'HR_ADMIN') return '/hr/profile';
   if (role === 'SYSTEM_ADMIN') return '/system-admin/dashboard';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
   if (role === 'HOD_DEAN') return '/hod/profile';
@@ -495,7 +495,7 @@ function profileHref(role: AuthRole | null) {
 function settingsHref(role: AuthRole | null) {
   if (role === 'LECTURER') return '/lecturer-portal/settings';
   if (role === 'SYSTEM_ADMIN') return '/system-admin/settings';
-  if (role === 'HR_ADMIN') return '/hr/dashboard';
+  if (role === 'HR_ADMIN') return '/hr/profile';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
   if (role === 'HOD_DEAN') return '/hod/profile';
   return '/dashboard';
