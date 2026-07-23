@@ -164,13 +164,13 @@ export default function AppShell({ children }: AppShellProps) {
           : isHodNav
             ? [
                 { href: '/hod/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Department overview' },
-                { href: '/hod/applications', icon: 'DA', label: 'Department Applications', subtitle: 'Department queue' },
-                { href: '/hod/applications', icon: 'RR', label: 'Review Requests', subtitle: 'Pending decisions' },
-                { href: '/hod/applications', icon: 'RC', label: 'Recommendations', subtitle: 'Comments' },
-                { href: '/hod/applications', icon: 'FW', label: 'Forwarded Applications', subtitle: 'Sent to HR' },
+                { href: '/hod/applications?segment=active', icon: 'RR', label: 'Review Queue', subtitle: 'Pending decisions' },
+                { href: '/hod/applications?segment=all', icon: 'DA', label: 'Applications', subtitle: 'Scoped records' },
+                { href: '/hod/applications?segment=further', icon: 'RC', label: 'Recommendations', subtitle: 'Further review' },
+                { href: '/hod/applications?segment=forwarded', icon: 'FW', label: 'Forwarded Applications', subtitle: 'Sent to HR' },
                 { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Department reports' },
                 { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-                { href: '/hod/dashboard', icon: 'PF', label: 'Profile', subtitle: 'Account' },
+                { href: '/hod/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
               ]
             : baseNavItems;
 
@@ -328,8 +328,9 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
 
         <div className="mt-4 border-t border-white/10 p-4 text-xs text-blue-50/55">
-          <p>GCTU Promotion System v1.0</p>
-          <p>2026 GCTU. All rights reserved.</p>
+          <p>&copy; 2026 Ghana Communication Technology University</p>
+          <p>Digital Staff Promotion Support System</p>
+          <p>Version 1.0</p>
         </div>
       </nav>
 
@@ -380,7 +381,8 @@ export default function AppShell({ children }: AppShellProps) {
         <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-24 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-24 lg:pb-6">{children}</main>
 
         <footer className="border-t border-brand-border bg-white px-4 py-4 pb-20 text-center text-xs text-brand-muted md:px-8 lg:pb-4">
-          <p>GCTU Promotion System v1.0 | University Promotion Management Platform</p>
+          <p>&copy; 2026 Ghana Communication Technology University</p>
+          <p className="mt-1">Digital Staff Promotion Support System | Version 1.0</p>
         </footer>
         <BottomNavigation role={effectivePortalRole} />
       </div>
@@ -486,7 +488,7 @@ function profileHref(role: AuthRole | null) {
   if (role === 'HR_ADMIN') return '/hr/dashboard';
   if (role === 'SYSTEM_ADMIN') return '/system-admin/dashboard';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
-  if (role === 'HOD_DEAN') return '/hod/dashboard';
+  if (role === 'HOD_DEAN') return '/hod/profile';
   return '/dashboard';
 }
 
@@ -495,7 +497,7 @@ function settingsHref(role: AuthRole | null) {
   if (role === 'SYSTEM_ADMIN') return '/system-admin/settings';
   if (role === 'HR_ADMIN') return '/hr/dashboard';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
-  if (role === 'HOD_DEAN') return '/hod/dashboard';
+  if (role === 'HOD_DEAN') return '/hod/profile';
   return '/dashboard';
 }
 

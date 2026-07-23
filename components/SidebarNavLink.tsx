@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Bell,
   BookOpenCheck,
@@ -70,8 +70,16 @@ const iconMap = {
 
 export default function SidebarNavLink({ href, icon, children, subtitle, onNavigate }: SidebarNavLinkProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const normalizedHref = href.split('#')[0].split('?')[0];
-  const isActive = pathname === normalizedHref || pathname.startsWith(`${normalizedHref}/`);
+  const hrefQuery = href.includes('?') ? new URLSearchParams(href.split('?')[1].split('#')[0]) : null;
+  const hasSpecificQuery = hrefQuery && Array.from(hrefQuery.keys()).length > 0;
+  const queryMatches = hasSpecificQuery
+    ? Array.from(hrefQuery.entries()).every(([key, value]) => searchParams.get(key) === value)
+    : true;
+  const isActive = hasSpecificQuery
+    ? pathname === normalizedHref && queryMatches
+    : pathname === normalizedHref || pathname.startsWith(`${normalizedHref}/`);
   const Icon = iconMap[icon as keyof typeof iconMap] || Square;
 
   return (

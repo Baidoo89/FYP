@@ -251,9 +251,6 @@ export default async function HodDashboardPage() {
                 Open Review Queue
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <Link href="/analytics" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
-                Reports
-              </Link>
             </div>
           </div>
 
@@ -269,8 +266,9 @@ export default async function HodDashboardPage() {
               </div>
             </div>
             <div className="mt-4 grid gap-2 text-sm">
-              <ScopeLine label="Reviewer" value={scope.reviewer?.name || 'Authorized reviewer'} />
+              <ScopeLine label="Department" value={scope.reviewer?.departmentRef?.name || scope.reviewer?.department || scope.scopeLabel} />
               <ScopeLine label="Faculty" value={scope.reviewer?.faculty?.name || 'Not assigned'} />
+              <ScopeLine label="Reviewer" value={scope.reviewer?.name || 'Authorized reviewer'} />
               <ScopeLine label="Last update" value={formatDate(recentApplications[0]?.updatedAt)} />
             </div>
           </aside>
@@ -280,7 +278,7 @@ export default async function HodDashboardPage() {
       <ActionBanner {...actionBanner} />
 
       <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-5">
-        <MetricTile icon={FileText} label="Department Applications" value={departmentApplications} detail="All scoped records" tone="blue" />
+        <MetricTile icon={FileText} label="Scoped Applications" value={departmentApplications} detail="Department/faculty records" tone="blue" />
         <MetricTile icon={AlertTriangle} label="Active Action" value={activeDepartmentAction} detail="Needs department decision" tone="amber" />
         <MetricTile icon={Clock3} label="Pending Review" value={pendingDepartmentReview} detail="Submitted or in review" tone="slate" />
         <MetricTile icon={Send} label="Forwarded" value={forwardedApplications} detail="Moved beyond department" tone="green" />
@@ -329,15 +327,21 @@ export default async function HodDashboardPage() {
                           <p className="font-semibold text-gray-900">{application.lecturer.name}</p>
                           <p className="mt-1 text-xs text-gray-500">{application.lecturer.department || application.lecturer.email}</p>
                         </td>
-                        <td className="px-5 py-4"><StatusBadge status={application.status} /></td>
+                        <td className="px-5 py-4">
+                          <div className="space-y-2">
+                            <StatusBadge status={application.status} />
+                            <ReviewSignal status={application.status} counts={counts} />
+                          </div>
+                        </td>
                         <td className="px-5 py-4">
                           <p className="font-semibold text-gray-900">{counts.verified}/{counts.total} verified</p>
                           <p className={`mt-1 text-xs ${counts.returned ? 'text-orange-700' : 'text-gray-500'}`}>{counts.returned ? `${counts.returned} needs correction` : `${counts.pending} pending`}</p>
                         </td>
                         <td className="px-5 py-4 text-gray-600">{formatDate(application.updatedAt)}</td>
                         <td className="px-5 py-4 text-right">
-                          <Link href={`/hod/applications?request=${application.id}`} className="inline-flex min-h-9 items-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary">
+                          <Link href={`/hod/applications?request=${application.id}&segment=active`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary" aria-label={`Open ${applicationCode(application.id)}`}>
                             Open
+                            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                           </Link>
                         </td>
                       </tr>
@@ -397,6 +401,36 @@ export default async function HodDashboardPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function reviewSignalFor(status: RequestStatus, counts: ReturnType<typeof documentCounts>) {
+  if (status === RequestStatus.RETURNED_FOR_CORRECTION || counts.returned > 0) {
+    return { label: 'Returned', className: 'border-rose-200 bg-rose-50 text-rose-800' };
+  }
+
+  if (status === RequestStatus.SUBMITTED || status === RequestStatus.UNDER_DEPARTMENT_REVIEW) {
+    return { label: 'Under Review', className: 'border-amber-200 bg-amber-50 text-amber-900' };
+  }
+
+  if (status === RequestStatus.UNDER_HR_VERIFICATION) {
+    return { label: 'Ready for HR', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
+  }
+
+  if (forwardedStatuses.includes(status)) {
+    return { label: 'Forwarded', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
+  }
+
+  return { label: 'Monitoring', className: 'border-slate-200 bg-slate-50 text-slate-700' };
+}
+
+function ReviewSignal({ status, counts }: { status: RequestStatus; counts: ReturnType<typeof documentCounts> }) {
+  const signal = reviewSignalFor(status, counts);
+
+  return (
+    <span className={`inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-[11px] font-bold ${signal.className}`}>
+      {signal.label}
+    </span>
   );
 }
 

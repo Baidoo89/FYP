@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Clock3, FileText, MessageSquareText, RotateCcw, Search, Send, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -257,10 +256,6 @@ export default function HodApplicationsPage() {
               Review academic promotion files from your area, record formal department comments, return incomplete submissions, and forward complete applications to HR verification.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/hod/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Dashboard</Link>
-            <Link href="/analytics" className="inline-flex min-h-10 items-center justify-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primaryDark">Reports</Link>
-          </div>
         </div>
       </div>
 
@@ -393,7 +388,7 @@ export default function HodApplicationsPage() {
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   <Send className="h-4 w-4" aria-hidden="true" />
-                  {saving ? 'Saving...' : 'Forward to HR'}
+                  {saving ? 'Saving...' : 'Approve & Forward'}
                 </button>
                 <button
                   type="button"
@@ -402,7 +397,7 @@ export default function HodApplicationsPage() {
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-orange-300 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-950 shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                 >
                   <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                  Return for correction
+                  Return to Lecturer
                 </button>
                 <button
                   type="button"
