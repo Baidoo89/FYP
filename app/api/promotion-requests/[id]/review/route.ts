@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ReviewRecommendation } from '@prisma/client';
-import { getAuthSession } from '../../../../../lib/auth';
+import { getAuthSession, type AuthSession } from '../../../../../lib/auth';
 import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../../lib/prisma';
 import {
   recordCommitteeReview,
@@ -21,6 +21,48 @@ function workflowErrorResponse(error: unknown, fallback: string) {
   const status = error instanceof WorkflowError ? error.statusCode : 500;
   const message = error instanceof Error ? error.message : fallback;
   return NextResponse.json({ success: false, error: message } as ApiResponse<null>, { status });
+}
+
+function clean(value?: string | null) {
+  return value?.trim().toLowerCase() || '';
+}
+
+async function canAccessDepartmentRequest(session: AuthSession, requestId: number) {
+  if (session.role !== 'HOD_DEAN') return true;
+
+  const [reviewer, promotionRequest] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.userId },
+      select: {
+        department: true,
+        departmentId: true,
+        facultyId: true,
+      },
+    }),
+    prisma.promotionRequest.findUnique({
+      where: { id: requestId },
+      select: {
+        lecturer: {
+          select: {
+            department: true,
+            departmentId: true,
+            facultyId: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  if (!promotionRequest) return true;
+
+  const lecturer = promotionRequest.lecturer;
+  const reviewerDepartment = clean(reviewer?.department || session.department);
+
+  return Boolean(
+    (reviewer?.facultyId && lecturer.facultyId && reviewer.facultyId === lecturer.facultyId) ||
+    (reviewer?.departmentId && lecturer.departmentId && reviewer.departmentId === lecturer.departmentId) ||
+    (reviewerDepartment && clean(lecturer.department) === reviewerDepartment)
+  );
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -47,6 +89,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
   if (recommendation && !Object.values(ReviewRecommendation).includes(recommendation)) {
     return NextResponse.json({ success: false, error: 'Invalid recommendation' } as ApiResponse<null>, { status: 400 });
+  }
+
+  const inDepartmentScope = await canAccessDepartmentRequest(session, requestId);
+  if (!inDepartmentScope) {
+    return NextResponse.json({ success: false, error: 'This application is outside your department review scope' } as ApiResponse<null>, { status: 403 });
   }
 
   try {

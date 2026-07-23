@@ -1,15 +1,17 @@
 import Link from 'next/link';
 import { RequestStatus, type Prisma } from '@prisma/client';
 import { cookies } from 'next/headers';
+import type { LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Building2, CheckCircle2, Clock3, FileText, MessageSquareText, RotateCcw, Send } from 'lucide-react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import { prisma } from '../../../lib/prisma';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const pendingDepartmentStatuses = [RequestStatus.SUBMITTED, RequestStatus.UNDER_DEPARTMENT_REVIEW];
-const actionableStatuses = [...pendingDepartmentStatuses, RequestStatus.REQUIRES_FURTHER_REVIEW];
-const forwardedStatuses = [
+const pendingDepartmentStatuses: RequestStatus[] = [RequestStatus.SUBMITTED, RequestStatus.UNDER_DEPARTMENT_REVIEW];
+const actionableStatuses: RequestStatus[] = [...pendingDepartmentStatuses, RequestStatus.REQUIRES_FURTHER_REVIEW];
+const forwardedStatuses: RequestStatus[] = [
   RequestStatus.UNDER_HR_VERIFICATION,
   RequestStatus.UNDER_COMMITTEE_REVIEW,
   RequestStatus.ELIGIBLE,
@@ -18,24 +20,47 @@ const forwardedStatuses = [
   RequestStatus.NOT_RECOMMENDED,
   RequestStatus.APPROVED_BY_AUTHORITY,
   RequestStatus.APPROVED,
+  RequestStatus.REJECTED,
   RequestStatus.COMPLETED,
 ];
 
-async function getDepartmentScopeWhere(): Promise<Prisma.PromotionRequestWhereInput> {
+type DepartmentScope = {
+  where: Prisma.PromotionRequestWhereInput;
+  reviewer: {
+    name: string;
+    email: string;
+    department: string | null;
+    departmentRef: { name: string } | null;
+    faculty: { name: string } | null;
+  } | null;
+  scopeLabel: string;
+  scopeDetail: string;
+};
+
+async function getDepartmentScope(): Promise<DepartmentScope> {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const session = verifySessionToken(sessionToken);
 
   if (session?.role !== 'HOD_DEAN') {
-    return {};
+    return {
+      where: {},
+      reviewer: null,
+      scopeLabel: 'Institution-wide view',
+      scopeDetail: 'System administrators can see all promotion records.',
+    };
   }
 
   const reviewer = await prisma.user.findUnique({
     where: { id: session.userId },
     select: {
+      name: true,
+      email: true,
       department: true,
       departmentId: true,
       facultyId: true,
+      departmentRef: { select: { name: true } },
+      faculty: { select: { name: true } },
     },
   });
 
@@ -53,9 +78,27 @@ async function getDepartmentScopeWhere(): Promise<Prisma.PromotionRequestWhereIn
     lecturerFilters.push({ department: reviewer?.department || session.department });
   }
 
-  return lecturerFilters.length > 0
-    ? { lecturer: { OR: lecturerFilters } }
-    : { lecturerId: -1 };
+  const scopeLabel = reviewer?.departmentRef?.name || reviewer?.department || session.department || reviewer?.faculty?.name || 'No department assigned';
+  const scopeDetail = reviewer?.faculty?.name
+    ? `${reviewer.faculty.name} faculty scope`
+    : reviewer?.departmentRef?.name || reviewer?.department || session.department
+      ? 'Department-scoped review workspace'
+      : 'Assign this account to a department or faculty to activate review scope.';
+
+  return {
+    where: lecturerFilters.length > 0 ? { lecturer: { OR: lecturerFilters } } : { lecturerId: -1 },
+    reviewer: reviewer
+      ? {
+          name: reviewer.name,
+          email: reviewer.email,
+          department: reviewer.department,
+          departmentRef: reviewer.departmentRef,
+          faculty: reviewer.faculty,
+        }
+      : null,
+    scopeLabel,
+    scopeDetail,
+  };
 }
 
 function withStatuses(scopeWhere: Prisma.PromotionRequestWhereInput, statuses: RequestStatus[]): Prisma.PromotionRequestWhereInput {
@@ -78,14 +121,25 @@ function applicationCode(id: number) {
   return `PR-${String(id).padStart(5, '0')}`;
 }
 
+function documentCounts(documents: Array<{ verificationStatus: string }>) {
+  return {
+    total: documents.length,
+    verified: documents.filter((document) => document.verificationStatus === 'VERIFIED').length,
+    returned: documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus)).length,
+    pending: documents.filter((document) => document.verificationStatus === 'PENDING').length,
+  };
+}
+
 export default async function HodDashboardPage() {
-  const scopeWhere = await getDepartmentScopeWhere();
+  const scope = await getDepartmentScope();
+  const scopeWhere = scope.where;
   const [
     departmentApplications,
     pendingDepartmentReview,
     activeDepartmentAction,
     forwardedApplications,
     returnedForCorrection,
+    furtherReview,
     recentApplications,
     recentComments,
     groupedStatuses,
@@ -95,6 +149,7 @@ export default async function HodDashboardPage() {
     prisma.promotionRequest.count({ where: withStatuses(scopeWhere, actionableStatuses) }),
     prisma.promotionRequest.count({ where: withStatuses(scopeWhere, forwardedStatuses) }),
     prisma.promotionRequest.count({ where: { ...scopeWhere, status: RequestStatus.RETURNED_FOR_CORRECTION } }),
+    prisma.promotionRequest.count({ where: { ...scopeWhere, status: RequestStatus.REQUIRES_FURTHER_REVIEW } }),
     prisma.promotionRequest.findMany({
       where: scopeWhere,
       include: {
@@ -166,44 +221,80 @@ export default async function HodDashboardPage() {
     .map((row) => ({ label: label(row.status), value: row._count._all, status: row.status }))
     .sort((left, right) => right.value - left.value);
 
+  const actionBanner = activeDepartmentAction > 0
+    ? {
+        title: `${activeDepartmentAction} application${activeDepartmentAction === 1 ? '' : 's'} need department action`,
+        detail: 'Review submitted files, add a formal department comment, then forward complete applications to HR or return incomplete records for correction.',
+        href: '/hod/applications?segment=active',
+        tone: 'amber' as const,
+      }
+    : {
+        title: 'No department action waiting',
+        detail: 'Your review queue is clear. Continue monitoring forwarded applications and recent recommendation comments.',
+        href: '/hod/applications?segment=all',
+        tone: 'green' as const,
+      };
+
   return (
-    <main className="space-y-6">
-      <section className="pro-hero px-6 py-8">
-        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+    <main className="min-w-0 max-w-full space-y-5 overflow-x-hidden">
+      <section className="relative overflow-hidden rounded-xl border border-brand-primary/15 bg-white p-5 shadow-sm sm:p-6">
+        <div className="absolute inset-x-0 top-0 h-1 bg-brand-primary" aria-hidden="true" />
+        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] xl:items-center">
+          <div className="min-w-0">
             <div className="pro-eyebrow">HOD / Dean Workspace</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Department Promotion Review</h1>
+            <h1 className="mt-3 break-words text-2xl font-semibold tracking-tight text-gray-950 sm:text-3xl">Department Promotion Review</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Monitor department applications, act on submitted files, review recent comments, and forward complete promotion records to HR verification.
+              Monitor scoped promotion files, record department recommendations, return incomplete applications, and forward complete records to HR verification.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link href="/hod/applications?segment=active" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
+                Open Review Queue
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link href="/analytics" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-brand-primary/25 hover:bg-brand-primarySoft hover:text-brand-primary">
+                Reports
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/hod/applications" className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-teal-900">
-              Open Review Queue
-            </Link>
-            <Link href="/analytics" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-900">
-              Analytics
-            </Link>
-          </div>
+
+          <aside className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-primary/15 bg-white text-brand-primary">
+                <Building2 className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Review Scope</p>
+                <h2 className="mt-1 break-words text-base font-semibold text-gray-950">{scope.scopeLabel}</h2>
+                <p className="mt-1 break-words text-sm leading-6 text-gray-600">{scope.scopeDetail}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2 text-sm">
+              <ScopeLine label="Reviewer" value={scope.reviewer?.name || 'Authorized reviewer'} />
+              <ScopeLine label="Faculty" value={scope.reviewer?.faculty?.name || 'Not assigned'} />
+              <ScopeLine label="Last update" value={formatDate(recentApplications[0]?.updatedAt)} />
+            </div>
+          </aside>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricTile code="ALL" label="Department applications" value={departmentApplications} detail="All scoped records" tone="teal" />
-        <MetricTile code="ACT" label="Active action" value={activeDepartmentAction} detail="Needs department attention" tone="amber" />
-        <MetricTile code="PEN" label="Pending review" value={pendingDepartmentReview} detail="Submitted or in review" tone="slate" />
-        <MetricTile code="FWD" label="Forwarded" value={forwardedApplications} detail="Moved beyond department" tone="green" />
-        <MetricTile code="RET" label="Returned" value={returnedForCorrection} detail="Applicant corrections" tone="rose" />
+      <ActionBanner {...actionBanner} />
+
+      <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-5">
+        <MetricTile icon={FileText} label="Department Applications" value={departmentApplications} detail="All scoped records" tone="blue" />
+        <MetricTile icon={AlertTriangle} label="Active Action" value={activeDepartmentAction} detail="Needs department decision" tone="amber" />
+        <MetricTile icon={Clock3} label="Pending Review" value={pendingDepartmentReview} detail="Submitted or in review" tone="slate" />
+        <MetricTile icon={Send} label="Forwarded" value={forwardedApplications} detail="Moved beyond department" tone="green" />
+        <MetricTile icon={RotateCcw} label="Returned / Further" value={returnedForCorrection + furtherReview} detail="Corrections or review holds" tone="rose" />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="pro-card overflow-hidden">
+      <section className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
+        <div className="pro-card min-w-0 overflow-hidden">
           <div className="flex flex-col justify-between gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-end">
-            <div>
-              <h2 className="text-lg font-bold text-gray-950">Recent Department Applications</h2>
+            <div className="min-w-0">
+              <h2 className="break-words text-lg font-bold text-gray-950">Recent Department Applications</h2>
               <p className="mt-1 text-sm text-gray-600">Latest promotion files in your department or faculty scope.</p>
             </div>
-            <Link href="/hod/applications" className="rounded-lg border border-teal-200 px-3 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">
+            <Link href="/hod/applications?segment=all" className="inline-flex min-h-9 w-fit items-center rounded-lg border border-brand-primary/20 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primarySoft">
               View All
             </Link>
           </div>
@@ -214,7 +305,7 @@ export default async function HodDashboardPage() {
             </div>
           ) : (
             <div className="pro-scroll-x">
-              <table className="min-w-full divide-y divide-gray-100 text-left text-sm">
+              <table className="min-w-[920px] divide-y divide-gray-100 text-left text-sm">
                 <thead className="bg-gray-50 text-xs font-bold uppercase tracking-[0.12em] text-gray-500">
                   <tr>
                     <th className="px-5 py-3">Application</th>
@@ -227,10 +318,9 @@ export default async function HodDashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {recentApplications.map((application) => {
-                    const verifiedDocuments = application.documents.filter((document) => document.verificationStatus === 'VERIFIED').length;
-                    const returnedDocuments = application.documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus)).length;
+                    const counts = documentCounts(application.documents);
                     return (
-                      <tr key={application.id} className="align-top hover:bg-gray-50/80">
+                      <tr key={application.id} className="align-top transition hover:bg-gray-50/80">
                         <td className="px-5 py-4">
                           <p className="font-bold text-gray-950">{applicationCode(application.id)}</p>
                           <p className="mt-1 text-xs text-gray-500">{label(application.currentRank)} to {label(application.targetRank)}</p>
@@ -241,12 +331,12 @@ export default async function HodDashboardPage() {
                         </td>
                         <td className="px-5 py-4"><StatusBadge status={application.status} /></td>
                         <td className="px-5 py-4">
-                          <p className="font-semibold text-gray-900">{verifiedDocuments}/{application.documents.length} verified</p>
-                          <p className={`mt-1 text-xs ${returnedDocuments ? 'text-orange-700' : 'text-gray-500'}`}>{returnedDocuments ? `${returnedDocuments} needs correction` : 'No correction flags'}</p>
+                          <p className="font-semibold text-gray-900">{counts.verified}/{counts.total} verified</p>
+                          <p className={`mt-1 text-xs ${counts.returned ? 'text-orange-700' : 'text-gray-500'}`}>{counts.returned ? `${counts.returned} needs correction` : `${counts.pending} pending`}</p>
                         </td>
                         <td className="px-5 py-4 text-gray-600">{formatDate(application.updatedAt)}</td>
                         <td className="px-5 py-4 text-right">
-                          <Link href={`/hod/applications?request=${application.id}`} className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800">
+                          <Link href={`/hod/applications?request=${application.id}`} className="inline-flex min-h-9 items-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary">
                             Open
                           </Link>
                         </td>
@@ -259,31 +349,31 @@ export default async function HodDashboardPage() {
           )}
         </div>
 
-        <div className="space-y-6">
-          <section className="pro-card p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-bold text-gray-950">Application Status Summary</h2>
+        <div className="min-w-0 space-y-5">
+          <section className="pro-card min-w-0 p-5">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="break-words text-lg font-bold text-gray-950">Application Status Summary</h2>
                 <p className="mt-1 text-sm text-gray-600">Distribution of scoped promotion records.</p>
               </div>
-              <span className="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-teal-800">Live</span>
+              <span className="rounded-lg border border-brand-primary/20 bg-brand-primarySoft px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-brand-primary">Live</span>
             </div>
             <div className="mt-5 space-y-3">
               {statusRows.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">No status data available yet.</p>
               ) : (
-                statusRows.map((row) => <StatusRow key={row.status} label={row.label} value={row.value} total={departmentApplications} />)
+                statusRows.map((row) => <StatusRow key={row.status} label={row.label} value={row.value} total={departmentApplications} status={row.status} />)
               )}
             </div>
           </section>
 
-          <section className="pro-card p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-bold text-gray-950">Recent Recommendation Comments</h2>
-                <p className="mt-1 text-sm text-gray-600">Latest formal review notes across your department files.</p>
+          <section className="pro-card min-w-0 p-5">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="break-words text-lg font-bold text-gray-950">Recent Recommendation Comments</h2>
+                <p className="mt-1 text-sm text-gray-600">Latest formal review notes across department files.</p>
               </div>
-              <Link href="/hod/applications" className="text-sm font-semibold text-teal-800 hover:text-teal-900">Queue</Link>
+              <MessageSquareText className="h-5 w-5 shrink-0 text-brand-primary" aria-hidden="true" />
             </div>
             <div className="mt-4 space-y-3">
               {recentComments.length === 0 ? (
@@ -292,10 +382,10 @@ export default async function HodDashboardPage() {
                 recentComments.map((comment) => (
                   <article key={comment.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-bold text-gray-950">{applicationCode(comment.promotionRequest.id)} - {comment.promotionRequest.lecturer.name}</p>
+                      <p className="break-words text-sm font-bold text-gray-950">{applicationCode(comment.promotionRequest.id)} - {comment.promotionRequest.lecturer.name}</p>
                       <StatusBadge status={comment.promotionRequest.status} />
                     </div>
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-700">{comment.comment}</p>
+                    <p className="mt-2 line-clamp-3 break-words text-sm leading-6 text-gray-700">{comment.comment}</p>
                     <p className="mt-2 text-xs font-medium text-gray-500">
                       {comment.reviewer.name} ({label(comment.reviewer.role)}) - {formatDate(comment.createdAt)}
                     </p>
@@ -310,7 +400,41 @@ export default async function HodDashboardPage() {
   );
 }
 
-function MetricTile({ code, label: title, value, detail, tone }: { code: string; label: string; value: number; detail: string; tone: 'teal' | 'amber' | 'green' | 'rose' | 'slate' }) {
+function ScopeLine({ label: title, value }: { label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+      <span className="text-xs font-bold uppercase tracking-[0.12em] text-gray-500">{title}</span>
+      <span className="min-w-0 truncate text-right text-xs font-semibold text-gray-800">{value}</span>
+    </div>
+  );
+}
+
+function ActionBanner({ title, detail, href, tone }: { title: string; detail: string; href: string; tone: 'amber' | 'green' }) {
+  const toneClass = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-950'
+    : 'border-emerald-200 bg-emerald-50 text-emerald-950';
+  const Icon = tone === 'amber' ? AlertTriangle : CheckCircle2;
+
+  return (
+    <section role="status" aria-live="polite" className={`flex min-w-0 max-w-full flex-col gap-3 rounded-xl border px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between ${toneClass}`}>
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/70">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="break-words text-sm font-semibold">{title}</p>
+          <p className="mt-1 break-words text-xs leading-5 opacity-80">{detail}</p>
+        </div>
+      </div>
+      <Link href={href} className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 sm:w-auto">
+        Open queue
+        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </Link>
+    </section>
+  );
+}
+
+function MetricTile({ icon: Icon, label: title, value, detail, tone }: { icon: LucideIcon; label: string; value: number; detail: string; tone: 'blue' | 'amber' | 'green' | 'rose' | 'slate' }) {
   const toneClass = tone === 'amber'
     ? 'border-amber-200 bg-amber-50 text-amber-950'
     : tone === 'green'
@@ -319,33 +443,42 @@ function MetricTile({ code, label: title, value, detail, tone }: { code: string;
         ? 'border-rose-200 bg-rose-50 text-rose-950'
         : tone === 'slate'
           ? 'border-slate-200 bg-white text-slate-950'
-          : 'border-teal-200 bg-teal-50 text-teal-950';
+          : 'border-brand-primary/20 bg-brand-primarySoft text-brand-text';
 
   return (
-    <article className={`rounded-xl border p-5 shadow-sm ${toneClass}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-70">{title}</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight">{value}</p>
-          <p className="mt-1 text-xs opacity-75">{detail}</p>
+    <article className={`min-w-0 rounded-xl border p-4 shadow-sm sm:p-5 ${toneClass}`}>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-bold uppercase tracking-[0.14em] opacity-70">{title}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{value}</p>
+          <p className="mt-1 truncate text-xs opacity-75">{detail}</p>
         </div>
-        <span className="rounded-lg border border-current/15 bg-white/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]">{code}</span>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-current/15 bg-white/70">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
       </div>
     </article>
   );
 }
 
-function StatusRow({ label: title, value, total }: { label: string; value: number; total: number }) {
+function StatusRow({ label: title, value, total, status }: { label: string; value: number; total: number; status: RequestStatus }) {
   const width = total > 0 ? Math.max(6, Math.round((value / total) * 100)) : 0;
+  const barClass = status === RequestStatus.RETURNED_FOR_CORRECTION || status === RequestStatus.REQUIRES_FURTHER_REVIEW
+    ? 'bg-amber-500'
+    : forwardedStatuses.includes(status)
+      ? 'bg-emerald-600'
+      : pendingDepartmentStatuses.includes(status)
+        ? 'bg-brand-primary'
+        : 'bg-slate-600';
 
   return (
     <div>
       <div className="flex items-center justify-between gap-3 text-sm font-semibold text-gray-700">
-        <span>{title}</span>
+        <span className="break-words">{title}</span>
         <span>{value}</span>
       </div>
       <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
-        <div className="h-full rounded-full bg-teal-700" style={{ width: `${width}%` }} />
+        <div className={`h-full rounded-full ${barClass}`} style={{ width: `${width}%` }} />
       </div>
     </div>
   );
