@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { RequestStatus } from '@prisma/client';
-import { AlertTriangle, ArrowRight, CheckCircle2, ClipboardCheck, Clock3, FileCheck2, FileText, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ClipboardCheck, Clock3, FileCheck2, FileText, MessageSquareText, ShieldCheck } from 'lucide-react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import { prisma } from '../../../lib/prisma';
 
@@ -58,6 +58,25 @@ function priorityFor(status: RequestStatus, updatedAt: Date) {
   return { label: 'Normal', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
 }
 
+function queueSignal(status: RequestStatus) {
+  if (status === RequestStatus.UNDER_COMMITTEE_REVIEW) return { label: 'Awaiting Review', className: 'border-amber-200 bg-amber-50 text-amber-900' };
+  if (status === RequestStatus.RECOMMENDED) return { label: 'Recommended', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
+  if (status === RequestStatus.NOT_RECOMMENDED) return { label: 'Not Recommended', className: 'border-rose-200 bg-rose-50 text-rose-800' };
+  if (status === RequestStatus.REQUIRES_FURTHER_REVIEW) return { label: 'Needs Review', className: 'border-sky-200 bg-sky-50 text-sky-800' };
+  if (status === RequestStatus.APPROVED_BY_AUTHORITY) return { label: 'Final Approval', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
+  if (status === RequestStatus.COMPLETED || status === RequestStatus.APPROVED) return { label: 'Completed', className: 'border-emerald-900 bg-emerald-900 text-white' };
+  return { label: 'Under Review', className: 'border-slate-200 bg-slate-50 text-slate-700' };
+}
+
+function recommendationFooter(status: RequestStatus) {
+  if (status === RequestStatus.RECOMMENDED) return { label: 'Awaiting Final Approval', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
+  if (status === RequestStatus.NOT_RECOMMENDED) return { label: 'Awaiting Administrative Close-out', className: 'border-amber-200 bg-amber-50 text-amber-900' };
+  if (status === RequestStatus.REQUIRES_FURTHER_REVIEW) return { label: 'Clarification Required', className: 'border-sky-200 bg-sky-50 text-sky-800' };
+  if (status === RequestStatus.APPROVED_BY_AUTHORITY) return { label: 'Authority Approval Recorded', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
+  if (status === RequestStatus.COMPLETED || status === RequestStatus.APPROVED) return { label: 'Completed in Administrative Records', className: 'border-emerald-900 bg-emerald-900 text-white' };
+  return { label: 'Committee Review in Progress', className: 'border-slate-200 bg-slate-50 text-slate-700' };
+}
+
 export default async function CommitteeDashboardPage() {
   const committeeWhere = { status: { in: committeeStatuses } };
 
@@ -71,6 +90,7 @@ export default async function CommitteeDashboardPage() {
     recentApplications,
     recentRecommendations,
     eligibilityOutcomes,
+    recentActivity,
   ] = await Promise.all([
     prisma.promotionRequest.count({ where: committeeWhere }),
     prisma.promotionRequest.count({ where: { status: RequestStatus.UNDER_COMMITTEE_REVIEW } }),
@@ -146,10 +166,38 @@ export default async function CommitteeDashboardPage() {
       where: committeeWhere,
       _count: { _all: true },
     }),
+    prisma.statusHistory.findMany({
+      where: {
+        promotionRequest: {
+          status: { in: committeeStatuses },
+        },
+      },
+      include: {
+        changedBy: {
+          select: {
+            name: true,
+            role: true,
+          },
+        },
+        promotionRequest: {
+          select: {
+            id: true,
+            status: true,
+            lecturer: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
   ]);
 
   const eligibilityRows = eligibilityOutcomes
-    .map((row) => ({ label: label(row.eligibilityStatus), value: row._count._all }))
+    .map((row) => ({ label: label(row.eligibilityStatus), value: row._count._all, status: row.eligibilityStatus }))
     .sort((left, right) => right.value - left.value);
 
   const activeFile = recentApplications.find((application) => application.status === RequestStatus.UNDER_COMMITTEE_REVIEW) || recentApplications[0] || null;
@@ -168,7 +216,7 @@ export default async function CommitteeDashboardPage() {
             </p>
           </div>
           <Link href="/committee/review?segment=pending" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark sm:w-auto">
-            Open Review Queue
+            Open Assigned Reviews
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
@@ -189,7 +237,7 @@ export default async function CommitteeDashboardPage() {
               </div>
             </div>
             <Link href={`/committee/review?request=${activeFile.id}`} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-current/20 bg-white/80 px-4 py-2 text-sm font-bold text-amber-950 transition hover:bg-white">
-              Review File
+              Start Review
             </Link>
           </div>
         </section>
@@ -223,13 +271,14 @@ export default async function CommitteeDashboardPage() {
             </div>
           ) : (
             <div className="pro-scroll-x">
-              <table className="min-w-[900px] divide-y divide-gray-100 text-left text-sm">
+              <table className="min-w-[980px] divide-y divide-gray-100 text-left text-sm">
                 <thead className="brand-table-head bg-gray-50 text-xs font-bold uppercase tracking-[0.12em] text-gray-500">
                   <tr>
                     <th className="px-5 py-3">Application</th>
                     <th className="px-5 py-3">Applicant</th>
                     <th className="px-5 py-3">Readiness</th>
                     <th className="px-5 py-3">Priority</th>
+                    <th className="px-5 py-3">Review Signal</th>
                     <th className="px-5 py-3">Status</th>
                     <th className="px-5 py-3 text-right">Action</th>
                   </tr>
@@ -239,6 +288,7 @@ export default async function CommitteeDashboardPage() {
                     const verifiedDocuments = application.documents.filter((document) => document.verificationStatus === 'VERIFIED').length;
                     const categories = new Set(application.documents.map((document) => document.category));
                     const priority = priorityFor(application.status, application.updatedAt);
+                    const signal = queueSignal(application.status);
                     return (
                       <tr key={application.id} className="align-top transition hover:bg-gray-50/80">
                         <td className="px-5 py-4">
@@ -257,6 +307,9 @@ export default async function CommitteeDashboardPage() {
                         </td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${priority.className}`}>{priority.label}</span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${signal.className}`}>{signal.label}</span>
                         </td>
                         <td className="px-5 py-4"><StatusBadge status={application.status} /></td>
                         <td className="px-5 py-4 text-right">
@@ -285,6 +338,12 @@ export default async function CommitteeDashboardPage() {
                 <p className="mt-1 text-sm leading-6 text-gray-600">Server-calculated eligibility profile for committee-stage files.</p>
               </div>
             </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <OutcomeChip label="Eligible" value={eligibilityRows.find((row) => row.status === 'ELIGIBLE')?.value || 0} tone="green" />
+              <OutcomeChip label="Further Review" value={requiresFurtherReview} tone="blue" />
+              <OutcomeChip label="Not Eligible" value={eligibilityRows.find((row) => row.status === 'NOT_ELIGIBLE')?.value || 0} tone="rose" />
+              <OutcomeChip label="All Outcomes" value={assignedApplications} tone="slate" />
+            </div>
             <div className="mt-5 space-y-3">
               {eligibilityRows.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">No eligibility data available yet.</p>
@@ -308,18 +367,43 @@ export default async function CommitteeDashboardPage() {
               {recentRecommendations.length === 0 ? (
                 <EmptyPanel title="No recommendations yet" description="Committee recommendations will appear after reviewers submit decisions." compact />
               ) : (
-                recentRecommendations.map((review) => (
-                  <article key={review.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="break-words text-sm font-bold text-gray-950">{applicationCode(review.promotionRequest.id)} - {review.promotionRequest.lecturer.name}</p>
-                      <StatusBadge status={review.recommendation || review.promotionRequest.status} />
-                    </div>
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-700">{review.comment}</p>
-                    <p className="mt-2 text-xs font-medium text-gray-500">
-                      {review.reviewer.name} ({label(review.reviewer.role)}) - {formatDate(review.createdAt)}
-                    </p>
-                  </article>
-                ))
+                recentRecommendations.map((review) => {
+                  const footer = recommendationFooter(review.promotionRequest.status);
+                  return (
+                    <article key={review.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="break-words text-sm font-bold text-gray-950">{applicationCode(review.promotionRequest.id)} - {review.promotionRequest.lecturer.name}</p>
+                        <StatusBadge status={review.recommendation || review.promotionRequest.status} />
+                      </div>
+                      <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-700">{review.comment}</p>
+                      <p className="mt-2 text-xs font-medium text-gray-500">
+                        {review.reviewer.name} ({label(review.reviewer.role)}) - {formatDate(review.createdAt)}
+                      </p>
+                      <div className="mt-3 border-t border-gray-200 pt-3">
+                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${footer.className}`}>{footer.label}</span>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          <section className="pro-card min-w-0 p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-primary/15 bg-brand-primarySoft text-brand-primary">
+                <Activity className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-gray-950">Recent Committee Activity</h2>
+                <p className="mt-1 text-sm leading-6 text-gray-600">Latest movement across committee-stage files.</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {recentActivity.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">Activity appears once committee-stage workflow actions are recorded.</p>
+              ) : (
+                recentActivity.map((activity) => <ActivityEntry key={activity.id} item={activity} />)
               )}
             </div>
           </section>
@@ -355,6 +439,44 @@ function MetricTile({ icon: Icon, label: title, value, detail, tone }: { icon: t
         </div>
       </div>
     </article>
+  );
+}
+
+function OutcomeChip({ label: title, value, tone }: { label: string; value: number; tone: 'green' | 'blue' | 'rose' | 'slate' }) {
+  const toneClass = tone === 'green'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+    : tone === 'blue'
+      ? 'border-sky-200 bg-sky-50 text-sky-800'
+      : tone === 'rose'
+        ? 'border-rose-200 bg-rose-50 text-rose-800'
+        : 'border-gray-200 bg-gray-50 text-gray-700';
+
+  return (
+    <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] opacity-75">{title}</p>
+      <p className="mt-1 text-lg font-bold">{value}</p>
+    </div>
+  );
+}
+
+function ActivityEntry({ item }: { item: { id: number; newStatus: RequestStatus; comment?: string | null; createdAt: Date; changedBy: { name: string; role: string }; promotionRequest: { id: number; lecturer: { name: string } } } }) {
+  const signal = queueSignal(item.newStatus);
+
+  return (
+    <Link href={`/committee/review?request=${item.promotionRequest.id}`} className="block rounded-lg border border-gray-200 bg-gray-50 p-3 transition hover:border-brand-primary/25 hover:bg-brand-primarySoft">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="break-words text-sm font-bold text-gray-950">{applicationCode(item.promotionRequest.id)} {label(item.newStatus)}</p>
+          <p className="mt-1 break-words text-xs text-gray-600">{item.promotionRequest.lecturer.name}</p>
+          {item.comment && <p className="mt-2 line-clamp-2 text-xs leading-5 text-gray-500">{item.comment}</p>}
+        </div>
+        <span className="shrink-0 text-xs font-semibold text-gray-500">{formatDate(item.createdAt)}</span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${signal.className}`}>{signal.label}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-primary">{item.changedBy.name}</span>
+      </div>
+    </Link>
   );
 }
 

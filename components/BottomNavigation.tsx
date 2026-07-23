@@ -23,29 +23,29 @@ const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
   LECTURER: [
     { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },
-    { href: '/lecturer-portal/application', label: 'My Application', icon: BriefcaseBusiness },
-    { href: '/lecturer-portal/notifications', label: 'Notifications', icon: Bell },
+    { href: '/lecturer-portal/application', label: 'Promotion', icon: BriefcaseBusiness },
+    { href: '/lecturer-portal/notifications', label: 'Alerts', icon: Bell },
     { href: '/lecturer-portal/profile', label: 'Profile', icon: UserRound },
   ],
   HR_ADMIN: [
     { href: '/hr/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/hr/verify?segment=pending', label: 'Verify', icon: ClipboardList },
-    { href: '/hr/requests', label: 'Applications', icon: BriefcaseBusiness },
-    { href: '/notifications', label: 'Notifications', icon: Bell },
+    { href: '/hr/requests', label: 'Files', icon: BriefcaseBusiness },
+    { href: '/notifications', label: 'Alerts', icon: Bell },
     { href: '/hr/profile', label: 'Profile', icon: UserRound },
   ],
   COMMITTEE_REVIEWER: [
     { href: '/committee/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/committee/review?segment=pending', label: 'Review Queue', icon: ClipboardList, key: 'review-queue' },
-    { href: '/committee/review?segment=all', label: 'Applications', icon: BriefcaseBusiness, key: 'applications' },
-    { href: '/notifications', label: 'Notifications', icon: Bell },
+    { href: '/committee/review?segment=pending', label: 'Queue', icon: ClipboardList, key: 'review-queue' },
+    { href: '/committee/review?segment=all', label: 'Files', icon: BriefcaseBusiness, key: 'applications' },
+    { href: '/notifications', label: 'Alerts', icon: Bell },
     { href: '/committee/profile', label: 'Profile', icon: UserRound },
   ],
   HOD_DEAN: [
     { href: '/hod/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/hod/applications?segment=active', label: 'Review Queue', icon: ClipboardList, key: 'review-queue' },
-    { href: '/hod/applications?segment=all', label: 'Applications', icon: BriefcaseBusiness, key: 'applications' },
-    { href: '/notifications', label: 'Notifications', icon: Bell },
+    { href: '/hod/applications?segment=active', label: 'Queue', icon: ClipboardList, key: 'review-queue' },
+    { href: '/hod/applications?segment=all', label: 'Files', icon: BriefcaseBusiness, key: 'applications' },
+    { href: '/notifications', label: 'Alerts', icon: Bell },
     { href: '/hod/profile', label: 'Profile', icon: UserRound },
   ],
 };
@@ -80,7 +80,7 @@ export default function BottomNavigation({ role, notificationCount = 0 }: Bottom
         {items.map((item) => {
           const active = isActive(role, item, pathname, segment);
           const Icon = item.icon;
-          const badge = item.label === 'Notifications' && notificationCount > 0 ? (notificationCount > 9 ? '9+' : String(notificationCount)) : null;
+          const badge = item.href.includes('notifications') && notificationCount > 0 ? (notificationCount > 9 ? '9+' : String(notificationCount)) : null;
           return (
             <Link key={`${item.href}-${item.label}`} href={item.href} aria-current={active ? 'page' : undefined} className={cn('relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold text-brand-muted transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2', active && 'bg-brand-primarySoft text-brand-primary')}>
               <span className="relative">
