@@ -1,23 +1,16 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { verifySessionToken } from '../lib/auth';
+import { SESSION_COOKIE_NAME, verifySessionToken } from '../lib/auth';
+import { getDashboardForRole } from '../lib/rbac';
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('lpads_session')?.value;
+  const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const session = verifySessionToken(sessionToken);
 
   if (session?.legacy) {
     redirect('/hr/dashboard');
   }
 
-  if (session?.role === 'HR_ADMIN') {
-    redirect('/hr/dashboard');
-  }
-
-  if (session?.role === 'LECTURER') {
-    redirect('/lecturer-portal');
-  }
-
-  redirect('/login');
+  redirect(getDashboardForRole(session?.role));
 }

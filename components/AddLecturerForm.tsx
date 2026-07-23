@@ -58,8 +58,8 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
 
       setToast({
         open: true,
-        title: 'Lecturer Added',
-        description: 'Profile saved successfully and directory refreshed.',
+        title: 'Staff Record Created',
+        description: 'Staff record saved successfully and directory refreshed.',
         variant: 'success',
       });
       setFormData({
@@ -72,7 +72,7 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
     } catch (err) {
       setToast({
         open: true,
-        title: 'Unable to Add Lecturer',
+        title: 'Unable to Create Staff Record',
         description: err instanceof Error ? err.message : 'An error occurred',
         variant: 'error',
       });
@@ -93,8 +93,8 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
 
       <div className="pro-card p-6">
         <div className="mb-5 rounded-xl border border-amber-200 bg-gradient-to-r from-slate-50 to-amber-50 p-4">
-          <h2 className="text-2xl font-bold text-slate-900">Add New Lecturer</h2>
-          <p className="mt-1 text-sm text-slate-700">Create a lecturer profile to include them in appraisal and analytics workflows.</p>
+          <h2 className="text-2xl font-bold text-slate-900">Create Staff Record</h2>
+          <p className="mt-1 text-sm text-slate-700">Create a lecturer profile to support promotion applications, eligibility checks, and official reporting.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,7 +112,7 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
             required
             autoComplete="name"
               className="brand-input"
-            placeholder="Dr. John Smith"
+            placeholder="Dr. Ama Mensah"
           />
         </div>
 
@@ -130,7 +130,7 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
             required
             autoComplete="email"
               className="brand-input"
-            placeholder="john.smith@university.edu"
+            placeholder="ama.mensah@live.gctu.edu.gh"
           />
         </div>
 
@@ -184,7 +184,7 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
             disabled={loading}
               className="w-full rounded-xl bg-gradient-to-r from-teal-700 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-teal-800 hover:to-teal-700 disabled:opacity-60"
           >
-            {loading ? 'Adding Lecturer...' : 'Add Lecturer'}
+            {loading ? 'Creating Record...' : 'Create Record'}
           </button>
             <button
               type="button"

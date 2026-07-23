@@ -42,7 +42,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
   if (loading) {
     return (
       <div className="pro-card p-6">
-        <div className="text-center text-slate-600">Loading lecturers...</div>
+        <div className="text-center text-slate-600">Loading staff records...</div>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
   if (lecturers.length === 0) {
     return (
       <div className="pro-card p-6">
-        <div className="text-center text-slate-600">No lecturers found. Add one to get started!</div>
+        <div className="text-center text-slate-600">No staff records found. Create the first lecturer record to begin.</div>
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
   return (
     <div className="pro-card overflow-hidden">
       <div className="border-b border-slate-200 p-6">
-        <h2 className="text-2xl font-bold text-slate-900">Lecturers Directory</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Staff Directory</h2>
         <p className="mt-1 text-sm text-slate-600">Total records: {lecturers.length}</p>
 
         <div className="brand-muted-panel mt-5 p-3">
@@ -134,7 +134,7 @@ export default function LecturerList({ refreshTrigger = 0 }: LecturerListProps) 
       </div>
 
       {filteredLecturers.length === 0 ? (
-        <div className="p-6 text-sm text-slate-600">No lecturers match your current search and filter.</div>
+        <div className="p-6 text-sm text-slate-600">No staff records match your current search and filter.</div>
       ) : (
         <>
           <div className="space-y-3 p-4 md:hidden">
