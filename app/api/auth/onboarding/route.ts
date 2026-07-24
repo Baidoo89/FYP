@@ -4,6 +4,7 @@ import { prisma } from '../../../../lib/prisma';
 import { onboardingSchema } from '../../../../lib/validation/auth.schema';
 import { createSessionToken, verifySessionToken, SESSION_COOKIE_NAME } from '../../../../lib/auth';
 import { isValidFacultyDepartment } from '../../../../lib/institution-structure';
+import { writeAuditLog } from '../../../../lib/audit-logger';
 
 function fullNameFromParts(firstName: string, middleName: string | undefined, lastName: string) {
   return [firstName, middleName, lastName]
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         create: { name: department, facultyId: facultyRecord.id },
       });
 
-      return tx.user.update({
+      const user = await tx.user.update({
         where: { id: session.userId },
         data: {
           name: displayName,
@@ -74,6 +75,22 @@ export async function POST(request: NextRequest) {
           departmentRef: { select: { id: true, name: true } },
         },
       });
+
+      await writeAuditLog(tx, {
+        actorId: user.id,
+        action: 'PROFILE_COMPLETED',
+        entityType: 'User',
+        entityId: user.id,
+        description: 'User completed staff profile onboarding.',
+        metadata: {
+          departmentId: departmentRecord.id,
+          facultyId: facultyRecord.id,
+          staffId: user.staffId,
+          currentRank: user.currentRank,
+        },
+      });
+
+      return user;
     });
 
     const response = NextResponse.json(

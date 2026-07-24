@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME, createSessionToken, verifyPassword, hashLegacyPassword, type AuthRole } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { findLocalAdminAccount } from '../../../../lib/admin-storage';
+import { writeAuditLog } from '../../../../lib/audit-logger';
+import { getRequestSessionMetadata } from '../../../../lib/session-metadata';
+
+type LoginSource = 'user' | 'adminAccount' | 'localAdmin';
+
+type LoginSessionUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: AuthRole;
+  department?: string;
+  legacy?: boolean;
+  onboarded?: boolean;
+  emailVerified?: boolean;
+  source: LoginSource;
+};
 
 function isDatabaseUnavailableError(error: unknown) {
   if (!(error instanceof Error)) {
@@ -41,7 +57,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
 
-      // Clear stale session cookie so users are not kept in previous portal context.
       response.cookies.set({
         name: SESSION_COOKIE_NAME,
         value: '',
@@ -52,9 +67,8 @@ export async function POST(request: NextRequest) {
       return response;
     };
 
-    let sessionUser: { id: number; name: string; email: string; role: AuthRole; department?: string; legacy?: boolean; onboarded?: boolean; emailVerified?: boolean } | null = null;
+    let sessionUser: LoginSessionUser | null = null;
 
-    // Authenticate HR admin accounts first to avoid accidental lecturer-user collisions.
     const adminAccounts = await prisma.adminAccount.findMany({
       where: { is_active: true },
       select: {
@@ -76,6 +90,7 @@ export async function POST(request: NextRequest) {
         role: 'HR_ADMIN',
         onboarded: true,
         emailVerified: true,
+        source: 'adminAccount',
       };
     }
 
@@ -100,6 +115,7 @@ export async function POST(request: NextRequest) {
           department: promotionUser.department || undefined,
           onboarded: promotionUser.onboarded,
           emailVerified: promotionUser.emailVerified,
+          source: 'user',
         };
       }
     }
@@ -118,26 +134,27 @@ export async function POST(request: NextRequest) {
         role: 'HR_ADMIN',
         onboarded: true,
         emailVerified: true,
+        source: 'localAdmin',
       };
     }
 
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
-      name: sessionUser!.name,
-      role: sessionUser!.role,
+      name: sessionUser.name,
+      role: sessionUser.role,
     });
 
     response.cookies.set({
       name: SESSION_COOKIE_NAME,
       value: createSessionToken({
-        userId: sessionUser!.id,
-        name: sessionUser!.name,
-        email: sessionUser!.email,
-        role: sessionUser!.role,
-        department: sessionUser!.department,
-        onboarded: sessionUser!.onboarded ?? true,
-        emailVerified: sessionUser!.emailVerified ?? true,
+        userId: sessionUser.id,
+        name: sessionUser.name,
+        email: sessionUser.email,
+        role: sessionUser.role,
+        department: sessionUser.department,
+        onboarded: sessionUser.onboarded ?? true,
+        emailVerified: sessionUser.emailVerified ?? true,
       }),
       httpOnly: true,
       sameSite: 'lax',
@@ -145,6 +162,29 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 8,
     });
+
+    if (sessionUser.source === 'user') {
+      try {
+        const metadata = getRequestSessionMetadata(request);
+        await writeAuditLog(prisma, {
+          actorId: sessionUser.id,
+          action: 'USER_LOGIN',
+          entityType: 'User',
+          entityId: sessionUser.id,
+          description: 'User signed in successfully.',
+          ipAddress: metadata.ipAddress,
+          metadata: {
+            browser: metadata.browser,
+            platform: metadata.platform,
+            deviceType: metadata.deviceType,
+            device: metadata.device,
+            location: metadata.location,
+          },
+        });
+      } catch (auditError) {
+        console.error('Login audit failed:', auditError);
+      }
+    }
 
     return response;
 
