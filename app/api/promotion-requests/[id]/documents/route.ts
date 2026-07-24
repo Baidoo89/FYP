@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../../lib/prisma';
 import { getAuthSession } from '../../../../../lib/auth';
-import { createSecureFileName, MAX_PROMOTION_PDF_SIZE, saveMockPdfFile } from '../../../../../lib/upload';
+import { createSecureFileName, isPdfUpload, MAX_PROMOTION_PDF_SIZE, savePdfFileBestEffort } from '../../../../../lib/upload';
 import { documentUploadSchema } from '../../../../../lib/validation/promotion-request.schema';
 import { savePromotionDocumentRecord, WorkflowError } from '../../../../../lib/promotion-workflow';
 import type { ApiResponse } from '../../../../../types';
+import { ensureDocumentFileStorage, saveDocumentFileBlob } from '../../../../../lib/document-file-storage';
 
 function workflowErrorResponse(error: unknown, fallback: string) {
   const status = error instanceof WorkflowError ? error.statusCode : 500;
@@ -51,21 +52,25 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ success: false, error: 'PDF file is required' } as ApiResponse<null>, { status: 400 });
   }
 
-  if (file.type !== 'application/pdf') {
-    return NextResponse.json({ success: false, error: 'Only PDF files are allowed' } as ApiResponse<null>, { status: 400 });
-  }
-
   if (file.size > MAX_PROMOTION_PDF_SIZE) {
     return NextResponse.json({ success: false, error: 'File size exceeds 10MB limit' } as ApiResponse<null>, { status: 400 });
   }
 
   const fileName = createSecureFileName(file.name || `${title}.pdf`);
   const buffer = Buffer.from(await file.arrayBuffer());
-  await saveMockPdfFile(fileName, buffer);
+
+  if (!isPdfUpload(file.name || `${title}.pdf`, file.type, buffer)) {
+    return NextResponse.json({ success: false, error: 'Only valid PDF files are allowed' } as ApiResponse<null>, { status: 400 });
+  }
+
+  const mimeType = file.type || 'application/pdf';
 
   try {
-    const documentRecord = await prisma.$transaction((tx) =>
-      savePromotionDocumentRecord(tx, {
+    await ensureDocumentFileStorage(prisma);
+    await savePdfFileBestEffort(fileName, buffer);
+
+    const documentRecord = await prisma.$transaction(async (tx) => {
+      const savedDocument = await savePromotionDocumentRecord(tx, {
         actor: {
           id: session.userId,
           role: session.role,
@@ -76,12 +81,21 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         title: parsed.data.title,
         fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
         fileName,
-        mimeType: file.type,
-        fileType: file.type,
+        mimeType,
+        fileType: mimeType,
         fileSize: file.size,
-      }),
-      WORKFLOW_TRANSACTION_OPTIONS
-    );
+      });
+
+      await saveDocumentFileBlob(tx, {
+        documentId: savedDocument.id,
+        fileName,
+        mimeType,
+        size: file.size,
+        buffer,
+      });
+
+      return savedDocument;
+    }, WORKFLOW_TRANSACTION_OPTIONS);
 
     return NextResponse.json(
       {

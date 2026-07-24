@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DocumentCategory, RequestStatus } from '@prisma/client';
 import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../lib/prisma';
 import { getAuthSession } from '../../../../lib/auth';
-import { createSecureFileName, MAX_PROMOTION_PDF_SIZE, saveMockPdfFile } from '../../../../lib/upload';
+import { createSecureFileName, isPdfUpload, MAX_PROMOTION_PDF_SIZE, savePdfFileBestEffort } from '../../../../lib/upload';
 import { documentUploadSchema } from '../../../../lib/validation/promotion-request.schema';
 import { createPromotionRequestWithWorkflow, savePromotionDocumentRecord, WorkflowError } from '../../../../lib/promotion-workflow';
 import { REQUIRED_CATEGORIES } from '../../../../lib/promotion-engine';
+import { ensureDocumentFileStorage, saveDocumentFileBlob } from '../../../../lib/document-file-storage';
 
 const ALL_CATEGORIES = Object.values(DocumentCategory);
 
@@ -237,13 +238,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (file.type !== 'application/pdf') {
-      return NextResponse.json(
-        { success: false, error: 'Only PDF files are allowed' },
-        { status: 400 }
-      );
-    }
-
     if (file.size > MAX_PROMOTION_PDF_SIZE) {
       return NextResponse.json(
         { success: false, error: 'File size exceeds 10MB limit' },
@@ -268,7 +262,17 @@ export async function POST(request: NextRequest) {
 
     const fileName = createSecureFileName(file.name || `${title}.pdf`);
     const buffer = Buffer.from(await file.arrayBuffer());
-    await saveMockPdfFile(fileName, buffer);
+
+    if (!isPdfUpload(file.name || `${title}.pdf`, file.type, buffer)) {
+      return NextResponse.json(
+        { success: false, error: 'Only valid PDF files are allowed' },
+        { status: 400 }
+      );
+    }
+
+    const mimeType = file.type || 'application/pdf';
+    await ensureDocumentFileStorage(prisma);
+    await savePdfFileBestEffort(fileName, buffer);
 
     const result = await prisma.$transaction(async (tx) => {
       const activeRequest = await tx.promotionRequest.findFirst({
@@ -304,9 +308,17 @@ export async function POST(request: NextRequest) {
         title: parsed.data.title,
         fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
         fileName,
-        fileType: file.type,
-        mimeType: file.type,
+        fileType: mimeType,
+        mimeType,
         fileSize: file.size,
+      });
+
+      await saveDocumentFileBlob(tx, {
+        documentId: documentRecord.id,
+        fileName,
+        mimeType,
+        size: file.size,
+        buffer,
       });
 
       return {

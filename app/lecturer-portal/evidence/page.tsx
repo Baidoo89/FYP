@@ -81,6 +81,8 @@ type EvidenceResponse = {
   error?: string;
 };
 
+const MAX_CLIENT_PDF_SIZE = 10 * 1024 * 1024;
+
 const CATEGORY_ORDER: DocumentCategory[] = [
   'TEACHING',
   'RESEARCH',
@@ -319,6 +321,31 @@ export default function EvidencePage() {
     setFileInputKey((key) => key + 1);
   }
 
+  function handleFileSelection(file?: File | null) {
+    setUploadMessage('');
+
+    if (!file) {
+      setUploadFile(null);
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setUploadFile(null);
+      setUploadMessage('Please choose a PDF file.');
+      setFileInputKey((key) => key + 1);
+      return;
+    }
+
+    if (file.size > MAX_CLIENT_PDF_SIZE) {
+      setUploadFile(null);
+      setUploadMessage('File size exceeds 10MB limit.');
+      setFileInputKey((key) => key + 1);
+      return;
+    }
+
+    setUploadFile(file);
+  }
+
   if (loading) {
     return <LoadingState label="Loading evidence portfolio..." />;
   }
@@ -534,7 +561,7 @@ export default function EvidencePage() {
                   key={fileInputKey}
                   type="file"
                   accept="application/pdf"
-                  onChange={(event) => setUploadFile(event.target.files?.[0] || null)}
+                  onChange={(event) => handleFileSelection(event.target.files?.[0] || null)}
                   className="block w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs text-gray-900 file:mr-2 file:rounded-md file:border-0 file:bg-teal-700 file:px-2 file:py-2 file:text-xs file:font-semibold file:text-white sm:text-sm sm:file:mr-3 sm:file:px-3 sm:file:text-sm"
                 />
               </label>

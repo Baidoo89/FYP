@@ -49,7 +49,7 @@ const stateStyles = {
 
 export default function ProgressStepper({ currentStep, steps, status }: ProgressStepperProps) {
   return (
-    <section className="h-full min-w-0 max-w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 print:shadow-none">
+    <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 print:shadow-none">
       <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h3 className="text-base font-bold text-gray-950">Promotion Workflow</h3>

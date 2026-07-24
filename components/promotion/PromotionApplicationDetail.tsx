@@ -341,7 +341,7 @@ export default function PromotionApplicationDetail({ application, role, children
         </section>
       )}
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <section className="pro-card min-w-0 p-5 print:shadow-none">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>

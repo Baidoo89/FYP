@@ -286,7 +286,7 @@ export default function CommitteeReviewPage() {
         </div>
       </section>
 
-      <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.7fr)]">
+      <div className="grid min-w-0 items-start gap-5 2xl:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.7fr)]">
         <div className="pro-card min-w-0 overflow-hidden">
           <div className="border-b border-gray-200 p-5">
             <h2 className="text-lg font-bold text-gray-950">Review Queue</h2>
