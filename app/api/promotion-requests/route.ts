@@ -4,12 +4,47 @@ import { getAuthSession } from '../../../lib/auth';
 import { startPromotionRequestSchema } from '../../../lib/validation/promotion-request.schema';
 import { createPromotionRequestWithWorkflow, submitPromotionRequest, WorkflowError } from '../../../lib/promotion-workflow';
 import { isValidPromotionTarget } from '../../../lib/promotion-ranks';
+import { REQUIRED_CATEGORIES } from '../../../lib/promotion-engine';
 import type { ApiResponse } from '../../../types';
 
-function buildRequestSummary(requestRecord: any) {
+const COMMITTEE_VISIBLE_STATUSES = [
+  'UNDER_COMMITTEE_REVIEW',
+  'RECOMMENDED',
+  'NOT_RECOMMENDED',
+  'REQUIRES_FURTHER_REVIEW',
+  'APPROVED_BY_AUTHORITY',
+  'APPROVED',
+  'COMPLETED',
+];
+
+function normalizeRank(value?: string | null) {
+  return String(value || '').trim().toUpperCase().replace(/\s+/g, '_').replace(/-/g, '_');
+}
+
+function criteriaKey(currentRank?: string | null, targetRank?: string | null) {
+  return `${normalizeRank(currentRank)}:${normalizeRank(targetRank)}`;
+}
+
+function countRequiredDocumentsFromCriteria(criteriaCounts: Map<string, number>, requestRecord: any) {
+  return criteriaCounts.get(criteriaKey(requestRecord.currentRank, requestRecord.targetRank)) || REQUIRED_CATEGORIES.length;
+}
+
+async function getRequiredDocumentCount(currentRank: string, targetRank: string) {
+  const criteria = await prisma.promotionCriteria.findFirst({
+    where: {
+      currentRank: normalizeRank(currentRank) as any,
+      targetRank: normalizeRank(targetRank) as any,
+      isActive: true,
+    },
+    select: { requiredDocumentCategories: true },
+  });
+
+  return criteria?.requiredDocumentCategories?.length || REQUIRED_CATEGORIES.length;
+}
+
+function buildRequestSummary(requestRecord: any, requiredDocuments: number = REQUIRED_CATEGORIES.length) {
   const documents = requestRecord.documents || [];
   const verifiedDocuments = documents.filter((document: any) => document.verificationStatus === 'VERIFIED').length;
-  const requiredDocuments = 3;
 
   return {
     id: requestRecord.id,
@@ -77,7 +112,7 @@ export async function GET(request: NextRequest) {
   }
 
   const statusFilter = request.nextUrl.searchParams.get('status');
-  const defaultScope = session.role === 'LECTURER' ? 'lecturer' : session.role === 'HOD_DEAN' ? 'department' : 'hr';
+  const defaultScope = session.role === 'LECTURER' ? 'lecturer' : session.role === 'HOD_DEAN' ? 'department' : session.role === 'COMMITTEE_REVIEWER' ? 'committee' : 'hr';
   const scope = request.nextUrl.searchParams.get('scope') || defaultScope;
 
   if (scope === 'lecturer' && session.role !== 'LECTURER') {
@@ -88,14 +123,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
-  if (scope === 'hr' && !['HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN', 'HOD_DEAN'].includes(session.role)) {
+  if (scope === 'committee' && !['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(session.role)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
+  }
+
+  if (scope === 'hr' && !['HR_ADMIN', 'SYSTEM_ADMIN'].includes(session.role)) {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
   let where: any = statusFilter ? { status: statusFilter as any } : {};
 
-  if (scope !== 'lecturer' && !statusFilter) {
-    where = { ...where, status: { not: 'DRAFT' } };
+  if (scope === 'committee') {
+    where = statusFilter
+      ? COMMITTEE_VISIBLE_STATUSES.includes(statusFilter)
+        ? where
+        : { id: -1 }
+      : { ...where, status: { in: COMMITTEE_VISIBLE_STATUSES } };
+  } else if (scope !== 'lecturer') {
+    where = statusFilter === 'DRAFT'
+      ? { id: -1 }
+      : statusFilter
+        ? where
+        : { ...where, status: { not: 'DRAFT' } };
   }
 
   if (scope === 'lecturer') {
@@ -158,9 +207,24 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  const criteriaRows = await prisma.promotionCriteria.findMany({
+    where: { isActive: true },
+    select: {
+      currentRank: true,
+      targetRank: true,
+      requiredDocumentCategories: true,
+    },
+  });
+  const criteriaCounts = new Map(
+    criteriaRows.map((criteria) => [
+      criteriaKey(criteria.currentRank, criteria.targetRank),
+      criteria.requiredDocumentCategories.length || REQUIRED_CATEGORIES.length,
+    ])
+  );
+
   return NextResponse.json({
     success: true,
-    data: promotionRequests.map(buildRequestSummary),
+    data: promotionRequests.map((requestRecord) => buildRequestSummary(requestRecord, countRequiredDocumentsFromCriteria(criteriaCounts, requestRecord))),
   } as ApiResponse<ReturnType<typeof buildRequestSummary>[]>);
 }
 
@@ -194,10 +258,12 @@ export async function POST(request: NextRequest) {
         WORKFLOW_TRANSACTION_OPTIONS
       );
 
+      const requiredDocumentCount = await getRequiredDocumentCount(updatedRequest.currentRank, updatedRequest.targetRank);
+
       return NextResponse.json({
         success: true,
         message: 'Promotion request submitted',
-        data: buildRequestSummary(updatedRequest),
+        data: buildRequestSummary(updatedRequest, requiredDocumentCount),
       } as ApiResponse<ReturnType<typeof buildRequestSummary>>);
     } catch (error) {
       return workflowErrorResponse(error, 'Promotion request submission failed');
@@ -270,11 +336,13 @@ export async function POST(request: NextRequest) {
       WORKFLOW_TRANSACTION_OPTIONS
     );
 
+    const requiredDocumentCount = await getRequiredDocumentCount(requestRecord.currentRank, requestRecord.targetRank);
+
     return NextResponse.json(
       {
         success: true,
         message: 'Promotion request created',
-        data: buildRequestSummary(requestRecord),
+        data: buildRequestSummary(requestRecord, requiredDocumentCount),
       } as ApiResponse<ReturnType<typeof buildRequestSummary>>,
       { status: 201 }
     );

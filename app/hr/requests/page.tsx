@@ -29,7 +29,6 @@ type WorkflowAction = {
 };
 
 const statuses = [
-  'DRAFT',
   'SUBMITTED',
   'UNDER_DEPARTMENT_REVIEW',
   'RETURNED_FOR_CORRECTION',
@@ -73,7 +72,7 @@ function segmentMatches(request: PromotionRequest, segment: QueueSegment) {
 
   if (segment === 'all') return true;
   if (segment === 'hr-work') {
-    return ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW', 'UNDER_HR_VERIFICATION', 'REQUIRES_FURTHER_REVIEW'].includes(request.status) || counts.pending > 0;
+    return ['UNDER_HR_VERIFICATION', 'REQUIRES_FURTHER_REVIEW'].includes(request.status);
   }
   if (segment === 'returned') {
     return request.status === 'RETURNED_FOR_CORRECTION' || request.eligibilityStatus === 'INCOMPLETE_APPLICATION' || counts.returned > 0;
@@ -103,8 +102,12 @@ function workflowHealth(request: PromotionRequest) {
     return { title: 'Applicant action needed', detail: 'Returned evidence or application details must be corrected before HR can continue.', tone: 'warning' as const };
   }
 
-  if (request.status === 'UNDER_HR_VERIFICATION' || counts.pending > 0) {
+  if (request.status === 'UNDER_HR_VERIFICATION') {
     return { title: 'Verify evidence', detail: `${counts.pending} pending document(s) require an HR verification decision.`, tone: 'primary' as const };
+  }
+
+  if (counts.pending > 0 && ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW'].includes(request.status)) {
+    return { title: 'Await department handoff', detail: 'Evidence is uploaded, but HOD/Dean review must forward the file before HR can verify it.', tone: 'slate' as const };
   }
 
   if (request.status === 'UNDER_COMMITTEE_REVIEW') {
@@ -602,26 +605,6 @@ function WorkflowActions({
 function getWorkflowActions(request: PromotionRequest): WorkflowAction[] {
   const actions: WorkflowAction[] = [];
 
-  if (request.status === 'SUBMITTED') {
-    actions.push({
-      status: 'UNDER_DEPARTMENT_REVIEW',
-      label: 'Start department review',
-      comment: 'Application moved to department review.',
-      description: 'Move this submitted file into department review tracking.',
-      variant: 'primary',
-    });
-  }
-
-  if (request.status === 'UNDER_DEPARTMENT_REVIEW') {
-    actions.push({
-      status: 'UNDER_HR_VERIFICATION',
-      label: 'Accept into HR verification',
-      comment: 'Application forwarded for HR verification.',
-      description: 'Use after department review has been completed or confirmed.',
-      variant: 'primary',
-      confirm: 'Move this application to HR verification?',
-    });
-  }
 
   if (request.status === 'UNDER_HR_VERIFICATION' && request.eligibilityStatus === 'ELIGIBLE') {
     actions.push({

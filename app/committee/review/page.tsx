@@ -147,7 +147,7 @@ export default function CommitteeReviewPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/promotion-requests?scope=hr', { cache: 'no-store' });
+      const response = await fetch('/api/promotion-requests?scope=committee', { cache: 'no-store' });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || 'Unable to load committee applications');
@@ -155,7 +155,7 @@ export default function CommitteeReviewPage() {
 
       const allRequests = (payload.data || []) as PromotionRequest[];
       const scoped = allRequests.filter((request) => visibleStatuses.includes(request.status));
-      setRequests(allRequests);
+      setRequests(scoped);
 
       const preferred = scoped.find((request) => request.id === preferredId) || null;
       const next = preferred

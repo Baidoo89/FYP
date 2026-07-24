@@ -39,6 +39,11 @@ const TERMINAL_STATUSES = new Set<RequestStatus>([
   RequestStatus.NOT_RECOMMENDED,
 ]);
 
+const EVIDENCE_UPLOAD_STATUSES = new Set<RequestStatus>([
+  RequestStatus.DRAFT,
+  RequestStatus.RETURNED_FOR_CORRECTION,
+]);
+
 const FINAL_REVIEW_STATUSES = new Set<RequestStatus>([
   RequestStatus.RECOMMENDED,
   RequestStatus.NOT_RECOMMENDED,
@@ -409,6 +414,47 @@ export async function submitPromotionRequest(
 ) {
   assertActorRole(input.actor, ['LECTURER']);
 
+  const requestRecord = await client.promotionRequest.findUnique({
+    where: { id: input.requestId },
+    select: {
+      lecturerId: true,
+      documents: {
+        select: {
+          category: true,
+          verificationStatus: true,
+        },
+      },
+    },
+  });
+
+  if (!requestRecord) {
+    throw new WorkflowError('Promotion request not found.', 404);
+  }
+
+  if (requestRecord.lecturerId !== input.actor.id) {
+    throw new WorkflowError('You can only submit your own promotion request.', 403);
+  }
+
+  const requiredCategories = await getRequiredDocumentCategories(client, input.requestId);
+  const uploadedCategories = new Set(requestRecord.documents.map((document) => document.category));
+  const missingCategories = requiredCategories.filter((category) => !uploadedCategories.has(category));
+
+  if (missingCategories.length > 0) {
+    throw new WorkflowError(
+      `Upload all required evidence before submitting: ${missingCategories.map(formatEnum).join(', ')}.`,
+      400
+    );
+  }
+
+  const unresolvedStatuses: VerificationStatus[] = [VerificationStatus.REJECTED, VerificationStatus.REQUIRES_CORRECTION];
+  const unresolvedDocuments = requestRecord.documents.filter((document) =>
+    unresolvedStatuses.includes(document.verificationStatus)
+  );
+
+  if (unresolvedDocuments.length > 0) {
+    throw new WorkflowError('Resolve returned or rejected evidence before submitting the application.', 400);
+  }
+
   return transitionPromotionRequest(client, {
     actor: input.actor,
     requestId: input.requestId,
@@ -450,6 +496,10 @@ export async function savePromotionDocumentRecord(
 
   if (TERMINAL_STATUSES.has(request.status)) {
     throw new WorkflowError('Evidence cannot be uploaded after the application has been finalized.', 409);
+  }
+
+  if (!EVIDENCE_UPLOAD_STATUSES.has(request.status)) {
+    throw new WorkflowError('Evidence can only be uploaded while the application is a draft or has been returned for correction.', 409);
   }
 
   const document = await client.document.upsert({
@@ -646,6 +696,10 @@ export async function verifyPromotionDocument(
     throw new WorkflowError('Documents cannot be verified after the application has been finalized.', 409);
   }
 
+  if (documentRecord.request.status !== RequestStatus.UNDER_HR_VERIFICATION) {
+    throw new WorkflowError('HR verification can only be recorded after HOD/Dean forwards the application to HR verification.', 409);
+  }
+
   const updatedDocument = await client.document.update({
     where: { id: input.documentId },
     data: {
@@ -691,7 +745,7 @@ export async function verifyPromotionDocument(
   });
 
   let eligibility: Awaited<ReturnType<typeof calculateEligibility>> | null = null;
-  let requestStatus = documentRecord.request.status;
+  let requestStatus: RequestStatus = documentRecord.request.status;
   let updatedRequest: unknown = documentRecord.request;
 
   if (
@@ -769,6 +823,10 @@ export async function recordCommitteeReview(
 
   if (!current) {
     throw new WorkflowError('Promotion request not found.', 404);
+  }
+
+  if (current.status !== RequestStatus.UNDER_COMMITTEE_REVIEW) {
+    throw new WorkflowError('Committee review can only be recorded while the application is under committee review.', 409);
   }
 
   const review = await client.reviewComment.create({

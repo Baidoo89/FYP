@@ -40,14 +40,15 @@ function label(value?: string | null) {
 
 function nextActionFor(request: PromotionRequest) {
   const docs = request.documents || [];
+  const required = request.requiredDocumentCount && request.requiredDocumentCount > 0 ? request.requiredDocumentCount : 3;
   const pending = docs.filter((document) => document.verificationStatus === 'PENDING').length;
   const returned = docs.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length;
 
   if (request.status === 'DRAFT') {
-    if (docs.length < 3) {
+    if (docs.length < required) {
       return {
         title: 'Upload required evidence',
-        detail: 'Add teaching, research, and service evidence before submitting your application.',
+        detail: `Upload all ${required} required evidence categories before submitting your application.`,
         action: 'Upload Evidence',
         href: '/lecturer-portal/evidence',
       };

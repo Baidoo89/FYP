@@ -90,9 +90,13 @@ function documentCounts(request: RequestSummary) {
   };
 }
 
+function isHrVerificationRequest(request: RequestSummary) {
+  return request.status === 'UNDER_HR_VERIFICATION';
+}
+
 function actionHref(request: RequestSummary) {
   const counts = documentCounts(request);
-  if (request.status === 'UNDER_HR_VERIFICATION' || counts.pending > 0) return `/hr/verify?requestId=${request.id}&segment=pending`;
+  if (isHrVerificationRequest(request)) return `/hr/verify?requestId=${request.id}&segment=pending`;
   if (request.status === 'RETURNED_FOR_CORRECTION' || counts.returned > 0) return `/hr/verify?requestId=${request.id}&segment=returned`;
   return `/hr/requests?request=${request.id}`;
 }
@@ -104,8 +108,12 @@ function signalFor(request: RequestSummary) {
     return { label: 'Returned', className: 'border-rose-200 bg-rose-50 text-rose-800' };
   }
 
-  if (request.status === 'UNDER_HR_VERIFICATION' || counts.pending > 0) {
-    return { label: 'Pending Evidence', className: 'border-amber-200 bg-amber-50 text-amber-900' };
+  if (isHrVerificationRequest(request)) {
+    return { label: counts.pending > 0 ? 'Pending Evidence' : 'HR Verification', className: 'border-amber-200 bg-amber-50 text-amber-900' };
+  }
+
+  if (counts.pending > 0 && ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW'].includes(request.status)) {
+    return { label: 'Awaiting HOD/Dean', className: 'border-slate-200 bg-slate-50 text-slate-700' };
   }
 
   if (request.status === 'UNDER_COMMITTEE_REVIEW') {
@@ -200,8 +208,10 @@ export default function HrCommandCenterPage() {
         }
 
         const allRequests = (payload.data || []) as RequestSummary[];
+        const hrVerificationRequests = allRequests.filter(isHrVerificationRequest);
         const allDocuments = allRequests.flatMap((request) => request.documents || []);
-        const pendingDocuments = allDocuments.filter((document) => !document.verificationStatus || document.verificationStatus === 'PENDING').length;
+        const hrVerificationDocuments = hrVerificationRequests.flatMap((request) => request.documents || []);
+        const pendingDocuments = hrVerificationDocuments.filter((document) => !document.verificationStatus || document.verificationStatus === 'PENDING').length;
         const verifiedDocuments = allDocuments.filter((document) => document.verificationStatus === 'VERIFIED').length;
         const returnedRequests = allRequests.filter((request) =>
           request.status === 'RETURNED_FOR_CORRECTION' ||
@@ -209,7 +219,7 @@ export default function HrCommandCenterPage() {
         ).length;
         const actionableRequests = allRequests.filter((request) => {
           const counts = documentCounts(request);
-          return ['UNDER_HR_VERIFICATION', 'REQUIRES_FURTHER_REVIEW', 'RECOMMENDED', 'APPROVED_BY_AUTHORITY'].includes(request.status) || counts.pending > 0 || counts.returned > 0;
+          return ['UNDER_HR_VERIFICATION', 'REQUIRES_FURTHER_REVIEW', 'RECOMMENDED', 'NOT_RECOMMENDED', 'APPROVED_BY_AUTHORITY'].includes(request.status) || counts.returned > 0;
         });
 
         setStats({
@@ -225,7 +235,7 @@ export default function HrCommandCenterPage() {
           notEligible: allRequests.filter((request) => ['NOT_ELIGIBLE', 'INCOMPLETE_APPLICATION'].includes(request.eligibilityStatus || '')).length,
         });
         setRecentRequests((actionableRequests.length ? actionableRequests : allRequests).slice(0, 6));
-        setCategoryWorkload(buildCategoryWorkload(allRequests));
+        setCategoryWorkload(buildCategoryWorkload(hrVerificationRequests));
         setActivityFeed(buildActivityFeed(allRequests));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');

@@ -63,6 +63,18 @@ const decisionConfig: Record<VerificationDecision, { label: string; description:
 };
 
 const finalStatuses = new Set(['COMPLETED', 'REJECTED', 'NOT_RECOMMENDED', 'APPROVED', 'APPROVED_BY_AUTHORITY']);
+const verificationVisibleStatuses = new Set([
+  'UNDER_HR_VERIFICATION',
+  'RETURNED_FOR_CORRECTION',
+  'UNDER_COMMITTEE_REVIEW',
+  'RECOMMENDED',
+  'NOT_RECOMMENDED',
+  'REQUIRES_FURTHER_REVIEW',
+  'APPROVED_BY_AUTHORITY',
+  'APPROVED',
+  'COMPLETED',
+  'REJECTED',
+]);
 
 function label(value?: string | null) {
   if (!value) return 'Not available';
@@ -200,13 +212,14 @@ export default function VerificationWorkspacePage() {
       }
 
       const allRequests = (payload.data || []) as PromotionRequest[];
-      setRequests(allRequests);
+      const verificationRequests = allRequests.filter((request) => verificationVisibleStatuses.has(request.status));
+      setRequests(verificationRequests);
 
       const nextRequest =
-        allRequests.find((request) => request.id === targetRequestId) ||
-        allRequests.find((request) => request.status === 'UNDER_HR_VERIFICATION') ||
-        allRequests.find((request) => request.documents.some((document) => document.verificationStatus === 'PENDING')) ||
-        allRequests[0] ||
+        verificationRequests.find((request) => request.id === targetRequestId) ||
+        verificationRequests.find((request) => request.status === 'UNDER_HR_VERIFICATION') ||
+        verificationRequests.find((request) => request.status === 'UNDER_HR_VERIFICATION' && request.documents.some((document) => document.verificationStatus === 'PENDING')) ||
+        verificationRequests[0] ||
         null;
 
       setSelectedRequestId(nextRequest?.id || null);
@@ -307,7 +320,7 @@ export default function VerificationWorkspacePage() {
   if (error && requests.length === 0) return <ErrorState message={error} />;
 
   const selectedCounts = documentCounts(selectedRequest);
-  const requiredCount = selectedRequest?.requiredDocumentCount || Math.min(3, selectedCounts.total);
+  const requiredCount = selectedRequest?.requiredDocumentCount || selectedCounts.total || 3;
   const readiness = requiredCount ? Math.round((selectedCounts.verified / requiredCount) * 100) : 0;
   const verificationDisabled = !selectedRequest || !selectedDocument || finalStatuses.has(selectedRequest.status) || selectedRequest.status !== 'UNDER_HR_VERIFICATION';
 

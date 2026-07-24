@@ -134,7 +134,7 @@ function documentStats(application: PromotionApplicationDetailRecord): DocumentS
   const pending = documents.filter((document) => !document.verificationStatus || document.verificationStatus === 'PENDING').length;
   const correction = documents.filter((document) => document.verificationStatus === 'REQUIRES_CORRECTION').length;
   const rejected = documents.filter((document) => document.verificationStatus === 'REJECTED').length;
-  const required = application.requiredDocumentCount && application.requiredDocumentCount > 0 ? application.requiredDocumentCount : Math.max(3, total);
+  const required = application.requiredDocumentCount && application.requiredDocumentCount > 0 ? application.requiredDocumentCount : 3;
 
   return { total, verified, pending, correction, rejected, required };
 }
@@ -198,11 +198,19 @@ function getRoleGuidance(application: PromotionApplicationDetailRecord, role: Pr
   }
 
   if (role === 'HR_ADMIN') {
-    if (status === 'UNDER_HR_VERIFICATION' || stats.pending > 0) {
+    if (status === 'UNDER_HR_VERIFICATION') {
       return {
         title: 'Evidence verification required',
         description: 'Verify valid documents, return unclear evidence with comments, and let eligibility route the application automatically.',
         tone: 'blue' as const,
+      };
+    }
+
+    if (stats.pending > 0 && ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW'].includes(status)) {
+      return {
+        title: 'Awaiting department handoff',
+        description: 'Evidence exists on this file, but HR verification begins only after HOD/Dean forwards the application.',
+        tone: 'slate' as const,
       };
     }
 
@@ -296,7 +304,7 @@ export default function PromotionApplicationDetail({ application, role, children
             <Metric label="Current rank" value={label(application.currentRank)} />
             <Metric label="Target rank" value={label(application.targetRank)} />
             <Metric label="Years in rank" value={application.yearsInCurrentRank ?? 'Not set'} />
-            <Metric label="Verified evidence" value={`${stats.verified}/${stats.total}`} />
+            <Metric label="Verified evidence" value={`${stats.verified}/${stats.required}`} />
             <Metric label="Total score" value={scoreDisplay(application.totalScore)} />
           </div>
         </div>

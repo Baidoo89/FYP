@@ -240,6 +240,7 @@ export default function EvidencePage() {
     return data.documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || ''));
   }, [data]);
   const isReturnedApplication = data?.request?.status === 'RETURNED_FOR_CORRECTION';
+  const uploadLocked = Boolean(data?.request && !['DRAFT', 'RETURNED_FOR_CORRECTION'].includes(data.request.status));
   const correctionReady = Boolean(isReturnedApplication && data?.request?.id && attentionDocuments.length === 0);
 
   async function handleUpload() {
@@ -254,6 +255,13 @@ export default function EvidencePage() {
       const message = 'Please select a PDF file to upload.';
       setUploadMessage(message);
       toast.warning('PDF file required', message);
+      return;
+    }
+
+    if (uploadLocked) {
+      const message = 'Evidence upload is locked while this application is under review. Uploads reopen only if the file is returned for correction.';
+      setUploadMessage(message);
+      toast.warning('Evidence upload locked', message);
       return;
     }
 
@@ -593,13 +601,20 @@ export default function EvidencePage() {
               {latestSelectedDoc ? 'Uploading a new PDF replaces the current file in this category and resets HR verification to pending.' : 'Upload one PDF for this category. You may replace it later if HR requests correction.'}
             </p>
 
+            {uploadLocked && (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 text-sm leading-6 text-slate-700">
+                Evidence upload is locked while this application is under active review. If HR or the department returns the file for correction, replacement controls will reopen here.
+              </div>
+            )}
+
             <div className="mt-4 grid gap-3">
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-600">Document Title</span>
                 <input
                   value={uploadTitle}
                   onChange={(event) => setUploadTitle(event.target.value)}
-                  className="brand-input"
+                  disabled={uploadLocked}
+                  className="brand-input disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                   placeholder={`Enter ${selectedInfo.title.toLowerCase()} title`}
                 />
               </label>
@@ -611,7 +626,8 @@ export default function EvidencePage() {
                   type="file"
                   accept="application/pdf"
                   onChange={(event) => handleFileSelection(event.target.files?.[0] || null)}
-                  className="block w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs text-gray-900 file:mr-2 file:rounded-md file:border-0 file:bg-teal-700 file:px-2 file:py-2 file:text-xs file:font-semibold file:text-white sm:text-sm sm:file:mr-3 sm:file:px-3 sm:file:text-sm"
+                  disabled={uploadLocked}
+                  className="block w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs text-gray-900 file:mr-2 file:rounded-md file:border-0 file:bg-teal-700 file:px-2 file:py-2 file:text-xs file:font-semibold file:text-white disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 sm:text-sm sm:file:mr-3 sm:file:px-3 sm:file:text-sm"
                 />
               </label>
             </div>
@@ -619,7 +635,7 @@ export default function EvidencePage() {
             <button
               type="button"
               onClick={handleUpload}
-              disabled={uploading}
+              disabled={uploading || uploadLocked}
               className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploading ? 'Uploading...' : latestSelectedDoc ? 'Replace Evidence' : 'Upload Evidence'}

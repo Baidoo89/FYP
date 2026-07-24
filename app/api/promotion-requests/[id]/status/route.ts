@@ -20,6 +20,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ success: false, error: 'Unauthorized' } as ApiResponse<null>, { status: 401 });
   }
 
+  if (!['HR_ADMIN', 'SYSTEM_ADMIN'].includes(session.role)) {
+    return NextResponse.json({ success: false, error: 'Only HR administrators can update administrative workflow status.' } as ApiResponse<null>, { status: 403 });
+  }
+
   if (!Number.isInteger(requestId) || requestId <= 0) {
     return NextResponse.json({ success: false, error: 'Invalid request id' } as ApiResponse<null>, { status: 400 });
   }
