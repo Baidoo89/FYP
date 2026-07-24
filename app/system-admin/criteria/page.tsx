@@ -82,8 +82,6 @@ export default function CriteriaManagementPage() {
   }, [criteria, search, segment]);
 
   const activeCount = useMemo(() => criteria.filter((item) => item.isActive).length, [criteria]);
-  const scoreEnabledCount = useMemo(() => criteria.filter((item) => item.scoringEnabled !== false && item.minimumTotalScore !== null).length, [criteria]);
-  const completeCount = useMemo(() => criteria.filter((item) => item.requiredDocumentCategories.length >= 3 && item.minimumTotalScore !== null).length, [criteria]);
 
   async function loadCriteria() {
     setLoading(true);
@@ -92,11 +90,11 @@ export default function CriteriaManagementPage() {
       const response = await fetch('/api/system/criteria', { cache: 'no-store' });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || 'Unable to load promotion criteria');
+        throw new Error(payload.error || 'Unable to load promotion rules');
       }
       setCriteria(payload.data || []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load promotion criteria');
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load promotion rules');
     } finally {
       setLoading(false);
     }
@@ -169,22 +167,22 @@ export default function CriteriaManagementPage() {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || 'Unable to save promotion criteria');
+        throw new Error(payload.error || 'Unable to save promotion rule');
       }
-      const message = `Criteria saved for ${label(form.currentRank)} to ${label(form.targetRank)}.`;
+      const message = `Promotion rule saved for ${label(form.currentRank)} to ${label(form.targetRank)}.`;
       setMessage(message);
-      toast.success('Promotion criteria saved', message);
+      toast.success('Promotion rule saved', message);
       await loadCriteria();
     } catch (saveError) {
-      const message = saveError instanceof Error ? saveError.message : 'Unable to save promotion criteria';
+      const message = saveError instanceof Error ? saveError.message : 'Unable to save promotion rule';
       setError(message);
-      toast.error('Criteria save failed', message);
+      toast.error('Rule save failed', message);
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading && criteria.length === 0) return <LoadingState label="Loading promotion criteria..." />;
+  if (loading && criteria.length === 0) return <LoadingState label="Loading promotion rules..." />;
   if (error && criteria.length === 0) return <ErrorState message={error} />;
 
   return (
@@ -193,9 +191,9 @@ export default function CriteriaManagementPage() {
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">System Administration</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Promotion Criteria Management</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Promotion Rules</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Configure the eligibility rules used by the server-side promotion engine. Criteria guide recommendations while final decisions remain with university authorities.
+              Manage rank pathways, eligibility thresholds, required evidence categories, and scoring rules used by the server-side promotion engine.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -206,10 +204,10 @@ export default function CriteriaManagementPage() {
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard code="CR" label="Criteria records" value={criteria.length} tone="teal" />
-        <MetricCard code="ACT" label="Active criteria" value={activeCount} tone="green" />
-        <MetricCard code="SC" label="Scored rules" value={scoreEnabledCount} tone="blue" />
-        <MetricCard code="OK" label="Complete rules" value={completeCount} tone="amber" />
+        <MetricCard code="RL" label="Rank Levels" value={ranks.length} tone="teal" />
+        <MetricCard code="EV" label="Evidence Categories" value={categories.length} tone="blue" />
+        <MetricCard code="ACT" label="Active Rules" value={activeCount} tone="green" />
+        <MetricCard code="CR" label="Rule Records" value={criteria.length} tone="amber" />
       </section>
 
       {message && <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-semibold text-teal-800">{message}</div>}
@@ -219,8 +217,8 @@ export default function CriteriaManagementPage() {
         <form onSubmit={saveCriteria} className="pro-card p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
-              <h2 className="text-xl font-semibold text-gray-950">Criteria Form</h2>
-              <p className="mt-1 text-sm leading-6 text-gray-600">Create or update a criteria record by rank progression.</p>
+              <h2 className="text-xl font-semibold text-gray-950">Rank & Criteria Rule</h2>
+              <p className="mt-1 text-sm leading-6 text-gray-600">Create or update a promotion rule by rank progression, evidence requirements, and scoring thresholds.</p>
             </div>
             <button type="button" onClick={resetForm} className="w-fit rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">Reset</button>
           </div>
@@ -249,7 +247,7 @@ export default function CriteriaManagementPage() {
             </Field>
             <Field label="Status">
               <label className="flex h-11 items-center justify-between gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-semibold text-gray-800">
-                <span>Active criteria</span>
+                <span>Active rule</span>
                 <input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} />
               </label>
             </Field>
@@ -258,8 +256,8 @@ export default function CriteriaManagementPage() {
           <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
             <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
               <div>
-                <p className="font-semibold text-gray-950">Evidence Categories</p>
-                <p className="mt-1 text-sm text-gray-600">Select the required evidence areas for this rank progression.</p>
+                <p className="font-semibold text-gray-950">Required Evidence Categories</p>
+                <p className="mt-1 text-sm text-gray-600">Select the document categories required for this rank progression.</p>
               </div>
               <span className="w-fit rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600">{form.requiredDocumentCategories.length} selected</span>
             </div>
@@ -292,7 +290,7 @@ export default function CriteriaManagementPage() {
           </div>
 
           <button type="submit" disabled={saving || form.requiredDocumentCategories.length === 0} className="mt-5 w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-gray-300">
-            {saving ? 'Saving criteria...' : 'Save criteria'}
+            {saving ? 'Saving rule...' : 'Save rule'}
           </button>
         </form>
 
@@ -306,7 +304,7 @@ export default function CriteriaManagementPage() {
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Segment</span>
                 <select value={segment} onChange={(event) => setSegment(event.target.value as CriteriaSegment)} className="brand-input">
-                  <option value="all">All criteria</option>
+                  <option value="all">All rules</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="complete">Complete</option>
@@ -322,14 +320,14 @@ export default function CriteriaManagementPage() {
           <div className="pro-card overflow-hidden">
             <div className="flex flex-col justify-between gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-end">
               <div>
-                <h2 className="text-xl font-semibold text-gray-950">Configured Criteria</h2>
-                <p className="mt-1 text-sm text-gray-600">Select a rank pathway to edit its eligibility rule.</p>
+                <h2 className="text-xl font-semibold text-gray-950">Configured Promotion Rules</h2>
+                <p className="mt-1 text-sm text-gray-600">Select a rank pathway to edit its promotion rule.</p>
               </div>
               <span className="w-fit rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">Server-side engine</span>
             </div>
 
             {filteredCriteria.length === 0 ? (
-              <div className="p-5"><EmptyState title="No criteria found" description="Adjust filters or save a new criteria record." /></div>
+              <div className="p-5"><EmptyState title="No promotion rules found" description="Adjust filters or save a new promotion rule." /></div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {filteredCriteria.map((item) => (

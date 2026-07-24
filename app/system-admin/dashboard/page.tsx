@@ -112,27 +112,27 @@ export default async function SystemAdminDashboardPage() {
             <div className="pro-eyebrow">System Administration</div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Platform Configuration and Governance</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Govern staff accounts, role access, institutional structure, promotion criteria, and audit activity across the GCTU Digital Staff Promotion Support System.
+              Govern staff accounts, role access, institutional structure, promotion rules, and audit activity across the GCTU Digital Staff Promotion Support System.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/system-admin/users" className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-teal-900">
-              Manage Users
+              Manage Accounts
             </Link>
             <Link href="/audit" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-900">
-              Audit Logs
+              Audit Trail
             </Link>
           </div>
         </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <MetricTile code="USR" label="Total users" value={totalUsers} detail="All accounts" tone="teal" />
-        <MetricTile code="ACT" label="Active users" value={activeUsers} detail={`${accountHealth}% active`} tone="green" />
+        <MetricTile code="USR" label="Total Accounts" value={totalUsers} detail="All accounts" tone="teal" />
+        <MetricTile code="ACT" label="Active Accounts" value={activeUsers} detail={`${accountHealth}% active`} tone="green" />
         <MetricTile code="INA" label="Inactive" value={inactiveUsers} detail="Disabled accounts" tone="rose" />
         <MetricTile code="VER" label="Unverified" value={unverifiedUsers} detail="Email pending" tone="amber" />
-        <MetricTile code="STR" label="Departments / Faculties" value={`${departments}/${faculties}`} detail="Institution map" tone="slate" />
-        <MetricTile code="CRT" label="Active criteria" value={activeCriteria} detail={`${auditEvents} audit events`} tone="blue" />
+        <MetricTile code="STR" label="Institution Structure" value={`${faculties}/${departments}`} detail="Faculties / departments" tone="slate" />
+        <MetricTile code="CRT" label="Active Rules" value={activeCriteria} detail={`${auditEvents} audit events`} tone="blue" />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
@@ -143,7 +143,7 @@ export default async function SystemAdminDashboardPage() {
               <p className="mt-1 text-sm text-gray-600">Latest staff accounts and access readiness indicators.</p>
             </div>
             <Link href="/system-admin/users" className="rounded-lg border border-teal-200 px-3 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">
-              User Management
+              Users & Access
             </Link>
           </div>
           <div className="pro-scroll-x">
@@ -187,7 +187,7 @@ export default async function SystemAdminDashboardPage() {
           <section className="pro-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-950">Roles Summary</h2>
+                <h2 className="text-lg font-bold text-gray-950">Access Roles</h2>
                 <p className="mt-1 text-sm text-gray-600">Distribution of access across system portals.</p>
               </div>
               <span className="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-teal-800">RBAC</span>
@@ -200,15 +200,15 @@ export default async function SystemAdminDashboardPage() {
           <section className="pro-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-950">Administration Shortcuts</h2>
+                <h2 className="text-lg font-bold text-gray-950">Configuration Shortcuts</h2>
                 <p className="mt-1 text-sm text-gray-600">Core configuration modules.</p>
               </div>
             </div>
             <div className="mt-4 grid gap-2">
-              <Shortcut href="/system-admin/users" label="User management" detail="Roles, account status, onboarding" />
-              <Shortcut href="/system-admin/criteria" label="Promotion criteria" detail="Eligibility rules and scoring" />
-              <Shortcut href="/system-admin/structure" label="Faculties and departments" detail="Institutional structure mapping" />
-              <Shortcut href="/system-admin/settings" label="System settings" detail="Platform configuration values" />
+              <Shortcut href="/system-admin/users" label="Users & access" detail="Accounts, roles, status, onboarding" />
+              <Shortcut href="/system-admin/criteria" label="Promotion rules" detail="Rank pathways, criteria, evidence" />
+              <Shortcut href="/system-admin/structure" label="Institution structure" detail="Faculties, departments, and scope" />
+              <Shortcut href="/system-admin/settings" label="Platform settings" detail="Title, email, workflow parameters" />
               <Shortcut href="/analytics" label="Reports and analytics" detail="Promotion trends and exports" />
             </div>
           </section>
@@ -219,7 +219,7 @@ export default async function SystemAdminDashboardPage() {
         <section className="pro-card p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-gray-950">Faculties and Departments</h2>
+              <h2 className="text-lg font-bold text-gray-950">Institution Structure</h2>
               <p className="mt-1 text-sm text-gray-600">Institution structure currently configured.</p>
             </div>
             <Link href="/system-admin/structure" className="text-sm font-semibold text-teal-800 hover:text-teal-900">Manage</Link>
@@ -241,14 +241,14 @@ export default async function SystemAdminDashboardPage() {
         <section className="pro-card p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-gray-950">Promotion Criteria</h2>
-              <p className="mt-1 text-sm text-gray-600">Recently updated active eligibility rules.</p>
+              <h2 className="text-lg font-bold text-gray-950">Promotion Rules</h2>
+              <p className="mt-1 text-sm text-gray-600">Recently updated rank pathways, evidence requirements, and eligibility rules.</p>
             </div>
             <Link href="/system-admin/criteria" className="text-sm font-semibold text-teal-800 hover:text-teal-900">Manage</Link>
           </div>
           <div className="mt-4 space-y-3">
             {recentCriteria.length === 0 ? (
-              <EmptyPanel title="No active criteria" description="Create promotion criteria before eligibility can be calculated." compact />
+              <EmptyPanel title="No active promotion rules" description="Create promotion rules before eligibility can be calculated." compact />
             ) : (
               recentCriteria.map((criteria) => (
                 <div key={criteria.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -268,7 +268,7 @@ export default async function SystemAdminDashboardPage() {
         <section className="pro-card p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-gray-950">System Audit Activity</h2>
+              <h2 className="text-lg font-bold text-gray-950">Audit Trail</h2>
               <p className="mt-1 text-sm text-gray-600">Latest tracked governance events.</p>
             </div>
             <Link href="/audit" className="text-sm font-semibold text-teal-800 hover:text-teal-900">Open</Link>

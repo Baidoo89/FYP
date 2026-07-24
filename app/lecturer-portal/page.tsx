@@ -249,6 +249,7 @@ export default function LecturerDashboardOverview() {
   }, []);
 
   const nextAction = useMemo(() => (data ? nextActionFor(data) : null), [data]);
+  const showActionBanner = Boolean(nextAction && actionNeedsAttention(nextAction));
 
   if (loading) return <LoadingDashboard />;
 
@@ -307,9 +308,9 @@ export default function LecturerDashboardOverview() {
         <MetricCard label="Returned" value={data.documentStats.returnedCount} detail="Needs correction" icon={RotateCcw} tone="rose" />
       </section>
 
-      {nextAction && actionNeedsAttention(nextAction) && <ActionNotificationBanner action={nextAction} />}
+      {nextAction && showActionBanner && <ActionNotificationBanner action={nextAction} />}
 
-      <section className="grid min-w-0 max-w-full gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] 2xl:items-stretch">
+      <section className={showActionBanner ? 'min-w-0 max-w-full' : 'grid min-w-0 max-w-full gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] 2xl:items-stretch'}>
         <div className="min-w-0">
           {request ? (
             <ProgressStepper currentStep={currentStep} steps={WORKFLOW_STEPS} status={request.status} />
@@ -317,7 +318,7 @@ export default function LecturerDashboardOverview() {
             <NoRequestPanel />
           )}
         </div>
-        {nextAction && <NextActionPanel action={nextAction} />}
+        {nextAction && !showActionBanner && <NextActionPanel action={nextAction} />}
       </section>
 
       <div className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(0,1fr)_23rem]">
@@ -488,7 +489,7 @@ function ActionNotificationBanner({ action }: { action: ReturnType<typeof nextAc
         </div>
       </div>
       <Link href={action.href} className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 sm:w-auto">
-        Open
+        {action.label}
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </section>

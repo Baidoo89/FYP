@@ -24,6 +24,11 @@ function settingGroup(key: string) {
   return prefix.toLowerCase();
 }
 
+function isPromotionRuleSetting(key: string) {
+  const normalized = key.toLowerCase();
+  return normalized.startsWith('rank.') || normalized.startsWith('document.') || normalized.startsWith('documents.') || normalized.startsWith('evidence.');
+}
+
 export default function SystemSettingsPage() {
   const toast = useToast();
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -35,15 +40,17 @@ export default function SystemSettingsPage() {
   const [groupFilter, setGroupFilter] = useState('');
   const [form, setForm] = useState({ key: '', value: '', description: '' });
 
-  const groups = useMemo(() => Array.from(new Set(settings.map((setting) => settingGroup(setting.key)))).sort(), [settings]);
+  const platformSettings = useMemo(() => settings.filter((setting) => !isPromotionRuleSetting(setting.key)), [settings]);
+  const promotionRuleSettings = useMemo(() => settings.filter((setting) => isPromotionRuleSetting(setting.key)), [settings]);
+  const groups = useMemo(() => Array.from(new Set(platformSettings.map((setting) => settingGroup(setting.key)))).sort(), [platformSettings]);
   const filteredSettings = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return settings.filter((setting) => {
+    return platformSettings.filter((setting) => {
       const groupMatch = !groupFilter || settingGroup(setting.key) === groupFilter;
       const searchMatch = !query || [setting.key, setting.value, setting.description || ''].some((value) => value.toLowerCase().includes(query));
       return groupMatch && searchMatch;
     });
-  }, [settings, search, groupFilter]);
+  }, [platformSettings, search, groupFilter]);
 
   async function loadSettings() {
     setLoading(true);
@@ -93,18 +100,18 @@ export default function SystemSettingsPage() {
       const payload = await response.json();
 
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || 'Unable to save system setting');
+        throw new Error(payload.error || 'Unable to save platform parameter');
       }
 
-      const message = `System setting saved: ${form.key}.`;
+      const message = `Platform parameter saved: ${form.key}.`;
       setMessage(message);
-      toast.success('System setting saved', message);
+      toast.success('Platform parameter saved', message);
       resetForm();
       await loadSettings();
     } catch (saveError) {
-      const message = saveError instanceof Error ? saveError.message : 'Unable to save system setting';
+      const message = saveError instanceof Error ? saveError.message : 'Unable to save platform parameter';
       setError(message);
-      toast.error('Setting save failed', message);
+      toast.error('Parameter save failed', message);
     } finally {
       setSaving(false);
     }
@@ -113,8 +120,7 @@ export default function SystemSettingsPage() {
   if (loading && settings.length === 0) return <LoadingState label="Loading system settings..." />;
   if (error && settings.length === 0) return <ErrorState message={error} />;
 
-  const describedSettings = settings.filter((setting) => setting.description).length;
-  const longValues = settings.filter((setting) => setting.value.length > 80).length;
+  const describedSettings = platformSettings.filter((setting) => setting.description).length;
 
   return (
     <section className="space-y-6">
@@ -122,23 +128,24 @@ export default function SystemSettingsPage() {
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">System Administration</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">System Settings</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Platform Settings</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Maintain controlled configuration values used by the promotion support platform. Every change is recorded in the audit log.
+              Maintain general platform parameters such as system title, email behaviour, workflow timing, and deployment values. Rank pathways and evidence categories are managed under Promotion Rules.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a href="/system-admin/dashboard" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Dashboard</a>
-            <a href="/audit" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">Audit Logs</a>
+            <a href="/system-admin/criteria" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Promotion Rules</a>
+            <a href="/audit" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">Audit Trail</a>
           </div>
         </div>
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard code="SET" label="Settings" value={settings.length} tone="teal" />
-        <MetricCard code="GRP" label="Groups" value={groups.length} tone="blue" />
+        <MetricCard code="SET" label="Platform Parameters" value={platformSettings.length} tone="teal" />
+        <MetricCard code="GRP" label="Setting Groups" value={groups.length} tone="blue" />
         <MetricCard code="DOC" label="Documented" value={describedSettings} tone="green" />
-        <MetricCard code="VAL" label="Long values" value={longValues} tone="amber" />
+        <MetricCard code="RULE" label="Rule-Owned Keys" value={promotionRuleSettings.length} tone="amber" />
       </section>
 
       {message && <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-semibold text-teal-800">{message}</div>}
@@ -148,10 +155,10 @@ export default function SystemSettingsPage() {
         <form onSubmit={saveSetting} className="pro-card p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
-              <h2 className="text-xl font-semibold text-gray-950">Setting Form</h2>
-              <p className="mt-1 text-sm leading-6 text-gray-600">Create or update a controlled key/value configuration entry.</p>
+              <h2 className="text-xl font-semibold text-gray-950">Platform Parameter</h2>
+              <p className="mt-1 text-sm leading-6 text-gray-600">Create or update a general key/value configuration entry. Promotion rules are managed separately.</p>
             </div>
-            <button type="button" onClick={resetForm} className="w-fit rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">New setting</button>
+            <button type="button" onClick={resetForm} className="w-fit rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">New parameter</button>
           </div>
 
           <div className="mt-5 space-y-4">
@@ -167,12 +174,12 @@ export default function SystemSettingsPage() {
           </div>
 
           <button type="submit" disabled={saving} className="mt-5 w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-gray-300">
-            {saving ? 'Saving setting...' : 'Save setting'}
+            {saving ? 'Saving parameter...' : 'Save parameter'}
           </button>
 
           <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600">
             <p className="font-semibold text-gray-950">Key format</p>
-            <p className="mt-1">Use letters, numbers, dots, dashes, or underscores. Group related keys with prefixes such as system, workflow, email, or documents.</p>
+            <p className="mt-1">Use letters, numbers, dots, dashes, or underscores. Group related keys with prefixes such as system, workflow, email, security, or notifications.</p>
           </div>
         </form>
 
@@ -191,7 +198,7 @@ export default function SystemSettingsPage() {
                 </select>
               </label>
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
-                Showing {filteredSettings.length} of {settings.length}
+                Showing {filteredSettings.length} of {platformSettings.length}
               </div>
             </div>
           </div>
@@ -199,14 +206,14 @@ export default function SystemSettingsPage() {
           <div className="pro-card overflow-hidden">
             <div className="flex flex-col justify-between gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-end">
               <div>
-                <h2 className="text-xl font-semibold text-gray-950">Configured Settings</h2>
-                <p className="mt-1 text-sm text-gray-600">Select a setting to edit its value and description.</p>
+                <h2 className="text-xl font-semibold text-gray-950">Configured Platform Parameters</h2>
+                <p className="mt-1 text-sm text-gray-600">Select a platform parameter to edit its value and description.</p>
               </div>
               <span className="w-fit rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">Audited changes</span>
             </div>
 
             {filteredSettings.length === 0 ? (
-              <div className="p-5"><EmptyState title="No settings found" description="Adjust filters or create a new setting." /></div>
+              <div className="p-5"><EmptyState title="No platform parameters found" description="Adjust filters or create a new platform parameter." /></div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {filteredSettings.map((setting) => (

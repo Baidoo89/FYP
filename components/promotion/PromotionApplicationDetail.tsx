@@ -275,6 +275,7 @@ export default function PromotionApplicationDetail({ application, role, children
   const guidance = getRoleGuidance(application, role, stats);
   const currentStep = STATUS_STEP[application.status] || 1;
   const verifiedPercent = completionPercent(stats);
+  const issueCount = stats.correction + stats.rejected;
 
   return (
     <div className="min-w-0 space-y-5 print:space-y-3">
@@ -324,8 +325,8 @@ export default function PromotionApplicationDetail({ application, role, children
             <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
               <MiniMetric label="Pending" value={stats.pending} tone="amber" />
               <MiniMetric label="Verified" value={stats.verified} tone="green" />
-              <MiniMetric label="Correction" value={stats.correction} tone="amber" />
-              <MiniMetric label="Rejected" value={stats.rejected} tone="red" />
+              <MiniMetric label="Returned" value={stats.correction} tone={stats.correction > 0 ? 'amber' : 'green'} />
+              <MiniMetric label="Needs Fix" value={issueCount} tone={issueCount > 0 ? 'red' : 'green'} />
             </div>
           </div>
 

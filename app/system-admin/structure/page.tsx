@@ -44,6 +44,7 @@ export default function InstitutionStructurePage() {
   const [search, setSearch] = useState('');
   const [segment, setSegment] = useState<StructureSegment>('all');
   const [form, setForm] = useState({
+    id: '',
     type: 'FACULTY' as StructureType,
     name: '',
     description: '',
@@ -91,6 +92,7 @@ export default function InstitutionStructurePage() {
   function editFaculty(faculty: Faculty) {
     setMessage('');
     setForm({
+      id: String(faculty.id),
       type: 'FACULTY',
       name: faculty.name,
       description: faculty.description || '',
@@ -101,6 +103,7 @@ export default function InstitutionStructurePage() {
   function editDepartment(department: Department) {
     setMessage('');
     setForm({
+      id: String(department.id),
       type: 'DEPARTMENT',
       name: department.name,
       description: department.description || '',
@@ -109,7 +112,7 @@ export default function InstitutionStructurePage() {
   }
 
   function resetForm(type: StructureType = form.type) {
-    setForm({ type, name: '', description: '', facultyId: '' });
+    setForm({ id: '', type, name: '', description: '', facultyId: '' });
   }
 
   async function saveStructure(event: FormEvent<HTMLFormElement>) {
@@ -189,13 +192,13 @@ export default function InstitutionStructurePage() {
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">System Administration</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Faculties and Departments</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Institution Structure</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
               Maintain the institutional structure used for staff profiles, HOD/Dean scoping, promotion reporting, and workflow governance.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/system-admin/users" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Users</a>
+            <a href="/system-admin/users" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Users & Access</a>
             <a href="/analytics" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">Reports</a>
           </div>
         </div>
@@ -215,7 +218,7 @@ export default function InstitutionStructurePage() {
         <form onSubmit={saveStructure} className="pro-card p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
-              <h2 className="text-xl font-semibold text-gray-950">Structure Form</h2>
+              <h2 className="text-xl font-semibold text-gray-950">{form.id ? 'Edit Structure Record' : 'Structure Form'}</h2>
               <p className="mt-1 text-sm leading-6 text-gray-600">Create or update faculties and departments by name.</p>
             </div>
             <button type="button" onClick={() => resetForm()} className="w-fit rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">New record</button>
@@ -259,7 +262,7 @@ export default function InstitutionStructurePage() {
           </div>
 
           <button type="submit" disabled={saving} className="mt-5 w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-gray-300">
-            {saving ? 'Saving structure...' : 'Save structure'}
+            {saving ? 'Saving structure...' : form.id ? 'Update structure' : 'Save structure'}
           </button>
 
           <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600">

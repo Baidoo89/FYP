@@ -103,7 +103,7 @@ function formatDetails(details?: AuditLogEntry['details']) {
 }
 
 export default function AuditLogViewer({
-  title = 'Audit Logs',
+  title = 'Audit Trail',
   eyebrow = 'System Audit Trail',
   description = 'Monitor sensitive workflow actions, report exports, verification decisions, and administrative activity across the promotion system.',
   backHref,

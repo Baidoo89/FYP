@@ -11,6 +11,11 @@ const settingSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
+function isPromotionRuleSetting(key: string) {
+  const normalized = key.toLowerCase();
+  return normalized.startsWith('rank.') || normalized.startsWith('document.') || normalized.startsWith('documents.') || normalized.startsWith('evidence.');
+}
+
 function requireSystemAdmin(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session || session.legacy || session.role !== 'SYSTEM_ADMIN') {
@@ -44,6 +49,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isPromotionRuleSetting(parsed.data.key)) {
+    return NextResponse.json(
+      { success: false, error: 'Rank levels and evidence/document categories are managed from Promotion Rules, not Platform Settings.' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
   const saved = await prisma.$transaction(async (tx) => {
     const setting = await tx.systemSetting.upsert({
       where: { key: parsed.data.key },
@@ -63,7 +75,7 @@ export async function POST(request: NextRequest) {
       action: 'SETTING_UPDATED',
       entityType: 'SystemSetting',
       entityId: setting.key,
-      description: `System setting updated: ${setting.key}.`,
+      description: `Platform setting updated: ${setting.key}.`,
       metadata: {
         key: setting.key,
         value: setting.value,
@@ -73,5 +85,5 @@ export async function POST(request: NextRequest) {
     return setting;
   });
 
-  return NextResponse.json({ success: true, message: 'System setting saved', data: saved } as ApiResponse<typeof saved>);
+  return NextResponse.json({ success: true, message: 'Platform setting saved', data: saved } as ApiResponse<typeof saved>);
 }

@@ -38,7 +38,7 @@ const baseNavItems: NavItem[] = [
   { href: '/promotions', icon: 'PR', label: 'Promotion Requests', subtitle: 'Workflow queue' },
   { href: '/lecturers', icon: 'SR', label: 'Staff Records', subtitle: 'Academic profiles' },
   { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Promotion analytics' },
-  { href: '/audit', icon: 'AU', label: 'Audit Logs', subtitle: 'System activity' },
+  { href: '/audit', icon: 'AU', label: 'Audit Trail', subtitle: 'System activity' },
   { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
 ];
 
@@ -115,11 +115,10 @@ export default function AppShell({ children }: AppShellProps) {
   const navItems: NavItem[] = isLecturerNav
     ? [
         { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview' },
-        { href: '/lecturer-portal/application', icon: 'PR', label: 'Promotion Requests', subtitle: 'Track application' },
-        { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence Portfolio', subtitle: 'Documents' },
-        { href: '/lecturer-portal/applications', icon: 'AP', label: 'My Applications', subtitle: 'Status history' },
-        { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback & Remarks', subtitle: 'HR comments' },
-        { href: '/lecturer-portal/eligibility', icon: 'EL', label: 'Eligibility Status', subtitle: 'Criteria outcome' },
+        { href: '/lecturer-portal/application', icon: 'PR', label: 'My Application', subtitle: 'Workflow tracker' },
+        { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence Portfolio', subtitle: 'Upload documents' },
+        { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback', subtitle: 'Returned evidence' },
+        { href: '/lecturer-portal/eligibility', icon: 'EL', label: 'Eligibility', subtitle: 'Criteria outcome' },
         { href: '/lecturer-portal/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
         { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Academic record' },
         { href: '/lecturer-portal/help', icon: 'HC', label: 'Help Center', subtitle: 'Support' },
@@ -128,27 +127,22 @@ export default function AppShell({ children }: AppShellProps) {
     : isHrNav
       ? [
           { href: '/hr/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Workload overview' },
-          { href: '/hr/requests', icon: 'AA', label: 'All Applications', subtitle: 'Master queue' },
+          { href: '/hr/requests', icon: 'AA', label: 'Application Registry', subtitle: 'All promotion files' },
           { href: '/hr/verify', icon: 'VQ', label: 'Verification Queue', subtitle: 'Evidence review' },
           { href: '/lecturers', icon: 'SR', label: 'Staff Records', subtitle: 'Lecturer profiles' },
-          { href: '/hr/requests', icon: 'ER', label: 'Eligibility Review', subtitle: 'Criteria outcome' },
-          { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Analytics' },
-          { href: '/hr/logs', icon: 'AU', label: 'Audit Logs', subtitle: 'Activity trail' },
+          { href: '/analytics', icon: 'RP', label: 'Reports & Analytics', subtitle: 'Dashboards' },
+          { href: '/hr/logs', icon: 'AU', label: 'Audit Trail', subtitle: 'Activity history' },
           { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
           { href: '/hr/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
         ]
       : isSystemAdminNav
         ? [
-            { href: '/system-admin/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'System overview' },
-            { href: '/system-admin/users', icon: 'US', label: 'Users', subtitle: 'Account control' },
-            { href: '/system-admin/users', icon: 'RL', label: 'Roles', subtitle: 'Access levels' },
-            { href: '/system-admin/structure', icon: 'DP', label: 'Departments', subtitle: 'Academic units' },
-            { href: '/system-admin/structure', icon: 'FC', label: 'Faculties', subtitle: 'School structure' },
-            { href: '/system-admin/criteria', icon: 'RK', label: 'Rank Levels', subtitle: 'Promotion ranks' },
-            { href: '/system-admin/criteria', icon: 'CR', label: 'Promotion Criteria', subtitle: 'Eligibility rules' },
-            { href: '/system-admin/settings', icon: 'DC', label: 'Document Categories', subtitle: 'Evidence types' },
-            { href: '/audit', icon: 'AU', label: 'Audit Logs', subtitle: 'System activity' },
-            { href: '/system-admin/settings', icon: 'SE', label: 'System Settings', subtitle: 'Configuration' },
+            { href: '/system-admin/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Governance overview' },
+            { href: '/system-admin/users', icon: 'US', label: 'Users & Access', subtitle: 'Accounts, roles, status' },
+            { href: '/system-admin/structure', icon: 'ST', label: 'Institution Structure', subtitle: 'Faculties & departments' },
+            { href: '/system-admin/criteria', icon: 'CR', label: 'Promotion Rules', subtitle: 'Ranks, criteria, evidence' },
+            { href: '/audit', icon: 'AU', label: 'Audit Trail', subtitle: 'Governance activity' },
+            { href: '/system-admin/settings', icon: 'SE', label: 'Platform Settings', subtitle: 'General configuration' },
           ]
         : isCommitteeNav
           ? [

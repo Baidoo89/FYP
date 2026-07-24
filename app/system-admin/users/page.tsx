@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
-type Department = { id: number; name: string };
+type Department = { id: number; name: string; facultyId?: number | null };
 type Faculty = { id: number; name: string };
 
 type UserRecord = {
@@ -60,6 +60,27 @@ function roleTone(role: string) {
   return 'border-gray-200 bg-gray-50 text-gray-700';
 }
 
+function defaultCreateForm() {
+  return {
+    name: '',
+    email: '',
+    password: '',
+    role: 'LECTURER',
+    staffId: '',
+    departmentId: '',
+    facultyId: '',
+    currentRank: '',
+    phone: '',
+    emailVerified: true,
+    onboarded: true,
+    isActive: true,
+  };
+}
+
+function departmentOptionsFor(departments: Department[], facultyId: string) {
+  if (!facultyId) return departments;
+  return departments.filter((department) => !department.facultyId || String(department.facultyId) === facultyId);
+}
 export default function UserManagementPage() {
   const toast = useToast();
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -74,8 +95,10 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [createForm, setCreateForm] = useState(defaultCreateForm());
   const [form, setForm] = useState({
     role: '',
     isActive: true,
@@ -86,6 +109,8 @@ export default function UserManagementPage() {
   });
 
   const selectedUser = users.find((user) => user.id === selectedId) || null;
+  const editDepartmentOptions = useMemo(() => departmentOptionsFor(departments, form.facultyId), [departments, form.facultyId]);
+  const createDepartmentOptions = useMemo(() => departmentOptionsFor(departments, createForm.facultyId), [departments, createForm.facultyId]);
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -144,6 +169,36 @@ export default function UserManagementPage() {
     loadUsers();
   }, []);
 
+  async function createUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCreating(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/system/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createForm),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Unable to create user account');
+      }
+      const created = payload.data as UserRecord;
+      const message = `${created.name}'s account was created successfully.`;
+      setMessage(message);
+      toast.success('User account created', message);
+      setCreateForm(defaultCreateForm());
+      await loadUsers(created.id);
+    } catch (createError) {
+      const message = createError instanceof Error ? createError.message : 'Unable to create user account';
+      setError(message);
+      toast.error('Account creation failed', message);
+    } finally {
+      setCreating(false);
+    }
+  }
   async function saveUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedUser) return;
@@ -227,14 +282,14 @@ export default function UserManagementPage() {
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="pro-eyebrow">System Administration</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">User and Role Management</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">Users & Access Management</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
               Govern staff access, role assignments, account activation, academic rank, and institutional structure mapping across every promotion portal.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a href="/system-admin/dashboard" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Dashboard</a>
-            <a href="/audit" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">Audit Logs</a>
+            <a href="/audit" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">Audit Trail</a>
           </div>
         </div>
       </div>
@@ -317,6 +372,75 @@ export default function UserManagementPage() {
         </div>
 
         <div className="space-y-6">
+          <form onSubmit={createUser} className="pro-card p-5">
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-950">Create Staff Account</h2>
+                <p className="mt-1 text-sm leading-6 text-gray-600">Create official GCTU accounts for lecturers, reviewers, HR, HOD/Dean, and system administrators.</p>
+              </div>
+              <button type="button" onClick={() => setCreateForm(defaultCreateForm())} className="w-fit rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">Reset</button>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <Field label="Full name">
+                <input value={createForm.name} onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })} className="brand-input" placeholder="Dr. Ama Mensah" required />
+              </Field>
+              <Field label="Official email">
+                <input value={createForm.email} onChange={(event) => setCreateForm({ ...createForm, email: event.target.value })} className="brand-input" placeholder="name@live.gctu.edu.gh" type="email" required />
+              </Field>
+              <Field label="Temporary password">
+                <input value={createForm.password} onChange={(event) => setCreateForm({ ...createForm, password: event.target.value })} className="brand-input" placeholder="Minimum 8 characters" type="password" required />
+              </Field>
+              <Field label="Staff ID">
+                <input value={createForm.staffId} onChange={(event) => setCreateForm({ ...createForm, staffId: event.target.value })} className="brand-input" placeholder="GCTU-STAFF-001" />
+              </Field>
+              <Field label="Role">
+                <select value={createForm.role} onChange={(event) => setCreateForm({ ...createForm, role: event.target.value })} className="brand-input">
+                  {roles.map((role) => <option key={role} value={role}>{label(role)}</option>)}
+                </select>
+              </Field>
+              <Field label="Current rank">
+                <select value={createForm.currentRank} onChange={(event) => setCreateForm({ ...createForm, currentRank: event.target.value })} className="brand-input">
+                  <option value="">No rank</option>
+                  {ranks.map((rank) => <option key={rank} value={rank}>{label(rank)}</option>)}
+                </select>
+              </Field>
+              <Field label="Faculty">
+                <select value={createForm.facultyId} onChange={(event) => setCreateForm({ ...createForm, facultyId: event.target.value, departmentId: '' })} className="brand-input">
+                  <option value="">No faculty</option>
+                  {faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Department">
+                <select value={createForm.departmentId} onChange={(event) => setCreateForm({ ...createForm, departmentId: event.target.value })} className="brand-input">
+                  <option value="">No department</option>
+                  {createDepartmentOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Phone">
+                <input value={createForm.phone} onChange={(event) => setCreateForm({ ...createForm, phone: event.target.value })} className="brand-input" placeholder="+233 ..." />
+              </Field>
+              <div className="grid gap-2 text-sm font-semibold text-gray-800">
+                <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+                  <span>Email verified</span>
+                  <input type="checkbox" checked={createForm.emailVerified} onChange={(event) => setCreateForm({ ...createForm, emailVerified: event.target.checked })} />
+                </label>
+                <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+                  <span>Account active</span>
+                  <input type="checkbox" checked={createForm.isActive} onChange={(event) => setCreateForm({ ...createForm, isActive: event.target.checked })} />
+                </label>
+              </div>
+            </div>
+
+            <label className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">
+              <span>Mark onboarding complete</span>
+              <input type="checkbox" checked={createForm.onboarded} onChange={(event) => setCreateForm({ ...createForm, onboarded: event.target.checked })} />
+            </label>
+
+            <button type="submit" disabled={creating} className="mt-5 w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-gray-300">
+              {creating ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
           <form onSubmit={saveUser} className="pro-card p-5">
             <h2 className="text-xl font-semibold text-gray-950">Selected Account</h2>
             {!selectedUser ? (
@@ -343,7 +467,7 @@ export default function UserManagementPage() {
                     </select>
                   </Field>
                   <Field label="Faculty">
-                    <select value={form.facultyId} onChange={(event) => setForm({ ...form, facultyId: event.target.value })} className="brand-input">
+                    <select value={form.facultyId} onChange={(event) => setForm({ ...form, facultyId: event.target.value, departmentId: '' })} className="brand-input">
                       <option value="">No faculty</option>
                       {faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}
                     </select>
@@ -351,7 +475,7 @@ export default function UserManagementPage() {
                   <Field label="Department">
                     <select value={form.departmentId} onChange={(event) => setForm({ ...form, departmentId: event.target.value })} className="brand-input">
                       <option value="">No department</option>
-                      {departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+                      {editDepartmentOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
                     </select>
                   </Field>
                   <Field label="Current rank">
@@ -394,7 +518,7 @@ export default function UserManagementPage() {
           </form>
 
           <div className="pro-card p-5">
-            <h2 className="text-lg font-semibold text-gray-950">Role Summary</h2>
+            <h2 className="text-lg font-semibold text-gray-950">Access Roles</h2>
             <div className="mt-4 grid gap-2">
               {roleSummary.map((item) => (
                 <div key={item.role} className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">

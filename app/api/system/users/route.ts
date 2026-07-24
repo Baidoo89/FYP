@@ -1,10 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AcademicRank, RequestStatus, Role } from '@prisma/client';
+import { AcademicRank, Prisma, RequestStatus, Role } from '@prisma/client';
 import { z } from 'zod';
 import { getAuthSession } from '../../../../lib/auth';
+import { hashPassword } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { writeAuditLog } from '../../../../lib/audit-logger';
 import type { ApiResponse } from '../../../../types';
+
+const OFFICIAL_EMAIL_DOMAIN = '@live.gctu.edu.gh';
+
+const userRecordSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  staffId: true,
+  department: true,
+  departmentId: true,
+  facultyId: true,
+  currentRank: true,
+  phone: true,
+  emailVerified: true,
+  emailVerifiedAt: true,
+  isActive: true,
+  onboarded: true,
+  createdAt: true,
+  updatedAt: true,
+  departmentRef: true,
+  faculty: true,
+  _count: {
+    select: {
+      lecturerRequests: true,
+      notifications: true,
+    },
+  },
+} satisfies Prisma.UserSelect;
+const userCreateSchema = z.object({
+  name: z.string().trim().min(2, 'Full name is required'),
+  email: z.string().trim().email('Official GCTU email is required').transform((value) => value.toLowerCase()).refine(
+    (value) => value.endsWith(OFFICIAL_EMAIL_DOMAIN),
+    `Use an official ${OFFICIAL_EMAIL_DOMAIN} email address`
+  ),
+  password: z.string().min(8, 'Temporary password must be at least 8 characters'),
+  role: z.nativeEnum(Role),
+  staffId: z.string().trim().optional().nullable(),
+  departmentId: z.number().int().positive().nullable().optional(),
+  facultyId: z.number().int().positive().nullable().optional(),
+  currentRank: z.nativeEnum(AcademicRank).nullable().optional(),
+  phone: z.string().trim().optional().nullable(),
+  emailVerified: z.boolean().default(true),
+  onboarded: z.boolean().default(true),
+  isActive: z.boolean().default(true),
+});
 
 const userUpdateSchema = z.object({
   userId: z.number().int().positive(),
@@ -20,12 +67,52 @@ const userDeleteSchema = z.object({
   userId: z.number().int().positive(),
 });
 
+function nullableNumber(value: unknown) {
+  if (value === '' || value === null) return null;
+  if (value === undefined) return undefined;
+  return Number(value);
+}
+
+function nullableString(value: unknown) {
+  const text = String(value || '').trim();
+  return text ? text : null;
+}
+
 function requireSystemAdmin(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session || session.legacy || session.role !== 'SYSTEM_ADMIN') {
     return { session: null, response: NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 }) };
   }
   return { session, response: null };
+}
+
+function jsonError(error: string, status = 400) {
+  return NextResponse.json({ success: false, error } as ApiResponse<null>, { status });
+}
+
+async function resolveInstitutionMapping(input: { facultyId?: number | null; departmentId?: number | null }) {
+  const [department, faculty] = await Promise.all([
+    input.departmentId ? prisma.department.findUnique({ where: { id: input.departmentId } }) : Promise.resolve(null),
+    input.facultyId ? prisma.faculty.findUnique({ where: { id: input.facultyId } }) : Promise.resolve(null),
+  ]);
+
+  if (input.departmentId && !department) {
+    return { response: jsonError('Selected department was not found', 404), department: null, facultyId: null };
+  }
+
+  if (input.facultyId && !faculty) {
+    return { response: jsonError('Selected faculty was not found', 404), department: null, facultyId: null };
+  }
+
+  if (input.facultyId && department?.facultyId && department.facultyId !== input.facultyId) {
+    return { response: jsonError('Selected department does not belong to the selected faculty'), department: null, facultyId: null };
+  }
+
+  return {
+    response: null,
+    department,
+    facultyId: input.facultyId ?? department?.facultyId ?? null,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -50,16 +137,8 @@ export async function GET(request: NextRequest) {
       ...(role && Object.values(Role).includes(role) ? { role } : {}),
       ...(active === 'true' ? { isActive: true } : active === 'false' ? { isActive: false } : {}),
     },
-    include: {
-      departmentRef: true,
-      faculty: true,
-      _count: {
-        select: {
-          lecturerRequests: true,
-          notifications: true,
-        },
-      },
-    },
+    select: userRecordSelect,
+
     orderBy: [
       { role: 'asc' },
       { name: 'asc' },
@@ -83,6 +162,91 @@ export async function GET(request: NextRequest) {
   } as ApiResponse<unknown>);
 }
 
+export async function POST(request: NextRequest) {
+  const { session, response } = requireSystemAdmin(request);
+  if (response) return response;
+
+  const body = await request.json();
+  const parsed = userCreateSchema.safeParse({
+    ...body,
+    staffId: nullableString(body.staffId),
+    departmentId: nullableNumber(body.departmentId),
+    facultyId: nullableNumber(body.facultyId),
+    currentRank: body.currentRank === '' ? null : body.currentRank,
+    phone: nullableString(body.phone),
+    emailVerified: body.emailVerified !== undefined ? Boolean(body.emailVerified) : true,
+    onboarded: body.onboarded !== undefined ? Boolean(body.onboarded) : true,
+    isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
+  const mapping = await resolveInstitutionMapping({
+    facultyId: parsed.data.facultyId,
+    departmentId: parsed.data.departmentId,
+  });
+  if (mapping.response) return mapping.response;
+
+  try {
+    const created = await prisma.$transaction(async (tx) => {
+      const passwordHash = hashPassword(parsed.data.password);
+      const user = await tx.user.create({
+        data: {
+          name: parsed.data.name,
+          email: parsed.data.email,
+          password: passwordHash,
+          passwordHash,
+          role: parsed.data.role,
+          staffId: parsed.data.staffId || null,
+          departmentId: parsed.data.departmentId || null,
+          department: mapping.department?.name || null,
+          facultyId: mapping.facultyId,
+          currentRank: parsed.data.currentRank || null,
+          phone: parsed.data.phone || null,
+          emailVerified: parsed.data.emailVerified,
+          emailVerifiedAt: parsed.data.emailVerified ? new Date() : null,
+          onboarded: parsed.data.onboarded,
+          isActive: parsed.data.isActive,
+        },
+        select: userRecordSelect,
+
+      });
+
+      await writeAuditLog(tx, {
+        actorId: session!.userId,
+        action: 'USER_CREATED_BY_SYSTEM_ADMIN',
+        entityType: 'User',
+        entityId: user.id,
+        description: `System administrator created ${user.email}.`,
+        metadata: {
+          role: user.role,
+          staffId: user.staffId,
+          departmentId: user.departmentId,
+          facultyId: user.facultyId,
+          emailVerified: user.emailVerified,
+          onboarded: user.onboarded,
+        },
+      });
+
+      return user;
+    });
+
+    return NextResponse.json({ success: true, message: 'User account created', data: created } as ApiResponse<typeof created>, { status: 201 });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return jsonError('An account with this email or staff ID already exists', 409);
+    }
+
+    console.error('System user create error:', error);
+    return jsonError('Unable to create user account', 500);
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   const { session, response } = requireSystemAdmin(request);
   if (response) return response;
@@ -91,8 +255,8 @@ export async function PATCH(request: NextRequest) {
   const parsed = userUpdateSchema.safeParse({
     ...body,
     userId: Number(body.userId),
-    departmentId: body.departmentId === '' || body.departmentId === undefined ? null : Number(body.departmentId),
-    facultyId: body.facultyId === '' || body.facultyId === undefined ? null : Number(body.facultyId),
+    departmentId: nullableNumber(body.departmentId),
+    facultyId: nullableNumber(body.facultyId),
     currentRank: body.currentRank === '' ? null : body.currentRank,
   });
 
@@ -103,42 +267,56 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  if (parsed.data.userId === session!.userId && parsed.data.isActive === false) {
-    return NextResponse.json(
-      { success: false, error: 'You cannot deactivate your own active administrator session' } as ApiResponse<null>,
-      { status: 400 }
-    );
+  const current = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    include: { departmentRef: true, faculty: true },
+  });
+
+  if (!current) {
+    return jsonError('User not found', 404);
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const current = await tx.user.findUnique({
-      where: { id: parsed.data.userId },
-      include: { departmentRef: true, faculty: true },
+  if (parsed.data.userId === session!.userId && parsed.data.isActive === false) {
+    return jsonError('You cannot deactivate your own active administrator session');
+  }
+
+  const nextRole = parsed.data.role ?? current.role;
+  const nextActive = parsed.data.isActive ?? current.isActive;
+
+  if (current.role === Role.SYSTEM_ADMIN && (nextRole !== Role.SYSTEM_ADMIN || !nextActive)) {
+    const otherActiveAdmins = await prisma.user.count({
+      where: {
+        id: { not: current.id },
+        role: Role.SYSTEM_ADMIN,
+        isActive: true,
+      },
     });
 
-    if (!current) {
-      throw new Error('User not found');
+    if (otherActiveAdmins === 0) {
+      return jsonError('At least one active System Admin account must remain.');
     }
+  }
 
-    const department = parsed.data.departmentId
-      ? await tx.department.findUnique({ where: { id: parsed.data.departmentId } })
-      : null;
+  const mapping = await resolveInstitutionMapping({
+    facultyId: parsed.data.facultyId,
+    departmentId: parsed.data.departmentId,
+  });
+  if (mapping.response) return mapping.response;
 
+  const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.user.update({
       where: { id: parsed.data.userId },
       data: {
         role: parsed.data.role,
         isActive: parsed.data.isActive,
         departmentId: parsed.data.departmentId,
-        department: department?.name || (parsed.data.departmentId === null ? null : undefined),
-        facultyId: parsed.data.facultyId,
+        department: mapping.department?.name || (parsed.data.departmentId === null ? null : undefined),
+        facultyId: parsed.data.departmentId === undefined && parsed.data.facultyId === undefined ? undefined : mapping.facultyId,
         currentRank: parsed.data.currentRank,
         phone: parsed.data.phone,
       },
-      include: {
-        departmentRef: true,
-        faculty: true,
-      },
+      select: userRecordSelect,
+
     });
 
     await writeAuditLog(tx, {
@@ -170,6 +348,7 @@ export async function PATCH(request: NextRequest) {
 
   return NextResponse.json({ success: true, message: 'User updated', data: result } as ApiResponse<typeof result>);
 }
+
 export async function DELETE(request: NextRequest) {
   const { session, response } = requireSystemAdmin(request);
   if (response) return response;

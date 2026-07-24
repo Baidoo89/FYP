@@ -459,7 +459,7 @@ export default function HrCommandCenterPage() {
             <div className="mt-4 grid gap-2">
               <QuickLink href="/hr/verify?segment=pending" title="Verification Queue" description="Review submitted evidence" icon={FileCheck2} />
               <QuickLink href="/hr/requests?segment=all" title="Master Queue" description="Manage all promotion requests" icon={FileText} />
-              <QuickLink href="/hr/logs" title="Audit Logs" description="Track sensitive actions" icon={ShieldCheck} />
+              <QuickLink href="/hr/logs" title="Audit Trail" description="Track sensitive actions" icon={ShieldCheck} />
             </div>
           </section>
         </div>

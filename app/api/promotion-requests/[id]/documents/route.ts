@@ -7,6 +7,24 @@ import { savePromotionDocumentRecord, WorkflowError } from '../../../../../lib/p
 import type { ApiResponse } from '../../../../../types';
 import { ensureDocumentFileStorage, saveDocumentFileBlob } from '../../../../../lib/document-file-storage';
 
+
+type UploadedFileLike = {
+  name?: string;
+  type?: string;
+  size: number;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+};
+
+function isUploadedFile(value: FormDataEntryValue | null): value is File {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'arrayBuffer' in value &&
+    typeof (value as UploadedFileLike).arrayBuffer === 'function' &&
+    'size' in value &&
+    typeof (value as UploadedFileLike).size === 'number'
+  );
+}
 function workflowErrorResponse(error: unknown, fallback: string) {
   const status = error instanceof WorkflowError ? error.statusCode : 500;
   const message = error instanceof Error ? error.message : fallback;
@@ -48,7 +66,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     );
   }
 
-  if (!(file instanceof File)) {
+  if (!isUploadedFile(file)) {
     return NextResponse.json({ success: false, error: 'PDF file is required' } as ApiResponse<null>, { status: 400 });
   }
 

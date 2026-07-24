@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { getAuthSession } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
@@ -6,9 +7,10 @@ import { writeAuditLog } from '../../../../lib/audit-logger';
 import type { ApiResponse } from '../../../../types';
 
 const structureSchema = z.object({
+  id: z.number().int().positive().optional(),
   type: z.enum(['FACULTY', 'DEPARTMENT']),
-  name: z.string().min(2),
-  description: z.string().optional().nullable(),
+  name: z.string().trim().min(2),
+  description: z.string().trim().optional().nullable(),
   facultyId: z.number().int().positive().optional().nullable(),
 });
 
@@ -23,6 +25,16 @@ function requireSystemAdmin(request: NextRequest) {
     return { session: null, response: NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 }) };
   }
   return { session, response: null };
+}
+
+function jsonError(error: string, status = 400) {
+  return NextResponse.json({ success: false, error } as ApiResponse<null>, { status });
+}
+
+function nullableNumber(value: unknown) {
+  if (value === '' || value === null) return null;
+  if (value === undefined) return undefined;
+  return Number(value);
 }
 
 export async function GET(request: NextRequest) {
@@ -58,7 +70,9 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = structureSchema.safeParse({
     ...body,
-    facultyId: body.facultyId ? Number(body.facultyId) : null,
+    id: body.id ? Number(body.id) : undefined,
+    facultyId: nullableNumber(body.facultyId),
+    description: body.description ? String(body.description).trim() : null,
   });
 
   if (!parsed.success) {
@@ -68,57 +82,99 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    if (parsed.data.type === 'FACULTY') {
-      const faculty = await tx.faculty.upsert({
-        where: { name: parsed.data.name },
-        update: {
-          description: parsed.data.description || null,
-        },
-        create: {
-          name: parsed.data.name,
-          description: parsed.data.description || null,
-        },
-      });
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      if (parsed.data.type === 'FACULTY') {
+        const faculty = parsed.data.id
+          ? await tx.faculty.update({
+              where: { id: parsed.data.id },
+              data: {
+                name: parsed.data.name,
+                description: parsed.data.description || null,
+              },
+            })
+          : await tx.faculty.upsert({
+              where: { name: parsed.data.name },
+              update: {
+                description: parsed.data.description || null,
+              },
+              create: {
+                name: parsed.data.name,
+                description: parsed.data.description || null,
+              },
+            });
+
+        await writeAuditLog(tx, {
+          actorId: session!.userId,
+          action: parsed.data.id ? 'FACULTY_UPDATED' : 'FACULTY_UPSERTED',
+          entityType: 'Faculty',
+          entityId: faculty.id,
+          description: `Faculty configured: ${faculty.name}.`,
+        });
+
+        return faculty;
+      }
+
+      if (parsed.data.facultyId) {
+        const faculty = await tx.faculty.findUnique({ where: { id: parsed.data.facultyId } });
+        if (!faculty) {
+          throw new Error('Selected faculty was not found');
+        }
+      }
+
+      const department = parsed.data.id
+        ? await tx.department.update({
+            where: { id: parsed.data.id },
+            data: {
+              name: parsed.data.name,
+              description: parsed.data.description || null,
+              facultyId: parsed.data.facultyId || null,
+            },
+          })
+        : await tx.department.upsert({
+            where: { name: parsed.data.name },
+            update: {
+              description: parsed.data.description || null,
+              facultyId: parsed.data.facultyId || null,
+            },
+            create: {
+              name: parsed.data.name,
+              description: parsed.data.description || null,
+              facultyId: parsed.data.facultyId || null,
+            },
+          });
 
       await writeAuditLog(tx, {
         actorId: session!.userId,
-        action: 'FACULTY_UPSERTED',
-        entityType: 'Faculty',
-        entityId: faculty.id,
-        description: `Faculty configured: ${faculty.name}.`,
+        action: parsed.data.id ? 'DEPARTMENT_UPDATED' : 'DEPARTMENT_UPSERTED',
+        entityType: 'Department',
+        entityId: department.id,
+        description: `Department configured: ${department.name}.`,
+        metadata: { facultyId: department.facultyId },
       });
 
-      return faculty;
+      return department;
+    });
+
+    return NextResponse.json({ success: true, message: 'Institution structure saved', data: result } as ApiResponse<typeof result>);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return jsonError('A faculty or department with this name already exists', 409);
     }
 
-    const department = await tx.department.upsert({
-      where: { name: parsed.data.name },
-      update: {
-        description: parsed.data.description || null,
-        facultyId: parsed.data.facultyId || null,
-      },
-      create: {
-        name: parsed.data.name,
-        description: parsed.data.description || null,
-        facultyId: parsed.data.facultyId || null,
-      },
-    });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return jsonError('Selected structure record was not found', 404);
+    }
 
-    await writeAuditLog(tx, {
-      actorId: session!.userId,
-      action: 'DEPARTMENT_UPSERTED',
-      entityType: 'Department',
-      entityId: department.id,
-      description: `Department configured: ${department.name}.`,
-      metadata: { facultyId: department.facultyId },
-    });
+    if (error instanceof Error && error.message === 'Selected faculty was not found') {
+      return jsonError(error.message, 404);
+    }
 
-    return department;
-  });
-
-  return NextResponse.json({ success: true, message: 'Institution structure saved', data: result } as ApiResponse<typeof result>);
+    console.error('Structure save error:', error);
+    return jsonError('Unable to save institution structure', 500);
+  }
 }
+
 export async function DELETE(request: NextRequest) {
   const { session, response } = requireSystemAdmin(request);
   if (response) return response;

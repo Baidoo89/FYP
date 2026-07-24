@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, BriefcaseBusiness, ClipboardList, FileText, LayoutDashboard, UserRound } from 'lucide-react';
+import { Bell, BriefcaseBusiness, Building2, ClipboardList, FileText, LayoutDashboard, Settings, UserRound, UsersRound } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '../lib/utils';
 
@@ -47,6 +47,13 @@ const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
     { href: '/hod/applications?segment=all', label: 'Files', icon: BriefcaseBusiness, key: 'applications' },
     { href: '/notifications', label: 'Alerts', icon: Bell },
     { href: '/hod/profile', label: 'Profile', icon: UserRound },
+  ],
+  SYSTEM_ADMIN: [
+    { href: '/system-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/system-admin/users', label: 'Users', icon: UsersRound },
+    { href: '/system-admin/structure', label: 'Structure', icon: Building2 },
+    { href: '/system-admin/criteria', label: 'Rules', icon: ClipboardList },
+    { href: '/system-admin/settings', label: 'Settings', icon: Settings },
   ],
 };
 

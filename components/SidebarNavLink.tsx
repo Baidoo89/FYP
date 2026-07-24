@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Bell,
   BookOpenCheck,
+  Building2,
   BriefcaseBusiness,
   ClipboardCheck,
   ClipboardList,
@@ -65,6 +66,7 @@ const iconMap = {
   RR: ClipboardList,
   SE: Settings,
   SR: UsersRound,
+  ST: Building2,
   US: UserCog,
   VQ: FileCheck2,
 } as const;
