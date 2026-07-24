@@ -242,6 +242,12 @@ export default function EvidencePage() {
   const isReturnedApplication = data?.request?.status === 'RETURNED_FOR_CORRECTION';
   const uploadLocked = Boolean(data?.request && !['DRAFT', 'RETURNED_FOR_CORRECTION'].includes(data.request.status));
   const correctionReady = Boolean(isReturnedApplication && data?.request?.id && attentionDocuments.length === 0);
+  const needsAttentionCount = (data?.stats.returnedCount || 0) + (data?.stats.rejectedCount || 0);
+  const needsAttentionDetail = needsAttentionCount === 0
+    ? 'No document issues'
+    : data?.stats.rejectedCount
+      ? `${data.stats.rejectedCount} rejected, ${data.stats.returnedCount} correction`
+      : `${data?.stats.returnedCount || 0} correction required`;
 
   async function handleUpload() {
     if (!uploadTitle.trim()) {
@@ -437,7 +443,7 @@ export default function EvidencePage() {
         <PortfolioMetric code="REQ" label="Required verified" value={`${data.stats.requiredVerifiedCount}/${data.stats.requiredCategories}`} detail={`${readinessPercent}% readiness`} />
         <PortfolioMetric code="DOC" label="Uploaded documents" value={data.stats.totalDocuments} detail="Across active application" />
         <PortfolioMetric code="PEN" label="Pending review" value={data.stats.pendingCount} detail="Awaiting HR decision" tone="amber" />
-        <PortfolioMetric code="RET" label="Needs attention" value={data.stats.returnedCount + data.stats.rejectedCount} detail="Correction or rejection" tone="rose" />
+        <PortfolioMetric code="RET" label="Needs attention" value={needsAttentionCount} detail={needsAttentionDetail} tone="rose" />
       </section>
 
       <section className="pro-card min-w-0 p-5">
