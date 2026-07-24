@@ -42,8 +42,8 @@ export default function CheckEmailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
-      <section className="mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/70">
+    <main className="min-h-screen bg-brand-background px-4 py-10 text-brand-text dark:bg-[#07111f] dark:text-white">
+      <section className="mx-auto max-w-xl rounded-2xl border border-brand-border bg-white p-6 shadow-enterprise dark:border-[#26364d] dark:bg-[#0e1a2b] dark:shadow-black/30">
         <GctuBrandMark
           align="center"
           size="md"
@@ -52,7 +52,7 @@ export default function CheckEmailPage() {
           subtitle="GCTU Digital Staff Promotion Support System"
           className="mb-5"
         />
-        <p className="mt-3 text-sm leading-6 text-slate-700">
+        <p className="mt-3 text-sm leading-6 text-brand-muted dark:text-[#b7c6da]">
           We sent a verification link to your registered email address. Verify your email before completing your staff profile and submitting any promotion request.
         </p>
 
@@ -65,7 +65,7 @@ export default function CheckEmailPage() {
             <button
               type="button"
               onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-              className="font-semibold text-teal-700 underline"
+              className="font-semibold text-brand-primary underline dark:text-[#bfd7ff]"
             >
               verify account
             </button>
@@ -77,14 +77,14 @@ export default function CheckEmailPage() {
             type="button"
             onClick={resendVerification}
             disabled={loading}
-            className="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
+            className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primaryDark disabled:bg-slate-400 dark:bg-[#315f9f] dark:hover:bg-[#244a80]"
           >
             {loading ? 'Sending...' : 'Resend verification email'}
           </button>
           <button
             type="button"
             onClick={backToLogin}
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-brand-border bg-white px-4 py-2 text-sm font-semibold text-brand-text transition hover:bg-brand-primarySoft dark:border-[#30435f] dark:bg-[#132239] dark:text-white dark:hover:bg-[#18345a]"
           >
             Back to login
           </button>

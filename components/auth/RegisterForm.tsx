@@ -10,7 +10,10 @@ type RegisterFieldErrors = {
   confirmPassword?: string;
 };
 
-const inputClass = 'h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-950 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-400 focus:border-[#0b2d5b] focus:ring-4 focus:ring-[#0b2d5b]/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:hover:border-slate-500';
+const inputClass = 'brand-input h-12 rounded-xl px-3.5 text-sm shadow-sm placeholder:text-slate-400 hover:border-brand-primary/40 dark:placeholder:text-[#8394ad] dark:hover:border-[#5d789d]';
+const primaryButtonClass = 'mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 text-sm font-semibold text-white shadow-lg shadow-brand-primary/15 outline-none transition duration-200 hover:-translate-y-0.5 hover:bg-brand-primaryDark focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 dark:bg-[#315f9f] dark:hover:bg-[#244a80] dark:focus-visible:ring-[#93b7f0] dark:focus-visible:ring-offset-[#0e1a2b]';
+const linkClass = 'rounded-sm font-semibold text-brand-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 dark:text-[#bfd7ff] dark:focus-visible:ring-offset-[#0e1a2b]';
+const passwordToggleClass = 'absolute inset-y-1 right-1 rounded-lg px-3 text-xs font-semibold text-brand-muted outline-none transition hover:bg-brand-primarySoft hover:text-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary dark:text-[#b7c6da] dark:hover:bg-[#132239] dark:hover:text-white dark:focus-visible:ring-[#93b7f0]';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -91,9 +94,9 @@ export function RegisterForm() {
   return (
     <div>
       <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#0b2d5b] dark:text-yellow-100">Lecturer registration</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Create account</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Use your official GCTU staff email.</p>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary dark:text-brand-accent">Lecturer registration</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-brand-text dark:text-white">Create account</h1>
+        <p className="mt-2 text-sm leading-6 text-brand-muted dark:text-[#b7c6da]">Use your official GCTU staff email.</p>
       </div>
 
       {error && (
@@ -108,7 +111,7 @@ export function RegisterForm() {
           <button
             type="button"
             onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-            className="rounded-sm font-semibold text-[#0b2d5b] underline outline-none transition hover:text-[#082346] focus-visible:ring-2 focus-visible:ring-[#0b2d5b] focus-visible:ring-offset-2 dark:text-yellow-100 dark:focus-visible:ring-offset-slate-900"
+            className={`${linkClass} underline transition hover:text-brand-primaryDark dark:hover:text-white`}
           >
             verify account
           </button>
@@ -117,7 +120,7 @@ export function RegisterForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
-          <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <label htmlFor="email" className="mb-2 block text-sm font-semibold text-brand-text dark:text-white">
             Official GCTU email
           </label>
           <input
@@ -134,12 +137,12 @@ export function RegisterForm() {
           {fieldErrors.email ? (
             <p id="email-error" className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">{fieldErrors.email}</p>
           ) : (
-            <p id="email-note" className="mt-2 text-xs text-slate-500 dark:text-slate-400">Only @live.gctu.edu.gh accounts are accepted.</p>
+            <p id="email-note" className="mt-2 text-xs text-brand-muted dark:text-[#b7c6da]">Only @live.gctu.edu.gh accounts are accepted.</p>
           )}
         </div>
 
         <div>
-          <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <label htmlFor="password" className="mb-2 block text-sm font-semibold text-brand-text dark:text-white">
             Password
           </label>
           <div className="relative">
@@ -158,7 +161,7 @@ export function RegisterForm() {
               type="button"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               onClick={() => setShowPassword((current) => !current)}
-              className="absolute inset-y-1 right-1 rounded-lg px-3 text-xs font-semibold text-slate-500 outline-none transition hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b2d5b] dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              className={passwordToggleClass}
             >
               {showPassword ? 'Hide' : 'Show'}
             </button>
@@ -167,7 +170,7 @@ export function RegisterForm() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-brand-text dark:text-white">
             Confirm password
           </label>
           <div className="relative">
@@ -186,7 +189,7 @@ export function RegisterForm() {
               type="button"
               aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
               onClick={() => setShowConfirmPassword((current) => !current)}
-              className="absolute inset-y-1 right-1 rounded-lg px-3 text-xs font-semibold text-slate-500 outline-none transition hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-[#0b2d5b] dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              className={passwordToggleClass}
             >
               {showConfirmPassword ? 'Hide' : 'Show'}
             </button>
@@ -197,19 +200,19 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading || success}
-          className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0b2d5b] px-4 text-sm font-semibold text-white shadow-lg shadow-[#0b2d5b]/15 outline-none transition duration-200 hover:-translate-y-0.5 hover:bg-[#082346] focus-visible:ring-2 focus-visible:ring-[#0b2d5b] focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 dark:focus-visible:ring-offset-slate-900"
+          className={primaryButtonClass}
         >
           {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
           {success ? 'Account created' : loading ? 'Creating account...' : 'Create Account'}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-6 text-center text-sm text-brand-muted dark:text-[#b7c6da]">
         Already registered?{' '}
         <button
           type="button"
           onClick={() => router.push('/login')}
-          className="rounded-sm font-semibold text-[#0b2d5b] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[#0b2d5b] focus-visible:ring-offset-2 dark:text-yellow-100 dark:focus-visible:ring-offset-slate-900"
+          className={linkClass}
         >
           Sign in
         </button>

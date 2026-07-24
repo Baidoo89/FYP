@@ -50,8 +50,8 @@ function VerifyEmailContent() {
   }, [router, token]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-      <section className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-200/70">
+    <main className="flex min-h-screen items-center justify-center bg-brand-background px-4 py-10 text-brand-text dark:bg-[#07111f] dark:text-white">
+      <section className="w-full max-w-lg rounded-2xl border border-brand-border bg-white p-6 text-center shadow-enterprise dark:border-[#26364d] dark:bg-[#0e1a2b] dark:shadow-black/30">
         <GctuBrandMark
           align="center"
           size="md"
@@ -60,24 +60,24 @@ function VerifyEmailContent() {
           subtitle="Digital Staff Promotion Support System"
           className="mb-5"
         />
-        <h1 className="text-2xl font-bold text-slate-950">
+        <h1 className="text-2xl font-bold text-brand-text dark:text-white">
           {status === 'success' ? 'Verified' : status === 'error' ? 'Verification issue' : 'Please wait'}
         </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-700">{message}</p>
+        <p className="mt-3 text-sm leading-6 text-brand-muted dark:text-[#b7c6da]">{message}</p>
 
         {status === 'error' && (
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
               type="button"
               onClick={() => router.push('/check-email')}
-              className="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800"
+              className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primaryDark dark:bg-[#315f9f] dark:hover:bg-[#244a80]"
             >
               Request new link
             </button>
             <button
               type="button"
               onClick={backToLogin}
-              className="rounded border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-brand-border bg-white px-4 py-2 text-sm font-semibold text-brand-text transition hover:bg-brand-primarySoft dark:border-[#30435f] dark:bg-[#132239] dark:text-white dark:hover:bg-[#18345a]"
             >
               Back to login
             </button>
@@ -92,8 +92,8 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-          <section className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-200/70">
+        <main className="flex min-h-screen items-center justify-center bg-brand-background px-4 py-10 text-brand-text dark:bg-[#07111f] dark:text-white">
+          <section className="w-full max-w-lg rounded-2xl border border-brand-border bg-white p-6 text-center shadow-enterprise dark:border-[#26364d] dark:bg-[#0e1a2b] dark:shadow-black/30">
             <GctuBrandMark
               align="center"
               size="md"

@@ -41,14 +41,14 @@ export default function RootLayout({
         <style>
           {`
             :root {
-              --lpads-bg: #f6f8fb;
+              --lpads-bg: #f7f9fc;
               --lpads-surface: #ffffff;
-              --lpads-text: #0f172a;
-              --lpads-muted: #475569;
-              --lpads-ring: #0b2d5b;
-              --lpads-brand: #0b2d5b;
-              --lpads-brand-2: #0f172a;
-              --lpads-accent: #c99700;
+              --lpads-text: #111827;
+              --lpads-muted: #6b7280;
+              --lpads-ring: #183a72;
+              --lpads-brand: #183a72;
+              --lpads-brand-2: #102a54;
+              --lpads-accent: #d4af37;
             }
 
             * {
@@ -66,9 +66,7 @@ export default function RootLayout({
             body {
               color: var(--lpads-text);
               background-color: var(--lpads-bg);
-              background-image: radial-gradient(circle at 12% 18%, rgba(11, 45, 91, 0.10) 0, transparent 32%),
-                radial-gradient(circle at 88% 8%, rgba(201, 151, 0, 0.10) 0, transparent 28%),
-                linear-gradient(180deg, #fbfcff 0%, #f6f8fb 100%);
+              background-image: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
             }
 
             .lpads-surface {
@@ -95,7 +93,7 @@ export default function RootLayout({
             }
 
             ::selection {
-              background: rgba(201, 151, 0, 0.24);
+              background: rgba(212, 175, 55, 0.24);
             }
 
             button:focus-visible,

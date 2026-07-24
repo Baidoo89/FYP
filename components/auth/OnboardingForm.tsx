@@ -83,7 +83,7 @@ export function OnboardingForm() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-lg shadow-slate-200/70 border border-slate-200">
+    <div className="mx-auto w-full max-w-2xl rounded-2xl border border-brand-border bg-white p-6 shadow-enterprise dark:border-[#26364d] dark:bg-[#0e1a2b] dark:shadow-black/30 sm:p-8">
       <GctuBrandMark
         align="center"
         size="lg"
@@ -93,21 +93,21 @@ export function OnboardingForm() {
       />
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="mb-2 block text-sm font-semibold text-brand-text dark:text-white">
             Department *
           </label>
           <select
             name="department"
             value={formData.department}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800"
+            className="brand-input h-12 rounded-xl px-4 py-3"
             required
           >
             <option value="">Select your department</option>
@@ -117,13 +117,13 @@ export function OnboardingForm() {
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-brand-muted dark:text-[#b7c6da]">
             Your academic department
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="mb-2 block text-sm font-semibold text-brand-text dark:text-white">
             Staff ID *
           </label>
           <input
@@ -132,23 +132,23 @@ export function OnboardingForm() {
             value={formData.staffId}
             onChange={handleChange}
             placeholder="GCTU/CS/2026/001"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800"
+            className="brand-input h-12 rounded-xl px-4 py-3"
             required
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-brand-muted dark:text-[#b7c6da]">
             Enter your official university staff ID
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="mb-2 block text-sm font-semibold text-brand-text dark:text-white">
             Current Academic Rank *
           </label>
           <select
             name="currentRank"
             value={formData.currentRank}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800"
+            className="brand-input h-12 rounded-xl px-4 py-3"
             required
           >
             <option value="">Select your academic rank</option>
@@ -158,13 +158,13 @@ export function OnboardingForm() {
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-brand-muted dark:text-[#b7c6da]">
             Your current position within the university
           </p>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-8">
-          <p className="text-sm text-slate-700">
+        <div className="mt-8 rounded-lg border border-brand-border bg-brand-primarySoft p-4 dark:border-[#30435f] dark:bg-[#132239]">
+          <p className="text-sm text-brand-text dark:text-[#d7e2f0]">
             <span className="font-semibold">Note:</span> This information will be used to evaluate your eligibility for promotion based on university standards and policies.
           </p>
         </div>
@@ -172,13 +172,13 @@ export function OnboardingForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 bg-blue-900 text-white font-semibold rounded-lg hover:bg-blue-950 disabled:bg-gray-400 transition-colors text-lg mt-8"
+          className="mt-8 w-full rounded-xl bg-brand-primary px-4 py-3 text-base font-semibold text-white shadow-lg shadow-brand-primary/15 transition hover:-translate-y-0.5 hover:bg-brand-primaryDark disabled:cursor-not-allowed disabled:bg-gray-400 disabled:hover:translate-y-0 dark:bg-[#315f9f] dark:hover:bg-[#244a80]"
         >
           {loading ? 'Completing Profile...' : 'Complete Profile & Continue'}
         </button>
       </form>
 
-      <p className="text-center text-xs text-gray-500 mt-6">
+      <p className="mt-6 text-center text-xs text-brand-muted dark:text-[#b7c6da]">
         Your information is secure and will only be used for promotion evaluation purposes.
       </p>
     </div>
