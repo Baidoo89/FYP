@@ -39,7 +39,7 @@ async function main() {
     },
   });
 
-  console.log(`Checking ${users.length} users with supplied demo password.`);
+  console.log(`Checking ${users.length} users with supplied seed password.`);
   for (const user of users) {
     const storedHash = user.passwordHash || user.password;
     console.log({
@@ -66,7 +66,7 @@ async function main() {
     },
   });
 
-  console.log(`Checking ${admins.length} legacy/admin accounts with supplied demo password.`);
+  console.log(`Checking ${admins.length} legacy/admin accounts with supplied seed password.`);
   for (const admin of admins) {
     console.log({
       id: admin.id,

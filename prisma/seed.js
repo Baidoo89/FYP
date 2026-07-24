@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
-const DEMO_PASSWORD = 'Password123!';
+const SEED_PASSWORD = 'Password123!';
 
 function hashPassword(password) {
   return bcrypt.hashSync(password, 12);
@@ -16,8 +16,8 @@ function rankLabel(rank) {
     .join(' ');
 }
 
-async function upsertDemoUser(input) {
-  const passwordHash = hashPassword(DEMO_PASSWORD);
+async function upsertSeedUser(input) {
+  const passwordHash = hashPassword(SEED_PASSWORD);
   const department = input.departmentName
     ? await prisma.department.findUnique({ where: { name: input.departmentName } })
     : null;
@@ -107,9 +107,9 @@ async function main() {
     });
   }
 
-  const systemAdmin = await upsertDemoUser({
+  const systemAdmin = await upsertSeedUser({
     name: 'System Administrator',
-    email: 'system.admin@gctu.edu.gh',
+    email: 'system.admin@live.gctu.edu.gh',
     role: 'SYSTEM_ADMIN',
     staffId: 'GCTU-SYS-001',
     departmentName: 'Information Technology',
@@ -118,20 +118,10 @@ async function main() {
     phone: '+233 200 000 001',
   });
 
-  await upsertDemoUser({
-    name: 'Dr. Ama Mensah',
-    email: 'lecturer.demo@live.gctu.edu.gh',
-    role: 'LECTURER',
-    staffId: 'GCTU-LECT-001',
-    departmentName: 'Computer Science',
-    facultyName: 'Faculty of Computing and Information Systems',
-    currentRank: 'LECTURER',
-    phone: '+233 200 000 002',
-  });
 
-  await upsertDemoUser({
+  await upsertSeedUser({
     name: 'Prof. Kwame Boateng',
-    email: 'hod.demo@gctu.edu.gh',
+    email: 'hod.dean@live.gctu.edu.gh',
     role: 'HOD_DEAN',
     staffId: 'GCTU-HOD-001',
     departmentName: 'Computer Science',
@@ -140,9 +130,9 @@ async function main() {
     phone: '+233 200 000 003',
   });
 
-  const hrAdmin = await upsertDemoUser({
+  const hrAdmin = await upsertSeedUser({
     name: 'HR Administrator',
-    email: 'hr.admin@gctu.edu.gh',
+    email: 'hr.admin@live.gctu.edu.gh',
     role: 'HR_ADMIN',
     staffId: 'GCTU-HR-001',
     departmentName: 'Business School',
@@ -151,9 +141,9 @@ async function main() {
     phone: '+233 200 000 004',
   });
 
-  await upsertDemoUser({
+  await upsertSeedUser({
     name: 'Committee Reviewer',
-    email: 'committee.demo@gctu.edu.gh',
+    email: 'committee.reviewer@live.gctu.edu.gh',
     role: 'COMMITTEE_REVIEWER',
     staffId: 'GCTU-COM-001',
     departmentName: 'Software Engineering',
@@ -162,18 +152,6 @@ async function main() {
     phone: '+233 200 000 005',
   });
 
-  await prisma.adminAccount.upsert({
-    where: { username: 'admin' },
-    update: {
-      password_hash: hashPassword(DEMO_PASSWORD),
-      is_active: true,
-    },
-    create: {
-      username: 'admin',
-      password_hash: hashPassword(DEMO_PASSWORD),
-      is_active: true,
-    },
-  });
 
   const requiredDocumentCategories = [
     'TEACHING',
@@ -233,7 +211,7 @@ async function main() {
         minimumTotalScore: item.minimumTotalScore,
         publicationRequirement: item.publicationRequirement,
         professionalDevelopmentRequirement: item.professionalDevelopmentRequirement,
-        optionalReviewerNotes: `${rankLabel(item.currentRank)} to ${rankLabel(item.targetRank)} demonstration criteria.`,
+        optionalReviewerNotes: `${rankLabel(item.currentRank)} to ${rankLabel(item.targetRank)} institutional criteria.`,
         isActive: true,
         updatedById: systemAdmin.id,
       },
@@ -250,7 +228,7 @@ async function main() {
         minimumTotalScore: item.minimumTotalScore,
         publicationRequirement: item.publicationRequirement,
         professionalDevelopmentRequirement: item.professionalDevelopmentRequirement,
-        optionalReviewerNotes: `${rankLabel(item.currentRank)} to ${rankLabel(item.targetRank)} demonstration criteria.`,
+        optionalReviewerNotes: `${rankLabel(item.currentRank)} to ${rankLabel(item.targetRank)} institutional criteria.`,
         createdById: systemAdmin.id,
         updatedById: systemAdmin.id,
       },
@@ -296,18 +274,17 @@ async function main() {
       actorId: systemAdmin.id,
       action: 'SEED_DATA_REFRESHED',
       entityType: 'System',
-      description: 'Demo faculties, departments, users, criteria, and settings were seeded.',
+      description: 'Official faculties, departments, role accounts, criteria, and settings were seeded.',
     },
   });
 
   console.log('Seed data ready for GCTU Promotion System.');
-  console.log(`Demo password for all seeded users: ${DEMO_PASSWORD}`);
-  console.log('LECTURER: lecturer.demo@live.gctu.edu.gh');
-  console.log('HOD/DEAN: hod.demo@gctu.edu.gh');
-  console.log('HR ADMIN: hr.admin@gctu.edu.gh');
-  console.log('COMMITTEE: committee.demo@gctu.edu.gh');
-  console.log('SYSTEM ADMIN: system.admin@gctu.edu.gh');
-  console.log('Legacy admin username: admin');
+  console.log(`Seed password for pre-created role accounts: ${SEED_PASSWORD}`);
+  console.log('HOD/DEAN: hod.dean@live.gctu.edu.gh');
+  console.log('HR ADMIN: hr.admin@live.gctu.edu.gh');
+  console.log('COMMITTEE: committee.reviewer@live.gctu.edu.gh');
+  console.log('SYSTEM ADMIN: system.admin@live.gctu.edu.gh');
+  console.log('Lecturers should register through /register with an official @live.gctu.edu.gh email.');
   console.log(`Seeded HR admin id: ${hrAdmin.id}`);
 }
 

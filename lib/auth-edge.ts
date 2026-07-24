@@ -65,7 +65,7 @@ export async function getEdgeAuthSession(request: Request): Promise<EdgeAuthSess
     return {
       userId: 0,
       name: 'Administrator',
-      email: 'admin@example.com',
+      email: 'system.admin@live.gctu.edu.gh',
       role: 'HR_ADMIN',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,

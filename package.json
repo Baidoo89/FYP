@@ -17,10 +17,10 @@
     "db:migrate:dev": "dotenv -e .env.local -- prisma migrate dev --schema prisma/schema.prisma",
     "db:reset:dev": "dotenv -e .env.local -- prisma migrate reset --schema prisma/schema.prisma --force",
     "db:seed": "dotenv -e .env.local -- node prisma/seed.js",
-    "smoke": "dotenv -e .env.local -- node scripts/smoke-check.js",
-    "workflow:smoke": "dotenv -e .env.local -- node scripts/workflow-smoke.js",
-    "seed:demo": "dotenv -e .env.local -- node scripts/seed-demo-workflow.js",
-    "reset:demo-auth": "dotenv -e .env.local -- node scripts/reset-demo-auth.js"
+    "db:health": "dotenv -e .env.local -- node scripts/db-health-check.js",
+    "db:clean-test-data": "dotenv -e .env.local -- node scripts/cleanup-test-data.js",
+    "db:fresh-start": "dotenv -e .env.local -- node scripts/cleanup-test-data.js --fresh-start",
+    "reset:seed-auth": "dotenv -e .env.local -- node scripts/reset-seed-auth.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

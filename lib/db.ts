@@ -37,7 +37,7 @@ function createSeedDatabase(): LocalDatabase {
       {
         id: 1,
         name: 'Dr. John Smith',
-        email: 'john.smith@university.edu',
+        email: 'john.smith@live.gctu.edu.gh',
         department: 'Computer Science',
         rank: 'Associate Professor',
         hire_date: '2015-09-01',
@@ -48,7 +48,7 @@ function createSeedDatabase(): LocalDatabase {
       {
         id: 2,
         name: 'Dr. Sarah Johnson',
-        email: 'sarah.johnson@university.edu',
+        email: 'sarah.johnson@live.gctu.edu.gh',
         department: 'Computer Science',
         rank: 'Lecturer',
         hire_date: '2018-08-15',
@@ -59,7 +59,7 @@ function createSeedDatabase(): LocalDatabase {
       {
         id: 3,
         name: 'Prof. Michael Brown',
-        email: 'michael.brown@university.edu',
+        email: 'michael.brown@live.gctu.edu.gh',
         department: 'Computer Science',
         rank: 'Professor',
         hire_date: '2010-01-10',
@@ -70,7 +70,7 @@ function createSeedDatabase(): LocalDatabase {
       {
         id: 4,
         name: 'Dr. Emily Davis',
-        email: 'emily.davis@university.edu',
+        email: 'emily.davis@live.gctu.edu.gh',
         department: 'Information Systems',
         rank: 'Lecturer',
         hire_date: '2019-07-01',
@@ -81,7 +81,7 @@ function createSeedDatabase(): LocalDatabase {
       {
         id: 5,
         name: 'Dr. Robert Wilson',
-        email: 'robert.wilson@university.edu',
+        email: 'robert.wilson@live.gctu.edu.gh',
         department: 'Information Systems',
         rank: 'Senior Lecturer',
         hire_date: '2016-06-15',
