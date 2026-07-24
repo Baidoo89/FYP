@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AcademicRank, Role } from '@prisma/client';
+import { AcademicRank, RequestStatus, Role } from '@prisma/client';
 import { z } from 'zod';
 import { getAuthSession } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
@@ -14,6 +14,10 @@ const userUpdateSchema = z.object({
   facultyId: z.number().int().positive().nullable().optional(),
   currentRank: z.nativeEnum(AcademicRank).nullable().optional(),
   phone: z.string().optional().nullable(),
+});
+
+const userDeleteSchema = z.object({
+  userId: z.number().int().positive(),
 });
 
 function requireSystemAdmin(request: NextRequest) {
@@ -165,4 +169,158 @@ export async function PATCH(request: NextRequest) {
   });
 
   return NextResponse.json({ success: true, message: 'User updated', data: result } as ApiResponse<typeof result>);
+}
+export async function DELETE(request: NextRequest) {
+  const { session, response } = requireSystemAdmin(request);
+  if (response) return response;
+
+  const body = await request.json();
+  const parsed = userDeleteSchema.safeParse({
+    userId: Number(body.userId),
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
+  if (parsed.data.userId === session!.userId) {
+    return NextResponse.json(
+      { success: false, error: 'You cannot delete your own administrator account' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    include: {
+      lecturerRequests: {
+        select: { id: true, status: true },
+      },
+      applicantRequests: {
+        select: { id: true, status: true },
+      },
+    },
+  });
+
+  if (!user) {
+    return NextResponse.json({ success: false, error: 'User not found' } as ApiResponse<null>, { status: 404 });
+  }
+
+  if (user.role !== Role.LECTURER) {
+    return NextResponse.json(
+      { success: false, error: 'Only lecturer accounts can be deleted from this workspace. Deactivate or reassign privileged accounts instead.' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
+  const relatedRequests = [...user.lecturerRequests, ...user.applicantRequests];
+  const hasOfficialRecord = relatedRequests.some((promotionRequest) => promotionRequest.status !== RequestStatus.DRAFT);
+  if (hasOfficialRecord) {
+    return NextResponse.json(
+      { success: false, error: 'This lecturer has an official promotion record. Deactivate the account instead so university records and audit history are preserved.' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
+  const requestIds = [...new Set(relatedRequests.map((promotionRequest) => promotionRequest.id))];
+  const documents = await prisma.document.findMany({
+    where: {
+      OR: [
+        ...(requestIds.length ? [{ requestId: { in: requestIds } }] : []),
+        { uploadedById: user.id },
+        { verifiedById: user.id },
+      ],
+    },
+    select: { id: true, fileName: true, fileUrl: true },
+  });
+  const documentIds = [...new Set(documents.map((document) => document.id))];
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.notification.deleteMany({
+      where: {
+        OR: [
+          { userId: user.id },
+          ...(requestIds.length ? [{ promotionRequestId: { in: requestIds } }] : []),
+        ],
+      },
+    });
+    await tx.emailVerificationToken.deleteMany({ where: { userId: user.id } });
+    await tx.verification.deleteMany({
+      where: {
+        OR: [
+          ...(documentIds.length ? [{ documentId: { in: documentIds } }] : []),
+          { verifierId: user.id },
+        ],
+      },
+    });
+    await tx.reviewComment.deleteMany({
+      where: {
+        OR: [
+          ...(requestIds.length ? [{ promotionRequestId: { in: requestIds } }] : []),
+          { reviewerId: user.id },
+        ],
+      },
+    });
+    await tx.statusHistory.deleteMany({
+      where: {
+        OR: [
+          ...(requestIds.length ? [{ promotionRequestId: { in: requestIds } }] : []),
+          { changedById: user.id },
+        ],
+      },
+    });
+    await tx.auditLog.deleteMany({
+      where: {
+        OR: [
+          ...(requestIds.length ? [{ requestId: { in: requestIds } }] : []),
+          { actorId: user.id },
+        ],
+      },
+    });
+    await tx.score.deleteMany({
+      where: {
+        OR: [
+          ...(requestIds.length ? [{ promotionRequestId: { in: requestIds } }] : []),
+          { createdById: user.id },
+        ],
+      },
+    });
+    await tx.document.deleteMany({
+      where: documentIds.length ? { id: { in: documentIds } } : { id: -1 },
+    });
+    await tx.promotionRequest.deleteMany({
+      where: requestIds.length ? { id: { in: requestIds } } : { id: -1 },
+    });
+    await tx.user.delete({ where: { id: user.id } });
+
+    await writeAuditLog(tx, {
+      actorId: session!.userId,
+      action: 'LECTURER_DELETED',
+      entityType: 'User',
+      entityId: user.id,
+      description: `System administrator deleted lecturer account ${user.email}.`,
+      metadata: {
+        email: user.email,
+        name: user.name,
+        staffId: user.staffId,
+        deletedDraftRequestIds: requestIds,
+        deletedDocumentFiles: documents.map((document) => document.fileName),
+      },
+    });
+
+    return {
+      deletedUser: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+      deletedDraftRequests: requestIds.length,
+      deletedDocuments: documentIds.length,
+    };
+  }, { timeout: 60000, maxWait: 10000 });
+
+  return NextResponse.json({ success: true, message: 'Lecturer account deleted', data: result } as ApiResponse<typeof result>);
 }

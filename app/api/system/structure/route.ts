@@ -12,6 +12,11 @@ const structureSchema = z.object({
   facultyId: z.number().int().positive().optional().nullable(),
 });
 
+const structureDeleteSchema = z.object({
+  type: z.enum(['FACULTY', 'DEPARTMENT']),
+  id: z.number().int().positive(),
+});
+
 function requireSystemAdmin(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session || session.legacy || session.role !== 'SYSTEM_ADMIN') {
@@ -113,4 +118,95 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ success: true, message: 'Institution structure saved', data: result } as ApiResponse<typeof result>);
+}
+export async function DELETE(request: NextRequest) {
+  const { session, response } = requireSystemAdmin(request);
+  if (response) return response;
+
+  const body = await request.json();
+  const parsed = structureDeleteSchema.safeParse({
+    type: body.type,
+    id: Number(body.id),
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
+  if (parsed.data.type === 'FACULTY') {
+    const faculty = await prisma.faculty.findUnique({
+      where: { id: parsed.data.id },
+      include: { _count: { select: { departments: true, users: true } } },
+    });
+
+    if (!faculty) {
+      return NextResponse.json({ success: false, error: 'Faculty not found' } as ApiResponse<null>, { status: 404 });
+    }
+
+    if (faculty._count.departments > 0 || faculty._count.users > 0) {
+      return NextResponse.json(
+        { success: false, error: 'This faculty is still linked to departments or users. Reassign them before deleting it.' } as ApiResponse<null>,
+        { status: 400 }
+      );
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.faculty.delete({ where: { id: faculty.id } });
+      await writeAuditLog(tx, {
+        actorId: session!.userId,
+        action: 'FACULTY_DELETED',
+        entityType: 'Faculty',
+        entityId: faculty.id,
+        description: `System administrator deleted faculty ${faculty.name}.`,
+        metadata: { name: faculty.name },
+      });
+      return faculty;
+    });
+
+    return NextResponse.json({ success: true, message: 'Faculty deleted', data: result } as ApiResponse<typeof result>);
+  }
+
+  const department = await prisma.department.findUnique({
+    where: { id: parsed.data.id },
+    include: { faculty: true, _count: { select: { users: true } } },
+  });
+
+  if (!department) {
+    return NextResponse.json({ success: false, error: 'Department not found' } as ApiResponse<null>, { status: 404 });
+  }
+
+  const legacyNameLinkCount = await prisma.user.count({
+    where: {
+      departmentId: null,
+      department: department.name,
+    },
+  });
+
+  if (department._count.users > 0 || legacyNameLinkCount > 0) {
+    return NextResponse.json(
+      { success: false, error: 'This department is still linked to users. Reassign those users before deleting it.' } as ApiResponse<null>,
+      { status: 400 }
+    );
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.department.delete({ where: { id: department.id } });
+    await writeAuditLog(tx, {
+      actorId: session!.userId,
+      action: 'DEPARTMENT_DELETED',
+      entityType: 'Department',
+      entityId: department.id,
+      description: `System administrator deleted department ${department.name}.`,
+      metadata: {
+        name: department.name,
+        faculty: department.faculty?.name || null,
+      },
+    });
+    return department;
+  });
+
+  return NextResponse.json({ success: true, message: 'Department deleted', data: result } as ApiResponse<typeof result>);
 }

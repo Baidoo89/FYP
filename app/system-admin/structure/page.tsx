@@ -38,6 +38,7 @@ export default function InstitutionStructurePage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
@@ -141,6 +142,41 @@ export default function InstitutionStructurePage() {
     }
   }
 
+  async function deleteStructure(type: StructureType, id: number, name: string) {
+    const recordLabel = type === 'FACULTY' ? 'faculty' : 'department';
+    const confirmed = window.confirm(
+      `Delete ${recordLabel} "${name}"? This is allowed only when it is not linked to users or other structure records.`
+    );
+    if (!confirmed) return;
+
+    const key = `${type}-${id}`;
+    setDeletingKey(key);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/system/structure', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, id }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || `Unable to delete ${recordLabel}`);
+      }
+      const message = `${type === 'FACULTY' ? 'Faculty' : 'Department'} deleted successfully.`;
+      setMessage(message);
+      toast.success('Institution structure deleted', message);
+      if (form.type === type && form.name === name) resetForm(type);
+      await loadStructure();
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : `Unable to delete ${recordLabel}`;
+      setError(message);
+      toast.error('Structure delete failed', message);
+    } finally {
+      setDeletingKey(null);
+    }
+  }
   if (loading && faculties.length === 0 && departments.length === 0) return <LoadingState label="Loading institution structure..." />;
   if (error && faculties.length === 0 && departments.length === 0) return <ErrorState message={error} />;
 
@@ -260,43 +296,75 @@ export default function InstitutionStructurePage() {
             <div className="grid gap-6 lg:grid-cols-2">
               {filteredFaculties.length > 0 && (
                 <RecordPanel title="Faculties" description="Academic parent units used for reporting and structure governance.">
-                  {filteredFaculties.map((faculty) => (
-                    <button key={faculty.id} type="button" onClick={() => editFaculty(faculty)} className="block w-full rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-teal-200 hover:bg-teal-50/40">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-gray-950">{faculty.name}</p>
-                          <p className="mt-1 text-sm leading-6 text-gray-600">{faculty.description || 'No description provided.'}</p>
+                  {filteredFaculties.map((faculty) => {
+                    const isProtected = faculty._count.departments > 0 || faculty._count.users > 0;
+                    const deleteKey = `FACULTY-${faculty.id}`;
+                    return (
+                      <div key={faculty.id} className="rounded-lg border border-gray-200 bg-white p-4 transition hover:border-teal-200 hover:bg-teal-50/40">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-gray-950">{faculty.name}</p>
+                            <p className="mt-1 text-sm leading-6 text-gray-600">{faculty.description || 'No description provided.'}</p>
+                          </div>
+                          <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800">Faculty</span>
                         </div>
-                        <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800">Faculty</span>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-gray-600">
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1">{plural(faculty._count.departments, 'department')}</span>
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800">{plural(faculty._count.users, 'user')}</span>
+                        </div>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                          <button type="button" onClick={() => editFaculty(faculty)} className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Edit Faculty</button>
+                          <button
+                            type="button"
+                            onClick={() => deleteStructure('FACULTY', faculty.id, faculty.name)}
+                            disabled={isProtected || deletingKey === deleteKey}
+                            title={isProtected ? 'Reassign linked departments and users before deleting this faculty.' : 'Delete faculty'}
+                            className="flex-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            {deletingKey === deleteKey ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-gray-600">
-                        <span className="rounded-full bg-gray-100 px-2.5 py-1">{plural(faculty._count.departments, 'department')}</span>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800">{plural(faculty._count.users, 'user')}</span>
-                      </div>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </RecordPanel>
               )}
 
               {filteredDepartments.length > 0 && (
                 <RecordPanel title="Departments" description="Operational units used for HOD review scope and staff assignment.">
-                  {filteredDepartments.map((department) => (
-                    <button key={department.id} type="button" onClick={() => editDepartment(department)} className="block w-full rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-teal-200 hover:bg-teal-50/40">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-gray-950">{department.name}</p>
-                          <p className="mt-1 text-sm leading-6 text-gray-600">{department.faculty?.name || 'No faculty assigned'}</p>
-                          {department.description && <p className="mt-1 text-xs leading-5 text-gray-500">{department.description}</p>}
+                  {filteredDepartments.map((department) => {
+                    const isProtected = department._count.users > 0;
+                    const deleteKey = `DEPARTMENT-${department.id}`;
+                    return (
+                      <div key={department.id} className="rounded-lg border border-gray-200 bg-white p-4 transition hover:border-teal-200 hover:bg-teal-50/40">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-gray-950">{department.name}</p>
+                            <p className="mt-1 text-sm leading-6 text-gray-600">{department.faculty?.name || 'No faculty assigned'}</p>
+                            {department.description && <p className="mt-1 text-xs leading-5 text-gray-500">{department.description}</p>}
+                          </div>
+                          <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${department.facultyId ? 'border-sky-200 bg-sky-50 text-sky-800' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+                            {department.facultyId ? 'Mapped' : 'Unassigned'}
+                          </span>
                         </div>
-                        <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${department.facultyId ? 'border-sky-200 bg-sky-50 text-sky-800' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-                          {department.facultyId ? 'Mapped' : 'Unassigned'}
-                        </span>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-gray-600">
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800">{plural(department._count.users, 'user')}</span>
+                        </div>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                          <button type="button" onClick={() => editDepartment(department)} className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Edit Department</button>
+                          <button
+                            type="button"
+                            onClick={() => deleteStructure('DEPARTMENT', department.id, department.name)}
+                            disabled={isProtected || deletingKey === deleteKey}
+                            title={isProtected ? 'Reassign linked users before deleting this department.' : 'Delete department'}
+                            className="flex-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            {deletingKey === deleteKey ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-gray-600">
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800">{plural(department._count.users, 'user')}</span>
-                      </div>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </RecordPanel>
               )}
             </div>

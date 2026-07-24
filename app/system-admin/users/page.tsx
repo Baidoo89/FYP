@@ -73,6 +73,7 @@ export default function UserManagementPage() {
   const [segment, setSegment] = useState<AccountSegment>('all');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({
@@ -177,6 +178,41 @@ export default function UserManagementPage() {
     }
   }
 
+  async function deleteSelectedLecturer() {
+    if (!selectedUser || selectedUser.role !== 'LECTURER') return;
+
+    const confirmed = window.confirm(
+      `Delete ${selectedUser.name}'s lecturer account? Draft promotion data will be removed. Official submitted records are protected and cannot be deleted.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/system/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUser.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Unable to delete lecturer account');
+      }
+      const message = `${selectedUser.name}'s lecturer account was deleted.`;
+      setMessage(message);
+      toast.success('Lecturer account deleted', message);
+      setSelectedId(null);
+      await loadUsers(null);
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : 'Unable to delete lecturer account';
+      setError(message);
+      toast.error('Delete failed', message);
+    } finally {
+      setDeleting(false);
+    }
+  }
   if (loading && users.length === 0) return <LoadingState label="Loading user governance workspace..." />;
   if (error && users.length === 0) return <ErrorState message={error} />;
 
@@ -336,6 +372,23 @@ export default function UserManagementPage() {
                 <button type="submit" disabled={saving} className="mt-5 w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-gray-300">
                   {saving ? 'Saving account...' : 'Save account changes'}
                 </button>
+
+                {selectedUser.role === 'LECTURER' && (
+                  <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4">
+                    <p className="text-sm font-bold text-rose-950">Lecturer account removal</p>
+                    <p className="mt-1 text-xs leading-5 text-rose-800">
+                      Delete only fresh lecturer accounts or draft-only records. Submitted promotion records are protected; use account deactivation for official records.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={deleteSelectedLecturer}
+                      disabled={deleting}
+                      className="mt-3 w-full rounded-lg border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deleting ? 'Deleting lecturer...' : 'Delete Lecturer Account'}
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </form>
