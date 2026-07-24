@@ -117,7 +117,7 @@ export default function StartPromotionRequestCard({ currentRank, onCreated, comp
           </label>
 
           <label className="mt-3 block">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Years In Current Rank</span>
+            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Declared Years In Current Rank</span>
             <input
               type="number"
               min={0}
@@ -128,6 +128,7 @@ export default function StartPromotionRequestCard({ currentRank, onCreated, comp
               placeholder="Example: 4"
               disabled={saving}
             />
+            <span className="mt-1 block text-xs leading-5 text-slate-500">Enter completed years based on your official rank history. HOD/HR will verify this before eligibility is finalized.</span>
           </label>
 
           <button

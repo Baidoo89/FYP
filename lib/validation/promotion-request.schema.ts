@@ -35,7 +35,7 @@ export const promotionRequestSchema = z.object({
 export const documentUploadSchema = z.object({
   requestId: z.number().int().positive(),
   category: documentCategorySchema,
-  title: z.string().min(3),
+  title: z.string().trim().min(2, 'Enter a document title with at least 2 characters.'),
 });
 
 export const verificationSchema = z.object({

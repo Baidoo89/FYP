@@ -9,6 +9,11 @@ type DocumentUploadCardProps = {
   description: string;
   onUploaded?: () => void;
 };
+function apiErrorMessage(payload: { error?: string; details?: Record<string, string[]> }, fallback: string) {
+  const detail = payload.details ? Object.values(payload.details).flat().find(Boolean) : '';
+  if (payload.error && payload.error !== 'Validation failed') return payload.error;
+  return detail || payload.error || fallback;
+}
 
 export default function DocumentUploadCard({ requestId, category, title, description, onUploaded }: DocumentUploadCardProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -46,7 +51,7 @@ export default function DocumentUploadCard({ requestId, category, title, descrip
 
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || 'Upload failed');
+        throw new Error(apiErrorMessage(payload, 'Upload failed'));
       }
 
       setMessage('Document uploaded successfully');

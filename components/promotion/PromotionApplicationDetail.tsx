@@ -304,7 +304,7 @@ export default function PromotionApplicationDetail({ application, role, children
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Metric label="Current rank" value={label(application.currentRank)} />
             <Metric label="Target rank" value={label(application.targetRank)} />
-            <Metric label="Years in rank" value={application.yearsInCurrentRank ?? 'Not set'} />
+            <Metric label="Declared years" value={application.yearsInCurrentRank ?? 'Not set'} />
             <Metric label="Verified evidence" value={`${stats.verified}/${stats.required}`} />
             <Metric label="Total score" value={scoreDisplay(application.totalScore)} />
           </div>

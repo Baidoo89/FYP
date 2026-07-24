@@ -25,6 +25,32 @@ function isUploadedFile(value: FormDataEntryValue | null): value is File {
     typeof (value as UploadedFileLike).size === 'number'
   );
 }
+function labelFromEnum(value: string) {
+  return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function normalizeDocumentCategory(value: FormDataEntryValue | null) {
+  return String(value || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+}
+
+function titleFromUpload(value: FormDataEntryValue | null, file: FormDataEntryValue | null, category: string) {
+  const typedTitle = String(value || '').trim();
+  if (typedTitle.length >= 2) return typedTitle;
+
+  if (isUploadedFile(file) && file.name) {
+    const titleFromFile = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+    if (titleFromFile.length >= 2) return titleFromFile;
+  }
+
+  return category ? `${labelFromEnum(category)} Evidence` : 'Promotion Evidence';
+}
+
+function documentValidationMessage(fieldErrors: Record<string, string[] | undefined>) {
+  if (fieldErrors.requestId?.length) return 'Invalid promotion application selected.';
+  if (fieldErrors.category?.length) return 'Choose a valid evidence category before uploading.';
+  if (fieldErrors.title?.length) return fieldErrors.title[0] || 'Enter a valid document title.';
+  return 'Please check the document details and try again.';
+}
 function workflowErrorResponse(error: unknown, fallback: string) {
   const status = error instanceof WorkflowError ? error.statusCode : 500;
   const message = error instanceof Error ? error.message : fallback;
@@ -45,9 +71,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   }
 
   const formData = await request.formData();
-  const title = String(formData.get('title') || '').trim();
-  const category = String(formData.get('category') || '').trim();
+  const category = normalizeDocumentCategory(formData.get('category'));
   const file = formData.get('file');
+  const title = titleFromUpload(formData.get('title'), file, category);
 
   const parsed = documentUploadSchema.safeParse({
     requestId,
@@ -59,7 +85,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json(
       {
         success: false,
-        error: 'Validation failed',
+        error: documentValidationMessage(parsed.error.flatten().fieldErrors),
         details: parsed.error.flatten().fieldErrors,
       } as ApiResponse<null>,
       { status: 400 }

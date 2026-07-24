@@ -81,9 +81,15 @@ type EvidenceResponse = {
   success: boolean;
   data?: EvidenceData;
   error?: string;
+  details?: Record<string, string[]>;
 };
 
 const MAX_CLIENT_PDF_SIZE = 10 * 1024 * 1024;
+function apiErrorMessage(payload: { error?: string; details?: Record<string, string[]> }, fallback: string) {
+  const detail = payload.details ? Object.values(payload.details).flat().find(Boolean) : '';
+  if (payload.error && payload.error !== 'Validation failed') return payload.error;
+  return detail || payload.error || fallback;
+}
 
 const CATEGORY_ORDER: DocumentCategory[] = [
   'TEACHING',
@@ -250,10 +256,11 @@ export default function EvidencePage() {
       : `${data?.stats.returnedCount || 0} correction required`;
 
   async function handleUpload() {
-    if (!uploadTitle.trim()) {
-      const message = 'Please enter a document title.';
+    const normalizedTitle = uploadTitle.trim();
+    if (normalizedTitle && normalizedTitle.length < 2) {
+      const message = 'Document title must be at least 2 characters. You can also leave it blank to use the PDF filename.';
       setUploadMessage(message);
-      toast.warning('Document title required', message);
+      toast.warning('Document title too short', message);
       return;
     }
 
@@ -277,7 +284,7 @@ export default function EvidencePage() {
 
     try {
       const formData = new FormData();
-      formData.append('title', uploadTitle.trim());
+      formData.append('title', normalizedTitle);
       formData.append('category', selectedCategory);
       formData.append('file', uploadFile);
 
@@ -289,7 +296,7 @@ export default function EvidencePage() {
       const payload = await response.json();
 
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || 'Failed to upload evidence');
+        throw new Error(apiErrorMessage(payload, 'Failed to upload evidence'));
       }
 
       const message = latestSelectedDoc ? 'Evidence replaced successfully and returned to pending verification.' : 'Evidence uploaded successfully and is pending verification.';

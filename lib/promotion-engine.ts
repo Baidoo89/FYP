@@ -119,7 +119,7 @@ export async function calculateEligibility(client: DbClient, promotionRequestId:
   }
 
   if (request.yearsInCurrentRank < criteria.minimumYearsInCurrentRank) {
-    const reason = `Applicant has ${request.yearsInCurrentRank} year(s) in current rank; minimum required is ${criteria.minimumYearsInCurrentRank}.`;
+    const reason = `Applicant declared ${request.yearsInCurrentRank} year(s) in current rank; minimum required is ${criteria.minimumYearsInCurrentRank}. HOD/HR should verify the official rank history before final action.`;
     return saveEligibility(client, promotionRequestId, request.lecturerId, actorId, EligibilityStatus.NOT_ELIGIBLE, reason, request.totalScore);
   }
 
