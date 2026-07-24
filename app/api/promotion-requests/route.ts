@@ -5,6 +5,7 @@ import { startPromotionRequestSchema } from '../../../lib/validation/promotion-r
 import { createPromotionRequestWithWorkflow, submitPromotionRequest, WorkflowError } from '../../../lib/promotion-workflow';
 import { isValidPromotionTarget } from '../../../lib/promotion-ranks';
 import { REQUIRED_CATEGORIES } from '../../../lib/promotion-engine';
+import { getDepartmentReviewScope } from '../../../lib/department-scope';
 import type { ApiResponse } from '../../../types';
 
 const COMMITTEE_VISIBLE_STATUSES = [
@@ -77,33 +78,6 @@ function workflowErrorResponse(error: unknown, fallback: string) {
   return NextResponse.json({ success: false, error: message } as ApiResponse<null>, { status });
 }
 
-async function departmentScopeWhere(session: NonNullable<ReturnType<typeof getAuthSession>>) {
-  const reviewer = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: {
-      department: true,
-      departmentId: true,
-      facultyId: true,
-    },
-  });
-
-  const lecturerFilters: any[] = [];
-
-  if (reviewer?.facultyId) {
-    lecturerFilters.push({ facultyId: reviewer.facultyId });
-  }
-
-  if (reviewer?.departmentId) {
-    lecturerFilters.push({ departmentId: reviewer.departmentId });
-  }
-
-  if (reviewer?.department || session.department) {
-    lecturerFilters.push({ department: reviewer?.department || session.department });
-  }
-
-  return lecturerFilters.length > 0 ? { lecturer: { OR: lecturerFilters } } : { lecturerId: -1 };
-}
-
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
 
@@ -152,9 +126,15 @@ export async function GET(request: NextRequest) {
   }
 
   if ((scope === 'department' || session.role === 'HOD_DEAN') && session.role !== 'SYSTEM_ADMIN') {
+    const departmentScope = await getDepartmentReviewScope(prisma, {
+      userId: session.userId,
+      role: session.role,
+      sessionDepartment: session.department,
+    });
+
     where = {
       ...where,
-      ...(await departmentScopeWhere(session)),
+      ...departmentScope.where,
     };
   }
 

@@ -4,7 +4,7 @@ import type { ReactNode, RefObject } from 'react';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, ChevronDown, HelpCircle, Menu, Settings, UserRound } from 'lucide-react';
+import { Bell, ChevronDown, HelpCircle, KeyRound, Menu, Settings, UserRound } from 'lucide-react';
 import LogoutButton from './LogoutButton';
 import SidebarNavLink from './SidebarNavLink';
 import LecturerHeader from './LecturerHeader';
@@ -452,6 +452,7 @@ function HeaderProfileMenu({
           <div className="p-2">
             <ProfileMenuLink href={profileUrl} label="Profile" detail="View staff account" icon={<UserRound className="h-4 w-4" aria-hidden="true" />} onClick={onClose} />
             <ProfileMenuLink href={settingsUrl} label="Settings" detail="Account preferences" icon={<Settings className="h-4 w-4" aria-hidden="true" />} onClick={onClose} />
+            <ProfileMenuLink href="/account/security" label="Account Security" detail="Change password" icon={<KeyRound className="h-4 w-4" aria-hidden="true" />} onClick={onClose} />
             <ProfileMenuLink href={helpUrl} label="Help Centre" detail="Support and guidance" icon={<HelpCircle className="h-4 w-4" aria-hidden="true" />} onClick={onClose} />
             <div className="mt-2 border-t border-brand-border pt-2">
               <LogoutButton className="w-full justify-center border-transparent bg-brand-background shadow-none hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary" />

@@ -14,7 +14,7 @@ export default function CheckEmailPage() {
   const [verificationUrl, setVerificationUrl] = useState('');
 
   async function backToLogin() {
-    toast.info('Returning to sign in', 'You can sign in after your email has been verified.');
+    toast.info('Returning to sign in', 'You can sign in after your official staff email has been verified.');
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
     router.replace('/login');
     router.refresh();
@@ -60,7 +60,7 @@ export default function CheckEmailPage() {
           className="mb-5"
         />
         <p className="mt-3 text-sm leading-6 text-brand-muted dark:text-[#b7c6da]">
-          We sent a verification link to your registered email address. Verify your email before completing your staff profile and submitting any promotion request.
+          We sent a verification link to your registered official GCTU staff email. Verify your email before accessing your secure promotion workspace.
         </p>
 
         {message && <div className="mt-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>}

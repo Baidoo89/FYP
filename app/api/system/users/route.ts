@@ -5,6 +5,7 @@ import { getAuthSession } from '../../../../lib/auth';
 import { hashPassword } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { writeAuditLog } from '../../../../lib/audit-logger';
+import { sendAccountSetupEmail } from '../../../../lib/email-verification';
 import type { ApiResponse } from '../../../../types';
 
 const OFFICIAL_EMAIL_DOMAIN = '@live.gctu.edu.gh';
@@ -48,7 +49,8 @@ const userCreateSchema = z.object({
   facultyId: z.number().int().positive().nullable().optional(),
   currentRank: z.nativeEnum(AcademicRank).nullable().optional(),
   phone: z.string().trim().optional().nullable(),
-  emailVerified: z.boolean().default(true),
+  emailVerified: z.boolean().default(false),
+  sendSetupEmail: z.boolean().default(true),
   onboarded: z.boolean().default(true),
   isActive: z.boolean().default(true),
 });
@@ -174,7 +176,8 @@ export async function POST(request: NextRequest) {
     facultyId: nullableNumber(body.facultyId),
     currentRank: body.currentRank === '' ? null : body.currentRank,
     phone: nullableString(body.phone),
-    emailVerified: body.emailVerified !== undefined ? Boolean(body.emailVerified) : true,
+    emailVerified: body.emailVerified !== undefined ? Boolean(body.emailVerified) : false,
+    sendSetupEmail: body.sendSetupEmail !== undefined ? Boolean(body.sendSetupEmail) : true,
     onboarded: body.onboarded !== undefined ? Boolean(body.onboarded) : true,
     isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
   });
@@ -236,7 +239,40 @@ export async function POST(request: NextRequest) {
       return user;
     });
 
-    return NextResponse.json({ success: true, message: 'User account created', data: created } as ApiResponse<typeof created>, { status: 201 });
+    let setupEmail: Awaited<ReturnType<typeof sendAccountSetupEmail>> | null = null;
+    if (!created.emailVerified && parsed.data.sendSetupEmail) {
+      setupEmail = await sendAccountSetupEmail(
+        {
+          id: created.id,
+          name: created.name,
+          email: created.email,
+          role: created.role,
+        },
+        {
+          temporaryPassword: parsed.data.password,
+          throwOnDeliveryFailure: false,
+        }
+      );
+    }
+
+    const setupDeliveryFailed = Boolean(setupEmail?.emailDeliveryError) || Boolean(setupEmail && process.env.NODE_ENV === 'production' && !setupEmail.emailDelivered);
+    const message = setupEmail
+      ? setupDeliveryFailed
+        ? 'User account created, but the setup email could not be delivered. Check the email provider configuration and resend verification.'
+        : 'User account created and setup email sent.'
+      : 'User account created.';
+
+    return NextResponse.json({
+      success: true,
+      message,
+      data: {
+        ...created,
+        setupEmailSent: Boolean(setupEmail?.emailDelivered),
+        setupEmailProvider: setupEmail?.emailProvider,
+        setupEmailDeliveryError: setupEmail?.emailDeliveryError,
+        verificationUrl: process.env.NODE_ENV === 'production' ? undefined : setupEmail?.verificationUrl,
+      },
+    } as ApiResponse<typeof created & Record<string, unknown>>, { status: 201 });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return jsonError('An account with this email or staff ID already exists', 409);

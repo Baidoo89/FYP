@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
   if (isPublicRoute(pathname)) {
     // If authenticated and trying to access login/register, redirect based on onboarding status
     if (authenticated && (pathname === '/login' || pathname === '/register')) {
-      if (role === 'LECTURER' && !emailVerified) {
+      if (emailVerified === false) {
         return NextResponse.redirect(new URL('/check-email', request.url));
       }
 
@@ -66,8 +66,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    if (pathname === '/check-email' && authenticated && role === 'LECTURER' && !emailVerified) {
+    if (pathname === '/check-email' && authenticated && emailVerified === false) {
       return NextResponse.next();
+    }
+
+    if (pathname === '/check-email' && authenticated && emailVerified !== false) {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
 
     // If onboarded and trying to access /onboarding, redirect to dashboard
@@ -100,7 +104,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
       }
 
-      if (pathname.startsWith('/api/uploads') && !['LECTURER', 'HR_ADMIN', 'SYSTEM_ADMIN'].includes(role || '')) {
+      if (pathname.startsWith('/api/uploads') && !['LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(role || '')) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
       }
 
@@ -126,7 +130,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is authenticated but not onboarded, redirect to onboarding
-  if (role === 'LECTURER' && !emailVerified && pathname !== '/check-email' && pathname !== '/verify-email') {
+  if (emailVerified === false && pathname !== '/check-email' && pathname !== '/verify-email') {
     return NextResponse.redirect(new URL('/check-email', request.url));
   }
 

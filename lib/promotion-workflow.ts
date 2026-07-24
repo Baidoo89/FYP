@@ -10,6 +10,7 @@ import {
 } from '@prisma/client';
 import type { AuthRole } from './auth';
 import { writeAuditLog, writeStatusHistory } from './audit-logger';
+import { findDepartmentReviewRecipientIds } from './department-scope';
 import { calculateEligibility, REQUIRED_CATEGORIES } from './promotion-engine';
 import { assertStatusTransition } from './workflow';
 
@@ -140,6 +141,32 @@ async function notifyRoles(
   });
 }
 
+async function notifyUserIds(
+  client: DbClient,
+  input: {
+    userIds: number[];
+    promotionRequestId: number;
+    title: string;
+    message: string;
+    type?: NotificationType;
+  }
+) {
+  const userIds = [...new Set(input.userIds)];
+
+  if (userIds.length === 0) {
+    return;
+  }
+
+  await client.notification.createMany({
+    data: userIds.map((userId) => ({
+      userId,
+      promotionRequestId: input.promotionRequestId,
+      title: input.title,
+      message: input.message,
+      type: input.type || NotificationType.INFO,
+    })),
+  });
+}
 async function getRequiredDocumentCategories(client: DbClient, promotionRequestId: number) {
   const request = await client.promotionRequest.findUnique({
     where: { id: promotionRequestId },
@@ -392,14 +419,32 @@ export async function transitionPromotionRequest(
 
   const rolesToNotify = NEXT_OWNER_ROLES[input.newStatus] || [];
   if (input.notifyNextRoles !== false && rolesToNotify.length > 0) {
-    await notifyRoles(client, {
-      roles: rolesToNotify,
-      promotionRequestId: input.requestId,
-      title: `Promotion application ${formatEnum(input.newStatus)}`,
-      message: `${current.lecturer.name}'s promotion application is now ${formatEnum(input.newStatus)}.`,
-      type: NotificationType.INFO,
-      excludeUserId: input.actor.id,
-    });
+    const notificationTitle = `Promotion application ${formatEnum(input.newStatus)}`;
+    const notificationMessage = `${current.lecturer.name}'s promotion application is now ${formatEnum(input.newStatus)}.`;
+
+    if (input.newStatus === RequestStatus.SUBMITTED || input.newStatus === RequestStatus.UNDER_DEPARTMENT_REVIEW) {
+      const recipientIds = await findDepartmentReviewRecipientIds(client, {
+        promotionRequestId: input.requestId,
+        excludeUserId: input.actor.id,
+      });
+
+      await notifyUserIds(client, {
+        userIds: recipientIds,
+        promotionRequestId: input.requestId,
+        title: notificationTitle,
+        message: notificationMessage,
+        type: NotificationType.INFO,
+      });
+    } else {
+      await notifyRoles(client, {
+        roles: rolesToNotify,
+        promotionRequestId: input.requestId,
+        title: notificationTitle,
+        message: notificationMessage,
+        type: NotificationType.INFO,
+        excludeUserId: input.actor.id,
+      });
+    }
   }
 
   return updated;

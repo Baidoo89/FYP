@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowRight, Building2, CheckCircle2, Clock3, FileText, M
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import { prisma } from '../../../lib/prisma';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '../../../lib/auth';
+import { getDepartmentReviewScope } from '../../../lib/department-scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,81 +31,16 @@ const departmentVisibleStatuses: RequestStatus[] = [
   ...forwardedStatuses,
 ];
 
-type DepartmentScope = {
-  where: Prisma.PromotionRequestWhereInput;
-  reviewer: {
-    name: string;
-    email: string;
-    department: string | null;
-    departmentRef: { name: string } | null;
-    faculty: { name: string } | null;
-  } | null;
-  scopeLabel: string;
-  scopeDetail: string;
-};
-
-async function getDepartmentScope(): Promise<DepartmentScope> {
+async function getDepartmentScope() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const session = verifySessionToken(sessionToken);
 
-  if (session?.role !== 'HOD_DEAN') {
-    return {
-      where: {},
-      reviewer: null,
-      scopeLabel: 'Institution-wide view',
-      scopeDetail: 'System administrators can see all promotion records.',
-    };
-  }
-
-  const reviewer = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: {
-      name: true,
-      email: true,
-      department: true,
-      departmentId: true,
-      facultyId: true,
-      departmentRef: { select: { name: true } },
-      faculty: { select: { name: true } },
-    },
+  return getDepartmentReviewScope(prisma, {
+    userId: session?.userId,
+    role: session?.role,
+    sessionDepartment: session?.department,
   });
-
-  const lecturerFilters: Prisma.UserWhereInput[] = [];
-
-  if (reviewer?.facultyId) {
-    lecturerFilters.push({ facultyId: reviewer.facultyId });
-  }
-
-  if (reviewer?.departmentId) {
-    lecturerFilters.push({ departmentId: reviewer.departmentId });
-  }
-
-  if (reviewer?.department || session.department) {
-    lecturerFilters.push({ department: reviewer?.department || session.department });
-  }
-
-  const scopeLabel = reviewer?.departmentRef?.name || reviewer?.department || session.department || reviewer?.faculty?.name || 'No department assigned';
-  const scopeDetail = reviewer?.faculty?.name
-    ? `${reviewer.faculty.name} faculty scope`
-    : reviewer?.departmentRef?.name || reviewer?.department || session.department
-      ? 'Department-scoped review workspace'
-      : 'Assign this account to a department or faculty to activate review scope.';
-
-  return {
-    where: lecturerFilters.length > 0 ? { lecturer: { OR: lecturerFilters } } : { lecturerId: -1 },
-    reviewer: reviewer
-      ? {
-          name: reviewer.name,
-          email: reviewer.email,
-          department: reviewer.department,
-          departmentRef: reviewer.departmentRef,
-          faculty: reviewer.faculty,
-        }
-      : null,
-    scopeLabel,
-    scopeDetail,
-  };
 }
 
 function withStatuses(scopeWhere: Prisma.PromotionRequestWhereInput, statuses: RequestStatus[]): Prisma.PromotionRequestWhereInput {

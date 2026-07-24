@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken, SESSION_COOKIE_NAME } from '../../../../lib/auth';
 import { verifyEmailToken } from '../../../../lib/email-verification';
+import { getDashboardForRole } from '../../../../lib/rbac';
+import type { AuthRole } from '../../../../lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +18,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 });
     }
 
+    const userRole = result.user.role as AuthRole;
+    const nextPath = userRole === 'LECTURER' && !result.user.onboarded
+      ? '/onboarding'
+      : getDashboardForRole(userRole);
+
     const response = NextResponse.json({
       success: true,
       message: 'Email verified successfully',
-      nextPath: result.user.onboarded ? '/lecturer-portal' : '/onboarding',
+      nextPath,
     });
 
     response.cookies.set({

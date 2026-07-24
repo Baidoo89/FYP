@@ -71,7 +71,8 @@ function defaultCreateForm() {
     facultyId: '',
     currentRank: '',
     phone: '',
-    emailVerified: true,
+    emailVerified: false,
+    sendSetupEmail: true,
     onboarded: true,
     isActive: true,
   };
@@ -186,7 +187,7 @@ export default function UserManagementPage() {
         throw new Error(payload.error || 'Unable to create user account');
       }
       const created = payload.data as UserRecord;
-      const message = `${created.name}'s account was created successfully.`;
+      const message = payload.message || `${created.name}'s account was created successfully.`;
       setMessage(message);
       toast.success('User account created', message);
       setCreateForm(defaultCreateForm());
@@ -422,8 +423,12 @@ export default function UserManagementPage() {
               </Field>
               <div className="grid gap-2 text-sm font-semibold text-gray-800">
                 <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
-                  <span>Email verified</span>
-                  <input type="checkbox" checked={createForm.emailVerified} onChange={(event) => setCreateForm({ ...createForm, emailVerified: event.target.checked })} />
+                  <span>Send setup email</span>
+                  <input type="checkbox" checked={createForm.sendSetupEmail} disabled={createForm.emailVerified} onChange={(event) => setCreateForm({ ...createForm, sendSetupEmail: event.target.checked })} />
+                </label>
+                <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+                  <span>Mark email verified now</span>
+                  <input type="checkbox" checked={createForm.emailVerified} onChange={(event) => setCreateForm({ ...createForm, emailVerified: event.target.checked, sendSetupEmail: event.target.checked ? false : createForm.sendSetupEmail })} />
                 </label>
                 <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
                   <span>Account active</span>

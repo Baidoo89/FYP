@@ -50,7 +50,7 @@ function VerifyEmailContent() {
 
         setStatus('success');
         setMessage('Email verified successfully. Redirecting...');
-        toast.success('Email verified', 'Your GCTU staff account is verified. Continue to onboarding.');
+        toast.success('Email verified', 'Your GCTU staff account is verified. Redirecting to your workspace.');
         setTimeout(() => router.push(data.nextPath || '/onboarding'), 900);
       } catch (verificationError) {
         const message = verificationError instanceof Error ? verificationError.message : 'Email verification failed';
