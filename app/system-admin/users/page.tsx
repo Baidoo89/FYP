@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 type Department = { id: number; name: string };
 type Faculty = { id: number; name: string };
@@ -60,6 +61,7 @@ function roleTone(role: string) {
 }
 
 export default function UserManagementPage() {
+  const toast = useToast();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [faculties, setFaculties] = useState<Faculty[]>([]);
@@ -162,10 +164,14 @@ export default function UserManagementPage() {
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || 'Unable to update user');
       }
-      setMessage(`${selectedUser.name}'s account was updated successfully.`);
+      const message = `${selectedUser.name}'s account was updated successfully.`;
+      setMessage(message);
+      toast.success('User account updated', message);
       await loadUsers(selectedUser.id);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Unable to update user');
+      const message = saveError instanceof Error ? saveError.message : 'Unable to update user';
+      setError(message);
+      toast.error('User update failed', message);
     } finally {
       setSaving(false);
     }

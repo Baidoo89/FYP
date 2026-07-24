@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 const ranks = ['ASSISTANT_LECTURER', 'LECTURER', 'SENIOR_LECTURER', 'ASSOCIATE_PROFESSOR', 'PROFESSOR'];
 const categories = ['TEACHING', 'RESEARCH', 'SERVICE', 'QUALIFICATIONS', 'PUBLICATIONS', 'PROFESSIONAL_DEVELOPMENT', 'OTHER_SUPPORTING_EVIDENCE'];
@@ -45,6 +46,7 @@ function segmentMatches(item: Criteria, segment: CriteriaSegment) {
 }
 
 export default function CriteriaManagementPage() {
+  const toast = useToast();
   const [criteria, setCriteria] = useState<Criteria[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -169,10 +171,14 @@ export default function CriteriaManagementPage() {
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || 'Unable to save promotion criteria');
       }
-      setMessage(`Criteria saved for ${label(form.currentRank)} to ${label(form.targetRank)}.`);
+      const message = `Criteria saved for ${label(form.currentRank)} to ${label(form.targetRank)}.`;
+      setMessage(message);
+      toast.success('Promotion criteria saved', message);
       await loadCriteria();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Unable to save promotion criteria');
+      const message = saveError instanceof Error ? saveError.message : 'Unable to save promotion criteria';
+      setError(message);
+      toast.error('Criteria save failed', message);
     } finally {
       setSaving(false);
     }

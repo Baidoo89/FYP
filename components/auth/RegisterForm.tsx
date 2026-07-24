@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { registerSchema } from '../../lib/validation/auth.schema';
+import { useToast } from '../Toast';
 
 type RegisterFieldErrors = {
   email?: string;
@@ -17,6 +18,7 @@ const passwordToggleClass = 'absolute inset-y-1 right-1 rounded-lg px-3 text-xs 
 
 export function RegisterForm() {
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +62,7 @@ export function RegisterForm() {
           }
         }
         setFieldErrors(nextErrors);
+        toast.warning('Check registration details', 'Resolve the highlighted fields before creating the account.');
         setLoading(false);
         return;
       }
@@ -73,12 +76,15 @@ export function RegisterForm() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        setError(data.error || 'Registration failed');
+        const message = data.error || 'Registration failed';
+        setError(message);
+        toast.error('Account creation failed', message);
         setLoading(false);
         return;
       }
 
       setSuccess(true);
+      toast.success('Account created', data.message || 'Verification email sent. Check your GCTU staff mailbox to continue.');
       if (data.verificationUrl) {
         setVerificationUrl(data.verificationUrl);
       }
@@ -86,7 +92,9 @@ export function RegisterForm() {
       router.push('/check-email');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      setError(message);
+      toast.error('Registration issue', message);
       setLoading(false);
     }
   };

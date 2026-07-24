@@ -1,12 +1,15 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import GctuBrandMark from '../../components/GctuBrandMark';
+import { useToast } from '../../components/Toast';
 
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const verificationStartedRef = useRef(false);
   const token = searchParams.get('token') || '';
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Verifying your email address...');
@@ -18,10 +21,18 @@ function VerifyEmailContent() {
   }
 
   useEffect(() => {
+    if (verificationStartedRef.current) {
+      return;
+    }
+
+    verificationStartedRef.current = true;
+
     async function verify() {
       if (!token) {
+        const message = 'Verification token is missing.';
         setStatus('error');
-        setMessage('Verification token is missing.');
+        setMessage(message);
+        toast.error('Verification issue', message);
         return;
       }
 
@@ -39,15 +50,18 @@ function VerifyEmailContent() {
 
         setStatus('success');
         setMessage('Email verified successfully. Redirecting...');
+        toast.success('Email verified', 'Your GCTU staff account is verified. Continue to onboarding.');
         setTimeout(() => router.push(data.nextPath || '/onboarding'), 900);
       } catch (verificationError) {
+        const message = verificationError instanceof Error ? verificationError.message : 'Email verification failed';
         setStatus('error');
-        setMessage(verificationError instanceof Error ? verificationError.message : 'Email verification failed');
+        setMessage(message);
+        toast.error('Email verification failed', message);
       }
     }
 
     verify();
-  }, [router, token]);
+  }, [router, toast, token]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-background px-4 py-10 text-brand-text dark:bg-[#07111f] dark:text-white">

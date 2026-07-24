@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 import StatusBadge from '../../../components/promotion/StatusBadge';
+import { useToast } from '../../../components/Toast';
 
 type DocumentCategory =
   | 'TEACHING'
@@ -169,6 +170,7 @@ function categoryDocuments(data: EvidenceData, category: DocumentCategory) {
 }
 
 export default function EvidencePage() {
+  const toast = useToast();
   const [data, setData] = useState<EvidenceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -241,12 +243,16 @@ export default function EvidencePage() {
 
   async function handleUpload() {
     if (!uploadTitle.trim()) {
-      setUploadMessage('Please enter a document title.');
+      const message = 'Please enter a document title.';
+      setUploadMessage(message);
+      toast.warning('Document title required', message);
       return;
     }
 
     if (!uploadFile) {
-      setUploadMessage('Please select a PDF file to upload.');
+      const message = 'Please select a PDF file to upload.';
+      setUploadMessage(message);
+      toast.warning('PDF file required', message);
       return;
     }
 
@@ -271,13 +277,17 @@ export default function EvidencePage() {
         throw new Error(payload.error || 'Failed to upload evidence');
       }
 
-      setUploadMessage(latestSelectedDoc ? 'Evidence replaced successfully and returned to pending verification.' : 'Evidence uploaded successfully and is pending verification.');
+      const message = latestSelectedDoc ? 'Evidence replaced successfully and returned to pending verification.' : 'Evidence uploaded successfully and is pending verification.';
+      setUploadMessage(message);
+      toast.success(latestSelectedDoc ? 'Evidence replaced' : 'Evidence uploaded', message);
       setUploadTitle('');
       setUploadFile(null);
       setFileInputKey((key) => key + 1);
       await loadEvidence();
     } catch (uploadError) {
-      setUploadMessage(uploadError instanceof Error ? uploadError.message : 'Upload failed');
+      const message = uploadError instanceof Error ? uploadError.message : 'Upload failed';
+      setUploadMessage(message);
+      toast.error('Evidence upload failed', message);
     } finally {
       setUploading(false);
     }
@@ -302,10 +312,14 @@ export default function EvidencePage() {
         throw new Error(payload.error || 'Unable to resubmit corrected application');
       }
 
-      setResubmitMessage('Corrected application resubmitted successfully. Department review can now continue.');
+      const message = 'Corrected application resubmitted successfully. Department review can now continue.';
+      setResubmitMessage(message);
+      toast.success('Application resubmitted', message);
       await loadEvidence();
     } catch (resubmitError) {
-      setResubmitMessage(resubmitError instanceof Error ? resubmitError.message : 'Unable to resubmit corrected application');
+      const message = resubmitError instanceof Error ? resubmitError.message : 'Unable to resubmit corrected application';
+      setResubmitMessage(message);
+      toast.error('Resubmission failed', message);
     } finally {
       setResubmitting(false);
     }
@@ -330,15 +344,19 @@ export default function EvidencePage() {
     }
 
     if (!file.name.toLowerCase().endsWith('.pdf')) {
+      const message = 'Please choose a PDF file.';
       setUploadFile(null);
-      setUploadMessage('Please choose a PDF file.');
+      setUploadMessage(message);
+      toast.warning('Invalid file type', message);
       setFileInputKey((key) => key + 1);
       return;
     }
 
     if (file.size > MAX_CLIENT_PDF_SIZE) {
+      const message = 'File size exceeds 10MB limit.';
       setUploadFile(null);
-      setUploadMessage('File size exceeds 10MB limit.');
+      setUploadMessage(message);
+      toast.warning('File too large', message);
       setFileInputKey((key) => key + 1);
       return;
     }

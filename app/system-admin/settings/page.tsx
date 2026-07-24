@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 type Setting = {
   id: number;
@@ -24,6 +25,7 @@ function settingGroup(key: string) {
 }
 
 export default function SystemSettingsPage() {
+  const toast = useToast();
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,11 +96,15 @@ export default function SystemSettingsPage() {
         throw new Error(payload.error || 'Unable to save system setting');
       }
 
-      setMessage(`System setting saved: ${form.key}.`);
+      const message = `System setting saved: ${form.key}.`;
+      setMessage(message);
+      toast.success('System setting saved', message);
       resetForm();
       await loadSettings();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Unable to save system setting');
+      const message = saveError instanceof Error ? saveError.message : 'Unable to save system setting';
+      setError(message);
+      toast.error('Setting save failed', message);
     } finally {
       setSaving(false);
     }

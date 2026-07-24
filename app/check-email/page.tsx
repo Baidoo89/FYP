@@ -3,15 +3,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GctuBrandMark from '../../components/GctuBrandMark';
+import { useToast } from '../../components/Toast';
 
 export default function CheckEmailPage() {
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [verificationUrl, setVerificationUrl] = useState('');
 
   async function backToLogin() {
+    toast.info('Returning to sign in', 'You can sign in after your email has been verified.');
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
     router.replace('/login');
     router.refresh();
@@ -30,12 +33,16 @@ export default function CheckEmailPage() {
         throw new Error(data.error || 'Unable to resend verification email');
       }
 
-      setMessage(data.message || 'Verification email sent');
+      const message = data.message || 'Verification email sent';
+      setMessage(message);
+      toast.success('Verification email sent', message);
       if (data.verificationUrl) {
         setVerificationUrl(data.verificationUrl);
       }
     } catch (resendError) {
-      setError(resendError instanceof Error ? resendError.message : 'Unable to resend verification email');
+      const message = resendError instanceof Error ? resendError.message : 'Unable to resend verification email';
+      setError(message);
+      toast.error('Unable to resend email', message);
     } finally {
       setLoading(false);
     }

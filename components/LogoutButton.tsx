@@ -3,18 +3,28 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '../lib/utils';
+import { useToast } from './Toast';
 
 export default function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
     setLoading(true);
 
     try {
-      await fetch('/api/auth/logout', {
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
       });
+
+      if (!response.ok) {
+        throw new Error('The server could not confirm sign out.');
+      }
+
+      toast.success('Signed out', 'Your session has been closed securely.');
+    } catch (signOutError) {
+      toast.warning('Session closed locally', signOutError instanceof Error ? signOutError.message : 'You have been returned to sign in.');
     } finally {
       setLoading(false);
       router.push('/login');

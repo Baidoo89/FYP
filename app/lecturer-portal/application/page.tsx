@@ -5,6 +5,7 @@ import Link from 'next/link';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt?: string | null;
@@ -118,6 +119,7 @@ function nextActionFor(request: PromotionRequest) {
 }
 
 export default function ApplicationPage() {
+  const toast = useToast();
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,12 +181,16 @@ export default function ApplicationPage() {
         throw new Error(payload.error || 'Unable to submit application');
       }
 
-      setMessage(selectedRequest.status === 'RETURNED_FOR_CORRECTION'
+      const message = selectedRequest.status === 'RETURNED_FOR_CORRECTION'
         ? 'Corrected application resubmitted successfully. Department review can now continue.'
-        : 'Application submitted successfully. Department review can now begin.');
+        : 'Application submitted successfully. Department review can now begin.';
+      setMessage(message);
+      toast.success(selectedRequest.status === 'RETURNED_FOR_CORRECTION' ? 'Application resubmitted' : 'Application submitted', message);
       await loadApplications(selectedRequest.id);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Unable to submit application');
+      const message = submitError instanceof Error ? submitError.message : 'Unable to submit application';
+      setError(message);
+      toast.error('Submission failed', message);
     } finally {
       setSubmitting(false);
     }

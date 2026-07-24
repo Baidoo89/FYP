@@ -3,11 +3,13 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthPageShell from '../../components/auth/AuthPageShell';
+import { useToast } from '../../components/Toast';
 
 type LoginResponse = {
   success: boolean;
   error?: string;
   role?: 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
+  name?: string;
 };
 
 const DASHBOARD_BY_ROLE: Record<NonNullable<LoginResponse['role']>, string> = {
@@ -25,6 +27,7 @@ const passwordToggleClass = 'absolute inset-y-1 right-1 rounded-lg px-3 text-xs 
 
 export default function LoginPage() {
   const router = useRouter();
+  const toast = useToast();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -44,6 +47,7 @@ export default function LoginPage() {
     setError('');
 
     if (nextErrors.username || nextErrors.password) {
+      toast.warning('Complete required fields', 'Enter your GCTU email and password to continue.');
       return;
     }
 
@@ -65,10 +69,13 @@ export default function LoginPage() {
       }
 
       setSuccess(true);
+      toast.success('Welcome back', `Signed in as ${data.name || username.trim()}. Redirecting to your workspace.`);
       router.push(data.role ? DASHBOARD_BY_ROLE[data.role] : '/lecturer-portal');
       router.refresh();
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : 'Login failed');
+      const message = submissionError instanceof Error ? submissionError.message : 'Login failed';
+      setError(message);
+      toast.error('Sign in failed', message);
     } finally {
       setLoading(false);
     }

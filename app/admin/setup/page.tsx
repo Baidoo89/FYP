@@ -1,11 +1,13 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GctuBrandMark from '../../../components/GctuBrandMark';
+import { useToast } from '../../../components/Toast';
 
 export default function AdminSetup() {
   const router = useRouter();
+  const toast = useToast();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,17 +22,23 @@ export default function AdminSetup() {
     setSuccess('');
 
     if (!username || !password || !email) {
-      setError('All fields are required');
+      const message = 'All fields are required';
+      setError(message);
+      toast.warning('Complete setup fields', message);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      const message = 'Passwords do not match';
+      setError(message);
+      toast.warning('Password mismatch', message);
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      const message = 'Password must be at least 8 characters';
+      setError(message);
+      toast.warning('Password too short', message);
       return;
     }
 
@@ -46,12 +54,16 @@ export default function AdminSetup() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to create admin account');
+        const message = data.error || 'Failed to create admin account';
+        setError(message);
+        toast.error('Admin setup failed', message);
         setLoading(false);
         return;
       }
 
-      setSuccess('Admin account created successfully! Redirecting to login...');
+      const message = 'Admin account created successfully. Redirecting to login.';
+      setSuccess(message);
+      toast.success('Admin account created', message);
       setUsername('');
       setPassword('');
       setConfirmPassword('');
@@ -61,7 +73,9 @@ export default function AdminSetup() {
         router.push('/login');
       }, 2000);
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      const message = 'An error occurred. Please try again.';
+      setError(message);
+      toast.error('Admin setup issue', message);
       setLoading(false);
     }
   };

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onboardingSchema } from '../../lib/validation/auth.schema';
 import GctuBrandMark from '../GctuBrandMark';
+import { useToast } from '../Toast';
 
 const ACADEMIC_RANKS = [
   { value: 'ASSISTANT_LECTURER', label: 'Assistant Lecturer' },
@@ -27,6 +28,7 @@ const DEPARTMENTS = [
 
 export function OnboardingForm() {
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -51,10 +53,11 @@ export function OnboardingForm() {
     setLoading(true);
 
     try {
-      // Validate with Zod
       const validation = onboardingSchema.safeParse(formData);
       if (!validation.success) {
-        setError(validation.error.issues[0]?.message || 'Validation failed');
+        const message = validation.error.issues[0]?.message || 'Validation failed';
+        setError(message);
+        toast.warning('Complete staff profile', message);
         setLoading(false);
         return;
       }
@@ -68,16 +71,20 @@ export function OnboardingForm() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        setError(data.error || 'Onboarding failed');
+        const message = data.error || 'Onboarding failed';
+        setError(message);
+        toast.error('Onboarding failed', message);
         setLoading(false);
         return;
       }
 
-      // Redirect to the lecturer portal after onboarding
+      toast.success('Profile completed', 'Your promotion workspace is ready. Redirecting to the lecturer portal.');
       router.push('/lecturer-portal');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      setError(message);
+      toast.error('Onboarding issue', message);
       setLoading(false);
     }
   };

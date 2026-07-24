@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
+      name: sessionUser!.name,
       role: sessionUser!.role,
     });
 

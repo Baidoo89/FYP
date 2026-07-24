@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt: string | null;
@@ -130,6 +131,7 @@ function workflowHealth(request: PromotionRequest) {
 }
 
 export default function MasterQueuePage() {
+  const toast = useToast();
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -248,10 +250,14 @@ export default function MasterQueuePage() {
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || 'Failed to update status');
       }
-      setMessage(`${applicationCode(requestId)} updated to ${formatLabel(status)}.`);
+      const message = `${applicationCode(requestId)} updated to ${formatLabel(status)}.`;
+      setMessage(message);
+      toast.success('Workflow status updated', message);
       await loadRequests(requestId);
     } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : 'Failed to update status');
+      const message = statusError instanceof Error ? statusError.message : 'Failed to update status';
+      setError(message);
+      toast.error('Status update failed', message);
     } finally {
       setUpdatingId(null);
     }

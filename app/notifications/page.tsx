@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { EmptyState, ErrorState, LoadingState } from '../../components/enterprise-ui';
 import StatusBadge from '../../components/promotion/StatusBadge';
+import { useToast } from '../../components/Toast';
 
 type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
 type ReadState = 'all' | 'unread' | 'read';
@@ -92,6 +93,7 @@ function rankPath(request: PromotionContext) {
 }
 
 export default function NotificationsPage() {
+  const toast = useToast();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [viewerRole, setViewerRole] = useState<ViewerRole>('LECTURER');
   const [summary, setSummary] = useState<NotificationSummary>({ total: 0, unread: 0, read: 0, filtered: 0, typeCounts: { INFO: 0, SUCCESS: 0, WARNING: 0, ERROR: 0 } });
@@ -144,8 +146,11 @@ export default function NotificationsPage() {
         throw new Error(payload.error || 'Unable to update notification');
       }
       await loadNotifications();
+      toast.success(notificationId ? (isRead ? 'Notification marked read' : 'Notification marked unread') : 'Notifications updated', notificationId ? 'The notification status has been updated.' : 'All notifications have been marked as read.');
     } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : 'Unable to update notification');
+      const message = updateError instanceof Error ? updateError.message : 'Unable to update notification';
+      setError(message);
+      toast.error('Notification update failed', message);
     } finally {
       setUpdatingId(null);
     }

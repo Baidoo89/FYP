@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ErrorState, LoadingState, SectionCard } from '../../../components/enterprise-ui';
 import StatusBadge from '../../../components/promotion/StatusBadge';
+import { useToast } from '../../../components/Toast';
 
 type ProfileData = {
   profile: {
@@ -33,6 +34,7 @@ function formatDate(value?: string | null) {
 }
 
 export default function LecturerSettingsPage() {
+  const toast = useToast();
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,10 +78,14 @@ export default function LecturerSettingsPage() {
         throw new Error(payload.error || 'Failed to resend verification email');
       }
 
-      setMessage(payload.message || 'Verification email sent.');
+      const message = payload.message || 'Verification email sent.';
+      setMessage(message);
+      toast.success('Verification email sent', message);
       await loadProfile();
     } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : 'Failed to resend verification email');
+      const message = sendError instanceof Error ? sendError.message : 'Failed to resend verification email';
+      setError(message);
+      toast.error('Unable to resend email', message);
     } finally {
       setSaving(false);
     }

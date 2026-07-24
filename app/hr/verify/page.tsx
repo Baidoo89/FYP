@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 type DocumentItem = {
   id: number;
@@ -138,6 +139,7 @@ function queueHealth(request: PromotionRequest) {
 }
 
 export default function VerificationWorkspacePage() {
+  const toast = useToast();
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
@@ -249,7 +251,9 @@ export default function VerificationWorkspacePage() {
     if (!window.confirm(confirmMessage)) return;
 
     if ((decision === 'REQUIRES_CORRECTION' || decision === 'REJECTED') && comment.length < 8) {
-      setError('Please provide a clear verification comment before returning or rejecting evidence.');
+      const message = 'Please provide a clear verification comment before returning or rejecting evidence.';
+      setError(message);
+      toast.warning('Verification comment required', message);
       return;
     }
 
@@ -270,11 +274,15 @@ export default function VerificationWorkspacePage() {
       }
 
       const routedMessage = payload.data?.status ? ` Application is now ${label(String(payload.data.status))}.` : '';
-      setMessage(`${selectedDocument.title} marked as ${label(decision)}.${routedMessage}`);
+      const message = `${selectedDocument.title} marked as ${label(decision)}.${routedMessage}`;
+      setMessage(message);
+      toast.success('Document verification recorded', message);
       setVerificationComment('');
       await loadRequests(selectedRequest.id, selectedDocument.id);
     } catch (verifyError) {
-      setError(verifyError instanceof Error ? verifyError.message : 'Verification failed');
+      const message = verifyError instanceof Error ? verifyError.message : 'Verification failed';
+      setError(message);
+      toast.error('Verification failed', message);
     } finally {
       setVerifying(null);
     }

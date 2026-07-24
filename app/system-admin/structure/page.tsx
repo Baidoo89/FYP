@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 type Faculty = {
   id: number;
@@ -32,6 +33,7 @@ function plural(value: number, word: string) {
 }
 
 export default function InstitutionStructurePage() {
+  const toast = useToast();
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,11 +127,15 @@ export default function InstitutionStructurePage() {
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || 'Unable to save institution structure');
       }
-      setMessage(`${form.type === 'FACULTY' ? 'Faculty' : 'Department'} saved successfully.`);
+      const message = `${form.type === 'FACULTY' ? 'Faculty' : 'Department'} saved successfully.`;
+      setMessage(message);
+      toast.success('Institution structure saved', message);
       resetForm(form.type);
       await loadStructure();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Unable to save institution structure');
+      const message = saveError instanceof Error ? saveError.message : 'Unable to save institution structure';
+      setError(message);
+      toast.error('Structure save failed', message);
     } finally {
       setSaving(false);
     }

@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt?: string | null;
@@ -113,6 +114,7 @@ function canMarkFurtherReview(request: PromotionRequest) {
 }
 
 export default function HodApplicationsPage() {
+  const toast = useToast();
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [comment, setComment] = useState('');
@@ -223,11 +225,15 @@ export default function HodApplicationsPage() {
         throw new Error(payload.error || 'Unable to update department review');
       }
 
-      setMessage(`${applicationCode(selectedRequest.id)} department review saved.`);
+      const message = `${applicationCode(selectedRequest.id)} department review saved.`;
+      setMessage(message);
+      toast.success('Department review saved', message);
       setComment('');
       await loadRequests(selectedRequest.id);
     } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : 'Unable to update department review');
+      const message = updateError instanceof Error ? updateError.message : 'Unable to update department review';
+      setError(message);
+      toast.error('Review update failed', message);
     } finally {
       setSaving(false);
     }

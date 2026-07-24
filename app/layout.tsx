@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import AppShell from '../components/AppShell';
+import { ToastProvider } from '../components/Toast';
 import { getAppBaseUrl } from '../lib/app-url';
 import './globals.css';
 
@@ -108,7 +109,9 @@ export default function RootLayout({
         </style>
       </head>
       <body className="font-sans">
-        <AppShell>{children}</AppShell>
+        <ToastProvider>
+          <AppShell>{children}</AppShell>
+        </ToastProvider>
       </body>
     </html>
   );

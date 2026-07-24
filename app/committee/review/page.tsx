@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2, ClipboardCheck, Clock3, FileCh
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
+import { useToast } from '../../../components/Toast';
 
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
@@ -101,6 +102,7 @@ function reviewChecklist(request: PromotionRequest, comment: string, recommendat
 }
 
 export default function CommitteeReviewPage() {
+  const toast = useToast();
   const searchParams = useSearchParams();
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -206,11 +208,15 @@ export default function CommitteeReviewPage() {
         throw new Error(payload.error || 'Unable to save committee review');
       }
 
-      setMessage(`${applicationCode(selectedRequest.id)} committee recommendation saved.`);
+      const message = `${applicationCode(selectedRequest.id)} committee recommendation saved.`;
+      setMessage(message);
+      toast.success('Committee recommendation saved', message);
       setComment('');
       await loadRequests(selectedRequest.id);
     } catch (reviewError) {
-      setError(reviewError instanceof Error ? reviewError.message : 'Unable to save committee review');
+      const message = reviewError instanceof Error ? reviewError.message : 'Unable to save committee review';
+      setError(message);
+      toast.error('Committee review failed', message);
     } finally {
       setSaving(false);
     }
