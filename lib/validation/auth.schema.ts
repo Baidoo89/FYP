@@ -15,6 +15,10 @@ export const registerSchema = z.object({
 });
 
 export const onboardingSchema = z.object({
+  firstName: z.string().trim().min(2, 'First name is required').max(80, 'First name is too long'),
+  middleName: z.string().trim().max(80, 'Middle name is too long').optional().or(z.literal('')),
+  lastName: z.string().trim().min(2, 'Last name is required').max(80, 'Last name is too long'),
+  faculty: z.string().min(2, 'Faculty or school is required'),
   department: z.string().min(2, 'Department is required'),
   staffId: z.string().min(2, 'Staff ID is required'),
   currentRank: z.enum(['ASSISTANT_LECTURER', 'LECTURER', 'SENIOR_LECTURER', 'ASSOCIATE_PROFESSOR', 'PROFESSOR'] as const),

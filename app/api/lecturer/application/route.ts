@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const activeRequest = await prisma.promotionRequest.findFirst({
       where: {
         lecturerId: session.userId,
-        status: { in: ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'] },
+        status: { notIn: ['COMPLETED', 'REJECTED', 'NOT_RECOMMENDED'] },
       },
       orderBy: { updatedAt: 'desc' },
     });

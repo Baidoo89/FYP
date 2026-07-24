@@ -23,6 +23,12 @@ const forwardedStatuses: RequestStatus[] = [
   RequestStatus.REJECTED,
   RequestStatus.COMPLETED,
 ];
+const departmentVisibleStatuses: RequestStatus[] = [
+  ...pendingDepartmentStatuses,
+  RequestStatus.RETURNED_FOR_CORRECTION,
+  RequestStatus.REQUIRES_FURTHER_REVIEW,
+  ...forwardedStatuses,
+];
 
 type DepartmentScope = {
   where: Prisma.PromotionRequestWhereInput;
@@ -133,6 +139,7 @@ function documentCounts(documents: Array<{ verificationStatus: string }>) {
 export default async function HodDashboardPage() {
   const scope = await getDepartmentScope();
   const scopeWhere = scope.where;
+  const visibleScopeWhere = withStatuses(scopeWhere, departmentVisibleStatuses);
   const [
     departmentApplications,
     pendingDepartmentReview,
@@ -144,14 +151,14 @@ export default async function HodDashboardPage() {
     recentComments,
     groupedStatuses,
   ] = await Promise.all([
-    prisma.promotionRequest.count({ where: scopeWhere }),
+    prisma.promotionRequest.count({ where: visibleScopeWhere }),
     prisma.promotionRequest.count({ where: withStatuses(scopeWhere, pendingDepartmentStatuses) }),
     prisma.promotionRequest.count({ where: withStatuses(scopeWhere, actionableStatuses) }),
     prisma.promotionRequest.count({ where: withStatuses(scopeWhere, forwardedStatuses) }),
     prisma.promotionRequest.count({ where: { ...scopeWhere, status: RequestStatus.RETURNED_FOR_CORRECTION } }),
     prisma.promotionRequest.count({ where: { ...scopeWhere, status: RequestStatus.REQUIRES_FURTHER_REVIEW } }),
     prisma.promotionRequest.findMany({
-      where: scopeWhere,
+      where: visibleScopeWhere,
       include: {
         lecturer: {
           select: {
@@ -184,7 +191,7 @@ export default async function HodDashboardPage() {
     prisma.reviewComment.findMany({
       where: {
         promotionRequest: {
-          is: scopeWhere,
+          is: visibleScopeWhere,
         },
       },
       include: {
@@ -212,7 +219,7 @@ export default async function HodDashboardPage() {
     }),
     prisma.promotionRequest.groupBy({
       by: ['status'],
-      where: scopeWhere,
+      where: visibleScopeWhere,
       _count: { _all: true },
     }),
   ]);

@@ -157,7 +157,7 @@ export default function HodApplicationsPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/promotion-requests?scope=hr', { cache: 'no-store' });
+      const response = await fetch('/api/promotion-requests?scope=department', { cache: 'no-store' });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || 'Unable to load department applications');

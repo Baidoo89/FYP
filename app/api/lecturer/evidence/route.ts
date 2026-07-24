@@ -4,20 +4,11 @@ import { WORKFLOW_TRANSACTION_OPTIONS, prisma } from '../../../../lib/prisma';
 import { getAuthSession } from '../../../../lib/auth';
 import { createSecureFileName, isPdfUpload, MAX_PROMOTION_PDF_SIZE, savePdfFileBestEffort } from '../../../../lib/upload';
 import { documentUploadSchema } from '../../../../lib/validation/promotion-request.schema';
-import { createPromotionRequestWithWorkflow, savePromotionDocumentRecord, WorkflowError } from '../../../../lib/promotion-workflow';
+import { savePromotionDocumentRecord, WorkflowError } from '../../../../lib/promotion-workflow';
 import { REQUIRED_CATEGORIES } from '../../../../lib/promotion-engine';
 import { ensureDocumentFileStorage, saveDocumentFileBlob } from '../../../../lib/document-file-storage';
 
 const ALL_CATEGORIES = Object.values(DocumentCategory);
-
-function inferTargetRank(currentRank?: string | null) {
-  const rank = String(currentRank || 'LECTURER').toUpperCase();
-
-  if (rank === 'ASSISTANT_LECTURER') return 'LECTURER';
-  if (rank === 'LECTURER') return 'SENIOR_LECTURER';
-  if (rank === 'SENIOR_LECTURER') return 'ASSOCIATE_PROFESSOR';
-  return 'ASSOCIATE_PROFESSOR';
-}
 
 function normalizeRank(rank?: string | null) {
   return String(rank || 'LECTURER').trim().toUpperCase().replace(/\s+/g, '_').replace(/-/g, '_');
@@ -86,36 +77,34 @@ export async function GET(request: NextRequest) {
       orderBy: { updatedAt: 'desc' },
     });
 
-    const currentRank = activeRequest?.currentRank || String(user.currentRank || 'LECTURER');
-    const targetRank = activeRequest?.targetRank || inferTargetRank(user.currentRank);
+    const currentRank = activeRequest?.currentRank || String(user.currentRank || '');
+    const targetRank = activeRequest?.targetRank || null;
 
-    const criteria = await prisma.promotionCriteria.findFirst({
-      where: {
-        currentRank: normalizeRank(currentRank) as any,
-        targetRank: normalizeRank(targetRank) as any,
-        isActive: true,
-      },
-      select: {
-        requiredDocumentCategories: true,
-        minimumYearsInCurrentRank: true,
-        minimumTotalScore: true,
-        publicationRequirement: true,
-        professionalDevelopmentRequirement: true,
-      },
-    });
+    const criteria = activeRequest && targetRank
+      ? await prisma.promotionCriteria.findFirst({
+          where: {
+            currentRank: normalizeRank(currentRank) as any,
+            targetRank: normalizeRank(targetRank) as any,
+            isActive: true,
+          },
+          select: {
+            requiredDocumentCategories: true,
+            minimumYearsInCurrentRank: true,
+            minimumTotalScore: true,
+            publicationRequirement: true,
+            professionalDevelopmentRequirement: true,
+          },
+        })
+      : null;
 
-    const requiredCategories = criteria?.requiredDocumentCategories?.length
-      ? criteria.requiredDocumentCategories
-      : [...REQUIRED_CATEGORIES];
+    const requiredCategories = activeRequest
+      ? criteria?.requiredDocumentCategories?.length
+        ? criteria.requiredDocumentCategories
+        : [...REQUIRED_CATEGORIES]
+      : [];
 
     const documents = await prisma.document.findMany({
-      where: activeRequest
-        ? { requestId: activeRequest.id }
-        : {
-            request: {
-              lecturerId: session.userId,
-            },
-          },
+      where: activeRequest ? { requestId: activeRequest.id } : { id: -1 },
       select: {
         id: true,
         category: true,
@@ -245,18 +234,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: {
-        id: true,
-        currentRank: true,
+    const activeRequest = await prisma.promotionRequest.findFirst({
+      where: {
+        lecturerId: session.userId,
+        status: {
+          notIn: [RequestStatus.COMPLETED, RequestStatus.REJECTED, RequestStatus.NOT_RECOMMENDED],
+        },
       },
+      orderBy: { updatedAt: 'desc' },
     });
 
-    if (!user) {
+    if (!activeRequest) {
       return NextResponse.json(
-        { success: false, error: 'Lecturer account not found' },
-        { status: 404 }
+        { success: false, error: 'Start a promotion application and select the rank you are applying for before uploading evidence.' },
+        { status: 409 }
       );
     }
 
@@ -275,35 +266,13 @@ export async function POST(request: NextRequest) {
     await savePdfFileBestEffort(fileName, buffer);
 
     const result = await prisma.$transaction(async (tx) => {
-      const activeRequest = await tx.promotionRequest.findFirst({
-        where: {
-          lecturerId: session.userId,
-          status: {
-            notIn: [RequestStatus.COMPLETED, RequestStatus.REJECTED, RequestStatus.NOT_RECOMMENDED],
-          },
-        },
-        orderBy: { updatedAt: 'desc' },
-      });
-
-      const requestRecord = activeRequest || await createPromotionRequestWithWorkflow(tx, {
-        actor: {
-          id: session.userId,
-          role: session.role,
-          name: session.name,
-        },
-        lecturerId: session.userId,
-        currentRank: String(user.currentRank || 'LECTURER'),
-        targetRank: inferTargetRank(user.currentRank),
-        yearsInCurrentRank: 0,
-      });
-
       const documentRecord = await savePromotionDocumentRecord(tx, {
         actor: {
           id: session.userId,
           role: session.role,
           name: session.name,
         },
-        requestId: requestRecord.id,
+        requestId: activeRequest.id,
         category: parsed.data.category as DocumentCategory,
         title: parsed.data.title,
         fileUrl: `/api/uploads/${encodeURIComponent(fileName)}`,
@@ -322,7 +291,7 @@ export async function POST(request: NextRequest) {
       });
 
       return {
-        request: requestRecord,
+        request: activeRequest,
         document: documentRecord,
       };
     }, WORKFLOW_TRANSACTION_OPTIONS);

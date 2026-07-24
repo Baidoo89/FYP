@@ -94,6 +94,41 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat('en-GH', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
 }
 
+function stageLabelFor(request: DashboardData['activeRequest']) {
+  if (!request) return 'Not Started';
+
+  const stageByStatus: Record<string, string> = {
+    DRAFT: 'Evidence Upload',
+    SUBMITTED: 'Department Review',
+    UNDER_DEPARTMENT_REVIEW: 'Department Review',
+    RETURNED_FOR_CORRECTION: 'Correction Required',
+    UNDER_HR_VERIFICATION: 'HR Verification',
+    UNDER_REVIEW: 'HR Verification',
+    UNDER_COMMITTEE_REVIEW: 'Committee Review',
+    ELIGIBLE: 'Committee Review',
+    NOT_ELIGIBLE: 'Committee Review',
+    REQUIRES_FURTHER_REVIEW: 'Further Review',
+    RECOMMENDED: 'Recommendation',
+    NOT_RECOMMENDED: 'Recommendation',
+    APPROVED_BY_AUTHORITY: 'Final Approval',
+    APPROVED: 'Final Approval',
+    REJECTED: 'Closed',
+    COMPLETED: 'Completed',
+  };
+
+  return stageByStatus[request.status] || formatEnum(request.status);
+}
+
+function applicationStatusFor(request: DashboardData['activeRequest']) {
+  if (!request) return 'Not Started';
+  if (request.status === 'DRAFT') return 'In Progress';
+  if (request.status === 'RETURNED_FOR_CORRECTION') return 'Requires Correction';
+  if (request.status === 'REJECTED' || request.status === 'NOT_RECOMMENDED') return 'Not Approved';
+  if (request.status === 'COMPLETED' || request.status === 'APPROVED') return 'Completed';
+  if (request.eligibilityStatus && request.eligibilityStatus !== 'NOT_CALCULATED') return formatEnum(request.eligibilityStatus);
+  return 'Under Review';
+}
+
 function initialsFor(name: string) {
   return name
     .split(' ')
@@ -109,10 +144,10 @@ function nextActionFor(data: DashboardData) {
 
   if (!request) {
     return {
-      title: 'Start Promotion Request',
-      detail: 'Create your promotion application and begin uploading required evidence.',
+      title: 'Start Promotion Application',
+      detail: 'Select the rank you are applying for, then begin uploading required evidence.',
       href: '/lecturer-portal/application',
-      label: 'Create Request',
+      label: 'Start Application',
       tone: 'blue' as const,
       icon: BriefcaseBusiness,
     };
@@ -184,7 +219,7 @@ function nextActionFor(data: DashboardData) {
 }
 
 function actionNeedsAttention(action: ReturnType<typeof nextActionFor>) {
-  return ['Start Promotion Request', 'Correct Returned Evidence', 'Complete Your Draft'].includes(action.title);
+  return ['Start Promotion Application', 'Correct Returned Evidence', 'Complete Your Draft'].includes(action.title);
 }
 
 export default function LecturerDashboardOverview() {
@@ -228,7 +263,8 @@ export default function LecturerDashboardOverview() {
   const request = data.activeRequest;
   const currentStep = request ? workflowStepByStatus[request.status] || 1 : 1;
   const rankPath = request ? `${formatEnum(request.currentRank)} to ${formatEnum(request.targetRank)}` : `${formatEnum(data.user.currentRank)} promotion pathway`;
-  const eligibilityStatus = request?.eligibilityStatus || 'NOT_CALCULATED';
+  const currentStageLabel = stageLabelFor(request);
+  const applicationStatusLabel = applicationStatusFor(request);
   const initials = initialsFor(data.user.name) || 'GU';
 
   return (
@@ -254,10 +290,10 @@ export default function LecturerDashboardOverview() {
           <div className="rounded-lg border border-white/15 bg-white/10 p-3 shadow-inner backdrop-blur sm:p-4">
             <div className="grid grid-cols-2 gap-3">
               <ApplicationFact label="Promotion Cycle" value={PROMOTION_CYCLE} />
-              <ApplicationFact label="Current Stage" value={request ? formatEnum(request.status) : 'Not Started'} />
+              <ApplicationFact label="Current Stage" value={currentStageLabel} />
               <ApplicationFact label="Current Rank" value={formatEnum(request?.currentRank || data.user.currentRank)} />
-              <ApplicationFact label="Applying For" value={request ? formatEnum(request.targetRank) : 'Not selected'} />
-              <ApplicationFact label="Application Status" value={formatEnum(eligibilityStatus)} />
+              <ApplicationFact label="Applying For" value={request ? formatEnum(request.targetRank) : 'Select when starting application'} />
+              <ApplicationFact label="Application Status" value={applicationStatusLabel} />
               <ApplicationFact label="Last Updated" value={formatDate(request?.updatedAt)} />
             </div>
           </div>
@@ -352,10 +388,10 @@ function NoRequestPanel() {
     <section className="pro-card min-w-0 p-5">
       <div className="max-w-2xl">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">Promotion Workflow</p>
-        <h2 className="mt-2 text-xl font-semibold text-slate-950">No active promotion request yet</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Create a request when your promotion cycle is ready. The workflow tracker will appear here after the request is created.</p>
+        <h2 className="mt-2 text-xl font-semibold text-slate-950">No active promotion application yet</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Start an application by selecting the rank you are applying for. The workflow tracker will appear here after the request is created.</p>
         <Link href="/lecturer-portal/application" className="mt-4 inline-flex rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
-          Start Request
+          Start Application
         </Link>
       </div>
     </section>

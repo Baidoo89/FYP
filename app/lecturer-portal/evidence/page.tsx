@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 import StatusBadge from '../../../components/promotion/StatusBadge';
+import StartPromotionRequestCard from '../../../components/promotion/StartPromotionRequestCard';
 import { useToast } from '../../../components/Toast';
 
 type DocumentCategory =
@@ -46,7 +47,7 @@ type EvidenceData = {
     updatedAt?: string;
   } | null;
   currentRank: string;
-  targetRank: string;
+  targetRank: string | null;
   criteria?: {
     minimumYearsInCurrentRank?: number | null;
     minimumTotalScore?: number | null;
@@ -372,6 +373,36 @@ export default function EvidencePage() {
     return <ErrorState message={error || 'Failed to load evidence portfolio'} />;
   }
 
+  if (!data.request) {
+    return (
+      <div className="min-w-0 space-y-6">
+        <section className="pro-hero px-4 py-6 sm:px-6 sm:py-8">
+          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="pro-eyebrow">Evidence Portfolio</div>
+              <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-gray-950 sm:text-4xl">Start Your Promotion Application</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
+                Select the promotion rank you are applying for before uploading evidence. This keeps your workflow, eligibility rules, and HOD/Dean review aligned.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <StartPromotionRequestCard currentRank={data.currentRank} onCreated={() => loadEvidence()} />
+
+        <section className="pro-card p-5">
+          <EmptyState
+            title="Evidence upload is locked until an application is started"
+            description="After you select the target promotion rank, the required evidence categories and PDF upload controls will appear here."
+          />
+        </section>
+
+        <Link href="/lecturer-portal" className="inline-flex rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+          Back to Dashboard
+        </Link>
+      </div>
+    );
+  }
   return (
     <div className="min-w-0 space-y-6">
       <section className="pro-hero px-4 py-6 sm:px-6 sm:py-8">

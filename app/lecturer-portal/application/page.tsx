@@ -4,12 +4,17 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import StatusBadge from '../../../components/promotion/StatusBadge';
+import StartPromotionRequestCard from '../../../components/promotion/StartPromotionRequestCard';
 import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt?: string | null;
   verifiedAt?: string | null;
+};
+
+type LecturerProfile = {
+  currentRank: string | null;
 };
 
 const activeStatuses = new Set([
@@ -121,6 +126,7 @@ function nextActionFor(request: PromotionRequest) {
 export default function ApplicationPage() {
   const toast = useToast();
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
+  const [lecturerProfile, setLecturerProfile] = useState<LecturerProfile | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -148,6 +154,16 @@ export default function ApplicationPage() {
 
       const data = (payload.data || []) as PromotionRequest[];
       setRequests(data);
+
+      if (data[0]) {
+        setLecturerProfile({ currentRank: data[0].currentRank });
+      } else {
+        const profileResponse = await fetch('/api/lecturer/dashboard', { cache: 'no-store' });
+        const profilePayload = await profileResponse.json();
+        if (profileResponse.ok && profilePayload.success) {
+          setLecturerProfile({ currentRank: profilePayload.data.user.currentRank || null });
+        }
+      }
 
       const next = data.find((request) => request.id === preferredId) || data.find((request) => activeStatuses.has(request.status)) || data[0] || null;
       setSelectedId(next?.id || null);
@@ -209,19 +225,17 @@ export default function ApplicationPage() {
       <div className="min-w-0 space-y-6">
         <section className="pro-hero px-4 py-6 sm:px-6 sm:py-8">
           <div className="pro-eyebrow">Active Application</div>
-          <h1 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-4xl">No Active Application</h1>
+          <h1 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-4xl">Start Promotion Application</h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            You do not have an active promotion application yet. Start by uploading your promotion evidence.
+            Select the rank you are applying for before uploading evidence or submitting the promotion file.
           </p>
         </section>
+
+        <StartPromotionRequestCard currentRank={lecturerProfile?.currentRank || null} onCreated={(request) => loadApplications(request.id)} />
+
         <EmptyState
-          title="Start your promotion journey"
-          description="Upload evidence in the portfolio. The system will create a draft application and keep your workflow history connected."
-          action={
-            <Link href="/lecturer-portal/evidence" className="inline-flex rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
-              Go to Evidence Portfolio
-            </Link>
-          }
+          title="No application record yet"
+          description="Once the target rank is selected, your draft application, workflow tracker, evidence checklist, and HOD/Dean visibility will be created from the same database record."
         />
       </div>
     );
