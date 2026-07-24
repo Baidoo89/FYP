@@ -12,6 +12,7 @@ import type { AuthRole } from './auth';
 import { writeAuditLog, writeStatusHistory } from './audit-logger';
 import { findDepartmentReviewRecipientIds } from './department-scope';
 import { calculateEligibility, REQUIRED_CATEGORIES } from './promotion-engine';
+import { sendApplicantMilestoneEmail } from './workflow-email';
 import { assertStatusTransition } from './workflow';
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -445,6 +446,14 @@ export async function transitionPromotionRequest(
         excludeUserId: input.actor.id,
       });
     }
+  }
+
+  if (current.status !== input.newStatus) {
+    await sendApplicantMilestoneEmail({
+      request: updated,
+      previousStatus: current.status,
+      comment: input.comment,
+    });
   }
 
   return updated;
