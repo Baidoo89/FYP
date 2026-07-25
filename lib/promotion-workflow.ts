@@ -327,7 +327,11 @@ export async function transitionPromotionRequest(
   }
 
   if (current.status !== input.newStatus) {
-    assertStatusTransition(current.status, input.newStatus, input.actor.role);
+    try {
+      assertStatusTransition(current.status, input.newStatus, input.actor.role);
+    } catch (error) {
+      throw new WorkflowError(error instanceof Error ? error.message : 'Invalid workflow status transition.', 400);
+    }
   }
 
   const now = new Date();

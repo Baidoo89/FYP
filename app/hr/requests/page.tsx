@@ -474,9 +474,11 @@ function FinalizationBrief({ request }: { request: PromotionRequest }) {
       : 'Finalization readiness';
   const detail = completed
     ? 'This promotion file has been completed. Keep reports, audit trail, and application summary ready for institutional records.'
-    : finalStage
-      ? 'Committee or authority outcome is available. Confirm documentation, record the final status, and generate the required administrative reports.'
-      : 'This file is not yet in the final administrative stage. HR can still prepare reports and monitor audit activity.';
+    : request.status === 'RECOMMENDED'
+      ? 'Committee recommendation is available. Record final authority approval before completing the official administrative workflow.'
+      : finalStage
+        ? 'Committee or authority outcome is available. Confirm documentation, record the final status, and generate the required administrative reports.'
+        : 'This file is not yet in the final administrative stage. HR can still prepare reports and monitor audit activity.';
 
   return (
     <div className={`mt-4 rounded-lg border p-4 ${finalStage ? 'border-emerald-200 bg-emerald-50/70' : 'border-gray-200 bg-gray-50'}`}>
@@ -636,14 +638,7 @@ function getWorkflowActions(request: PromotionRequest): WorkflowAction[] {
       variant: 'success',
       confirm: 'Record final authority approval for this recommended application?',
     });
-    actions.push({
-      status: 'COMPLETED',
-      label: 'Complete after approval',
-      comment: 'Application workflow completed after committee recommendation and administrative review.',
-      description: 'Use only when approval documentation is complete.',
-      variant: 'slate',
-      confirm: 'Complete this recommended application without a separate authority-approved status?',
-    });
+
   }
 
   if (request.status === 'APPROVED_BY_AUTHORITY') {
