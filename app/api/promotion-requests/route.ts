@@ -52,7 +52,9 @@ function buildRequestSummary(requestRecord: any, requiredDocuments: number = REQ
     lecturerId: requestRecord.lecturerId,
     lecturerName: requestRecord.lecturer.name,
     lecturerEmail: requestRecord.lecturer.email,
-    department: requestRecord.lecturer.department || 'Unassigned',
+    lecturerStaffId: requestRecord.lecturer.staffId || null,
+    department: requestRecord.lecturer.departmentRef?.name || requestRecord.lecturer.department || 'Unassigned',
+    faculty: requestRecord.lecturer.faculty?.name || requestRecord.lecturer.departmentRef?.faculty?.name || null,
     currentRank: requestRecord.currentRank,
     targetRank: requestRecord.targetRank,
     status: requestRecord.status,
@@ -63,6 +65,8 @@ function buildRequestSummary(requestRecord: any, requiredDocuments: number = REQ
     eligibilityReason: requestRecord.eligibilityReason,
     yearsInCurrentRank: requestRecord.yearsInCurrentRank,
     adminComment: requestRecord.adminComment,
+    createdAt: requestRecord.createdAt,
+    updatedAt: requestRecord.updatedAt,
     documentCount: documents.length,
     verifiedDocumentCount: verifiedDocuments,
     requiredDocumentCount: requiredDocuments,
@@ -141,7 +145,12 @@ export async function GET(request: NextRequest) {
   const promotionRequests = await prisma.promotionRequest.findMany({
     where,
     include: {
-      lecturer: true,
+      lecturer: {
+        include: {
+          departmentRef: { include: { faculty: true } },
+          faculty: true,
+        },
+      },
       requestedBy: true,
       documents: {
         include: {

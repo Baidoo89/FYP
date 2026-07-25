@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { RequestStatus, type Prisma } from '@prisma/client';
 import { cookies } from 'next/headers';
 import type { LucideIcon } from 'lucide-react';
-import { AlertTriangle, ArrowRight, Building2, CheckCircle2, Clock3, FileText, MessageSquareText, RotateCcw, Send } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, Building2, CheckCircle2, Clock3, FileText, MessageSquareText, RotateCcw, Send } from 'lucide-react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import { prisma } from '../../../lib/prisma';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '../../../lib/auth';
@@ -59,6 +59,13 @@ function formatDate(value?: Date | string | null) {
   return new Intl.DateTimeFormat('en-GH', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
 }
 
+function formatDateTime(value?: Date | string | null) {
+  if (!value) return 'Not recorded';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not recorded';
+  return new Intl.DateTimeFormat('en-GH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
 function applicationCode(id: number) {
   return `PR-${String(id).padStart(5, '0')}`;
 }
@@ -86,6 +93,7 @@ export default async function HodDashboardPage() {
     recentApplications,
     recentComments,
     groupedStatuses,
+    recentActivity,
   ] = await Promise.all([
     prisma.promotionRequest.count({ where: visibleScopeWhere }),
     prisma.promotionRequest.count({ where: withStatuses(scopeWhere, pendingDepartmentStatuses) }),
@@ -158,11 +166,42 @@ export default async function HodDashboardPage() {
       where: visibleScopeWhere,
       _count: { _all: true },
     }),
+    prisma.statusHistory.findMany({
+      where: {
+        promotionRequest: {
+          is: visibleScopeWhere,
+        },
+      },
+      include: {
+        changedBy: {
+          select: {
+            name: true,
+            role: true,
+          },
+        },
+        promotionRequest: {
+          select: {
+            id: true,
+            status: true,
+            lecturer: {
+              select: {
+                name: true,
+                department: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
   ]);
 
   const statusRows = groupedStatuses
     .map((row) => ({ label: label(row.status), value: row._count._all, status: row.status }))
     .sort((left, right) => right.value - left.value);
+  const lastUpdatedAt = recentActivity[0]?.createdAt || recentApplications[0]?.updatedAt || null;
+  const completionRate = departmentApplications > 0 ? Math.round((forwardedApplications / departmentApplications) * 100) : 0;
 
   const actionBanner = activeDepartmentAction > 0
     ? {
@@ -212,7 +251,7 @@ export default async function HodDashboardPage() {
               <ScopeLine label="Department" value={scope.reviewer?.departmentRef?.name || scope.reviewer?.department || scope.scopeLabel} />
               <ScopeLine label="Faculty" value={scope.reviewer?.faculty?.name || 'Not assigned'} />
               <ScopeLine label="Reviewer" value={scope.reviewer?.name || 'Authorized reviewer'} />
-              <ScopeLine label="Last update" value={formatDate(recentApplications[0]?.updatedAt)} />
+              <ScopeLine label="Last synced" value={formatDateTime(lastUpdatedAt)} />
             </div>
           </aside>
         </div>
@@ -221,11 +260,11 @@ export default async function HodDashboardPage() {
       <ActionBanner {...actionBanner} />
 
       <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-5">
-        <MetricTile icon={FileText} label="Scoped Applications" value={departmentApplications} detail="Department/faculty records" tone="blue" />
-        <MetricTile icon={AlertTriangle} label="Active Action" value={activeDepartmentAction} detail="Needs department decision" tone="amber" />
-        <MetricTile icon={Clock3} label="Department Pending" value={pendingDepartmentReview} detail="Still with department" tone="slate" />
-        <MetricTile icon={Send} label="Forwarded" value={forwardedApplications} detail="Moved beyond department" tone="green" />
-        <MetricTile icon={RotateCcw} label="Returned / Further" value={returnedForCorrection + furtherReview} detail="Corrections or review holds" tone="rose" />
+        <MetricTile href="/hod/review-queue?segment=all" icon={FileText} label="Scoped Applications" value={departmentApplications} detail="Department/faculty records" tone="blue" />
+        <MetricTile href="/hod/review-queue?segment=active" icon={AlertTriangle} label="Active Action" value={activeDepartmentAction} detail="Needs department decision" tone="amber" />
+        <MetricTile href="/hod/review-queue?segment=submitted" icon={Clock3} label="Department Pending" value={pendingDepartmentReview} detail="Still with department" tone="slate" />
+        <MetricTile href="/hod/review-queue?segment=forwarded" icon={Send} label="Forwarded" value={forwardedApplications} detail="Moved beyond department" tone="green" />
+        <MetricTile href="/hod/review-queue?segment=returned" icon={RotateCcw} label="Returned / Further" value={returnedForCorrection + furtherReview} detail="Corrections or review holds" tone="rose" />
       </section>
 
       <section className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
@@ -242,7 +281,7 @@ export default async function HodDashboardPage() {
 
           {recentApplications.length === 0 ? (
             <div className="p-5">
-              <EmptyPanel title="No department applications" description="Promotion files will appear here when lecturers in your scope submit applications." />
+              <EmptyPanel title="No department applications" description="Promotion files will appear here when lecturers in your scope submit applications." href="/hod/review-queue?segment=all" actionLabel="Open Review Workspace" />
             </div>
           ) : (
             <div className="pro-scroll-x">
@@ -305,12 +344,17 @@ export default async function HodDashboardPage() {
               </div>
               <span className="rounded-lg border border-brand-primary/20 bg-brand-primarySoft px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-brand-primary">Live</span>
             </div>
-            <div className="mt-5 space-y-3">
-              {statusRows.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">No status data available yet.</p>
-              ) : (
-                statusRows.map((row) => <StatusRow key={row.status} label={row.label} value={row.value} total={departmentApplications} status={row.status} />)
-              )}
+            <div className="mt-5 grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-center">
+              <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-brand-primary/15 bg-white text-center shadow-sm" style={{ background: `conic-gradient(#007a5a ${completionRate * 3.6}deg, #e5e7eb 0deg)` }}>
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-xl font-bold text-gray-950">{completionRate}%</span>
+              </div>
+              <div className="space-y-3">
+                {statusRows.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">No status data available yet. Submitted promotion files will populate this summary automatically.</p>
+                ) : (
+                  statusRows.map((row) => <StatusRow key={row.status} label={row.label} value={row.value} total={departmentApplications} status={row.status} />)
+                )}
+              </div>
             </div>
           </section>
 
@@ -324,7 +368,7 @@ export default async function HodDashboardPage() {
             </div>
             <div className="mt-4 space-y-3">
               {recentComments.length === 0 ? (
-                <EmptyPanel title="No comments yet" description="Department comments will be listed once reviewers add notes." compact />
+                <EmptyPanel title="No comments yet" description="Department comments will be listed once reviewers add notes." href="/hod/review-queue?segment=active" actionLabel="Review Active Files" compact />
               ) : (
                 recentComments.map((comment) => (
                   <article key={comment.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -338,6 +382,25 @@ export default async function HodDashboardPage() {
                     </p>
                   </article>
                 ))
+              )}
+            </div>
+          </section>
+
+          <section className="pro-card min-w-0 p-5">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-primary/15 bg-brand-primarySoft text-brand-primary">
+                <Activity className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="break-words text-lg font-bold text-gray-950">Recent Department Activity</h2>
+                <p className="mt-1 text-sm text-gray-600">Latest workflow movement within your review scope.</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {recentActivity.length === 0 ? (
+                <EmptyPanel title="No workflow activity yet" description="Status updates will appear here after applications are submitted, forwarded, returned, or reviewed." href="/hod/review-queue?segment=all" actionLabel="Open Workspace" compact />
+              ) : (
+                recentActivity.map((activity) => <ActivityEntry key={activity.id} item={activity} />)
               )}
             </div>
           </section>
@@ -404,14 +467,14 @@ function ActionBanner({ title, detail, href, tone }: { title: string; detail: st
         </div>
       </div>
       <Link href={href} className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 sm:w-auto">
-        Open queue
+        Open workspace
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </section>
   );
 }
 
-function MetricTile({ icon: Icon, label: title, value, detail, tone }: { icon: LucideIcon; label: string; value: number; detail: string; tone: 'blue' | 'amber' | 'green' | 'rose' | 'slate' }) {
+function MetricTile({ href, icon: Icon, label: title, value, detail, tone }: { href: string; icon: LucideIcon; label: string; value: number; detail: string; tone: 'blue' | 'amber' | 'green' | 'rose' | 'slate' }) {
   const toneClass = tone === 'amber'
     ? 'border-amber-200 bg-amber-50 text-amber-950'
     : tone === 'green'
@@ -423,7 +486,7 @@ function MetricTile({ icon: Icon, label: title, value, detail, tone }: { icon: L
           : 'border-brand-primary/20 bg-brand-primarySoft text-brand-text';
 
   return (
-    <article className={`min-w-0 rounded-xl border p-4 shadow-sm sm:p-5 ${toneClass}`}>
+    <Link href={href} className={`block min-w-0 rounded-xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 sm:p-5 ${toneClass}`}>
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-bold uppercase tracking-[0.14em] opacity-70">{title}</p>
@@ -434,7 +497,7 @@ function MetricTile({ icon: Icon, label: title, value, detail, tone }: { icon: L
           <Icon className="h-4 w-4" aria-hidden="true" />
         </span>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -461,11 +524,35 @@ function StatusRow({ label: title, value, total, status }: { label: string; valu
   );
 }
 
-function EmptyPanel({ title, description, compact = false }: { title: string; description: string; compact?: boolean }) {
+function ActivityEntry({ item }: { item: { id: number; newStatus: RequestStatus; comment?: string | null; createdAt: Date; changedBy: { name: string; role: string }; promotionRequest: { id: number; status: RequestStatus; lecturer: { name: string; department: string | null } } } }) {
+  return (
+    <Link href={`/hod/review-queue?request=${item.promotionRequest.id}`} className="block rounded-lg border border-gray-200 bg-gray-50 p-3 transition hover:border-brand-primary/25 hover:bg-brand-primarySoft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="break-words text-sm font-bold text-gray-950">{applicationCode(item.promotionRequest.id)} - {label(item.newStatus)}</p>
+          <p className="mt-1 break-words text-xs text-gray-600">{item.promotionRequest.lecturer.name}</p>
+          {item.comment && <p className="mt-2 line-clamp-2 break-words text-xs leading-5 text-gray-500">{item.comment}</p>}
+        </div>
+        <span className="shrink-0 text-xs font-semibold text-gray-500">{formatDate(item.createdAt)}</span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <StatusBadge status={item.newStatus} />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-primary">{item.changedBy.name}</span>
+      </div>
+    </Link>
+  );
+}
+
+function EmptyPanel({ title, description, href, actionLabel, compact = false }: { title: string; description: string; href?: string; actionLabel?: string; compact?: boolean }) {
   return (
     <div className={`rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center ${compact ? 'p-4' : 'p-6'}`}>
       <p className="font-semibold text-gray-950">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600">{description}</p>
+      {href && actionLabel && (
+        <Link href={href} className="mt-4 inline-flex min-h-9 items-center justify-center rounded-lg border border-brand-primary/20 bg-white px-3 py-2 text-sm font-semibold text-brand-primary transition hover:bg-brand-primarySoft">
+          {actionLabel}
+        </Link>
+      )}
     </div>
   );
 }

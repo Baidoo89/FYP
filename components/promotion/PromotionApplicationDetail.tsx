@@ -47,7 +47,9 @@ export type PromotionApplicationDetailRecord = {
   id: number;
   lecturerName: string;
   lecturerEmail: string;
+  lecturerStaffId?: string | null;
   department: string;
+  faculty?: string | null;
   currentRank: string;
   targetRank: string;
   yearsInCurrentRank?: number;
@@ -56,6 +58,8 @@ export type PromotionApplicationDetailRecord = {
   eligibilityReason?: string | null;
   totalScore?: number | null;
   adminComment?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   documentCount?: number;
   verifiedDocumentCount?: number;
   requiredDocumentCount?: number;

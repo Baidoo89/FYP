@@ -14,6 +14,7 @@ type PromotionRequest = PromotionApplicationDetailRecord & {
 };
 
 type QueueSegment = 'active' | 'submitted' | 'forwarded' | 'returned' | 'further' | 'all';
+type QueueSort = 'newest' | 'oldest' | 'applicant' | 'targetRank';
 
 type DepartmentDecision = 'FORWARD_TO_HR' | 'RETURN_FOR_CORRECTION' | 'REQUIRES_FURTHER_REVIEW' | 'COMMENT_ONLY';
 
@@ -46,6 +47,26 @@ function applicationCode(id: number) {
   return `PR-${String(id).padStart(5, '0')}`;
 }
 
+function uniqueOptions(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean))).sort((left, right) => left.localeCompare(right));
+}
+
+function requestTimestamp(request: PromotionRequest) {
+  const value = request.submittedAt || request.updatedAt || request.createdAt || null;
+  if (!value) return 0;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+function sameOrAfter(value: number, dateValue: string) {
+  if (!dateValue) return true;
+  return value >= new Date(`${dateValue}T00:00:00`).getTime();
+}
+
+function sameOrBefore(value: number, dateValue: string) {
+  if (!dateValue) return true;
+  return value <= new Date(`${dateValue}T23:59:59`).getTime();
+}
 
 function isQueueSegment(value: string | null): value is QueueSegment {
   return Boolean(value && queueSegments.includes(value as QueueSegment));
@@ -132,6 +153,13 @@ export default function HodApplicationsWorkspace({
   const [comment, setComment] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [segment, setSegment] = useState<QueueSegment>(initialSegment);
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [facultyFilter, setFacultyFilter] = useState('all');
+  const [targetRankFilter, setTargetRankFilter] = useState('all');
+  const [workflowFilter, setWorkflowFilter] = useState('all');
+  const [submittedFrom, setSubmittedFrom] = useState('');
+  const [submittedTo, setSubmittedTo] = useState('');
+  const [sortOrder, setSortOrder] = useState<QueueSort>('newest');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -142,22 +170,62 @@ export default function HodApplicationsWorkspace({
     [requests]
   );
 
+  const departmentOptions = useMemo(() => uniqueOptions(departmentRequests.map((request) => request.department)), [departmentRequests]);
+  const facultyOptions = useMemo(() => uniqueOptions(departmentRequests.map((request) => request.faculty)), [departmentRequests]);
+  const targetRankOptions = useMemo(() => uniqueOptions(departmentRequests.map((request) => request.targetRank)), [departmentRequests]);
+  const workflowOptions = useMemo(() => uniqueOptions(departmentRequests.map((request) => request.status)), [departmentRequests]);
+
   const filteredRequests = useMemo(() => {
     let filtered = departmentRequests.filter((request) => segmentMatches(request, segment));
 
-    if (searchTerm.trim()) {
-      const query = searchTerm.trim().toLowerCase();
-      filtered = filtered.filter(
-        (request) =>
-          request.lecturerName.toLowerCase().includes(query) ||
-          request.lecturerEmail.toLowerCase().includes(query) ||
-          request.department.toLowerCase().includes(query) ||
-          applicationCode(request.id).toLowerCase().includes(query)
-      );
+    if (departmentFilter !== 'all') {
+      filtered = filtered.filter((request) => request.department === departmentFilter);
     }
 
-    return filtered;
-  }, [departmentRequests, searchTerm, segment]);
+    if (facultyFilter !== 'all') {
+      filtered = filtered.filter((request) => request.faculty === facultyFilter);
+    }
+
+    if (targetRankFilter !== 'all') {
+      filtered = filtered.filter((request) => request.targetRank === targetRankFilter);
+    }
+
+    if (workflowFilter !== 'all') {
+      filtered = filtered.filter((request) => request.status === workflowFilter);
+    }
+
+    if (submittedFrom || submittedTo) {
+      filtered = filtered.filter((request) => {
+        const timestamp = requestTimestamp(request);
+        return timestamp > 0 && sameOrAfter(timestamp, submittedFrom) && sameOrBefore(timestamp, submittedTo);
+      });
+    }
+
+    if (searchTerm.trim()) {
+      const query = searchTerm.trim().toLowerCase();
+      filtered = filtered.filter((request) => {
+        const fields = [
+          request.lecturerName,
+          request.lecturerEmail,
+          request.lecturerStaffId || '',
+          request.department,
+          request.faculty || '',
+          request.currentRank,
+          request.targetRank,
+          request.status,
+          applicationCode(request.id),
+        ];
+        return fields.some((field) => String(field || '').toLowerCase().includes(query));
+      });
+    }
+
+    return [...filtered].sort((left, right) => {
+      if (sortOrder === 'oldest') return requestTimestamp(left) - requestTimestamp(right);
+      if (sortOrder === 'applicant') return left.lecturerName.localeCompare(right.lecturerName);
+      if (sortOrder === 'targetRank') return label(left.targetRank).localeCompare(label(right.targetRank));
+      return requestTimestamp(right) - requestTimestamp(left);
+    });
+  }, [departmentRequests, departmentFilter, facultyFilter, searchTerm, segment, sortOrder, submittedFrom, submittedTo, targetRankFilter, workflowFilter]);
 
   const selectedRequest = filteredRequests.find((request) => request.id === selectedId)
     || departmentRequests.find((request) => request.id === selectedId)
@@ -197,6 +265,17 @@ export default function HodApplicationsWorkspace({
     }
   }
 
+  function resetFilters() {
+    setSearchTerm('');
+    setDepartmentFilter('all');
+    setFacultyFilter('all');
+    setTargetRankFilter('all');
+    setWorkflowFilter('all');
+    setSubmittedFrom('');
+    setSubmittedTo('');
+    setSortOrder('newest');
+  }
+
   useEffect(() => {
     const params = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search);
     const requestId = Number(params?.get('request'));
@@ -206,6 +285,27 @@ export default function HodApplicationsWorkspace({
 
     loadRequests(Number.isInteger(requestId) && requestId > 0 ? requestId : null);
   }, [initialSegment]);
+
+  async function confirmAndSaveReview(decision: DepartmentDecision) {
+    if (!selectedRequest) return;
+
+    const decisionLabel: Record<DepartmentDecision, string> = {
+      FORWARD_TO_HR: 'approve and forward this application to HR',
+      RETURN_FOR_CORRECTION: 'return this application to the lecturer',
+      REQUIRES_FURTHER_REVIEW: 'mark this application for further department review',
+      COMMENT_ONLY: 'save this department note',
+    };
+
+    if (decision !== 'COMMENT_ONLY' && comment.trim().length < 5) {
+      const continueWithoutComment = window.confirm('You have not entered a detailed department comment. Continue with the system-generated note?');
+      if (!continueWithoutComment) return;
+    }
+
+    const confirmed = window.confirm(`Confirm that you want to ${decisionLabel[decision]}?`);
+    if (!confirmed) return;
+
+    await saveReview(decision);
+  }
 
   async function saveReview(decision: DepartmentDecision) {
     if (!selectedRequest) return;
@@ -259,6 +359,11 @@ export default function HodApplicationsWorkspace({
   const furtherReviewCount = departmentRequests.filter((request) => request.status === 'REQUIRES_FURTHER_REVIEW').length;
   const selectedReadiness = selectedRequest ? readinessFor(selectedRequest) : null;
   const selectedStats = selectedRequest ? evidenceStats(selectedRequest) : null;
+  const selectedRequiredCount = selectedRequest?.requiredDocumentCount && selectedRequest.requiredDocumentCount > 0 ? selectedRequest.requiredDocumentCount : 3;
+  const selectedAvailableDocuments = selectedStats ? Math.min(selectedStats.total, selectedRequiredCount) : 0;
+  const selectedReviewProgress = selectedRequest && selectedStats
+    ? Math.min(100, Math.round(((selectedAvailableDocuments + (comment.trim().length >= 5 ? 1 : 0)) / (selectedRequiredCount + 1)) * 100))
+    : 0;
 
   return (
     <section className="min-w-0 max-w-full space-y-5 overflow-x-hidden">
@@ -287,8 +392,8 @@ export default function HodApplicationsWorkspace({
       {error && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{error}</div>}
 
       <section className="pro-card min-w-0 p-4 sm:p-5">
-        <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_18rem_auto] lg:items-end">
-          <label className="block min-w-0">
+        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.25fr)_repeat(3,minmax(10rem,0.75fr))_auto] xl:items-end">
+          <label className="block min-w-0 xl:col-span-2">
             <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Search</span>
             <span className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
@@ -296,25 +401,50 @@ export default function HodApplicationsWorkspace({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 className="brand-input pl-9"
-                placeholder="Name, email, department, or PR code"
+                placeholder="Applicant, staff ID, PR number, department, faculty, or rank"
                 type="text"
+                aria-label="Search department promotion applications"
               />
             </span>
           </label>
-          <label className="block min-w-0">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Queue segment</span>
-            <select value={segment} onChange={(event) => setSegment(event.target.value as QueueSegment)} className="brand-input">
-              <option value="active">Active action</option>
-              <option value="submitted">Submitted / department review</option>
-              <option value="forwarded">Forwarded files</option>
-              <option value="returned">Returned files</option>
-              <option value="further">Further review</option>
-              <option value="all">All department files</option>
-            </select>
-          </label>
+          <SelectControl label="Queue segment" value={segment} onChange={(value) => setSegment(value as QueueSegment)} options={[
+            ['active', 'Active action'],
+            ['submitted', 'Submitted / department review'],
+            ['forwarded', 'Forwarded files'],
+            ['returned', 'Returned files'],
+            ['further', 'Further review'],
+            ['all', 'All department files'],
+          ]} />
+          <SelectControl label="Target rank" value={targetRankFilter} onChange={setTargetRankFilter} options={[['all', 'All ranks'], ...targetRankOptions.map((rank) => [rank, label(rank)] as [string, string])]} />
+          <SelectControl label="Sort" value={sortOrder} onChange={(value) => setSortOrder(value as QueueSort)} options={[
+            ['newest', 'Newest first'],
+            ['oldest', 'Oldest first'],
+            ['applicant', 'Applicant name'],
+            ['targetRank', 'Target rank'],
+          ]} />
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
             Showing {filteredRequests.length} of {departmentRequests.length}
           </div>
+        </div>
+        <div className="mt-3 grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <SelectControl label="Faculty" value={facultyFilter} onChange={setFacultyFilter} options={[['all', 'All faculties'], ...facultyOptions.map((faculty) => [faculty, faculty] as [string, string])]} />
+          <SelectControl label="Department" value={departmentFilter} onChange={setDepartmentFilter} options={[['all', 'All departments'], ...departmentOptions.map((department) => [department, department] as [string, string])]} />
+          <SelectControl label="Workflow stage" value={workflowFilter} onChange={setWorkflowFilter} options={[['all', 'All stages'], ...workflowOptions.map((status) => [status, label(status)] as [string, string])]} />
+          <DateControl label="Submitted from" value={submittedFrom} onChange={setSubmittedFrom} />
+          <DateControl label="Submitted to" value={submittedTo} onChange={setSubmittedTo} />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2 text-xs font-semibold text-gray-600">
+            {searchTerm && <FilterChip label={`Search: ${searchTerm}`} />}
+            {departmentFilter !== 'all' && <FilterChip label={`Department: ${departmentFilter}`} />}
+            {facultyFilter !== 'all' && <FilterChip label={`Faculty: ${facultyFilter}`} />}
+            {targetRankFilter !== 'all' && <FilterChip label={`Rank: ${label(targetRankFilter)}`} />}
+            {workflowFilter !== 'all' && <FilterChip label={`Stage: ${label(workflowFilter)}`} />}
+            {(submittedFrom || submittedTo) && <FilterChip label="Submission date filter" />}
+          </div>
+          <button type="button" onClick={resetFilters} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary">
+            Clear filters
+          </button>
         </div>
       </section>
 
@@ -325,9 +455,7 @@ export default function HodApplicationsWorkspace({
             <p className="mt-1 text-sm text-gray-600">Filter and open scoped applications to inspect evidence, history, and academic review actions.</p>
           </div>
           {filteredRequests.length === 0 ? (
-            <div className="p-5">
-              <EmptyState title="No matching applications" description="Adjust the segment or search term to view department promotion files." />
-            </div>
+            <WorkspaceEmptyState onReset={resetFilters} />
           ) : (
             <div className="max-h-[72rem] divide-y divide-gray-100 overflow-y-auto">
               {filteredRequests.map((request) => {
@@ -375,6 +503,20 @@ export default function HodApplicationsWorkspace({
                   <p className="mt-2 text-sm leading-6 text-gray-600">
                     Open each evidence file, check academic completeness and relevance, then record a clear recommendation or correction note. HR performs the official document verification after forwarding.
                   </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg border border-brand-primary/15 bg-brand-primarySoft p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">Review completion</p>
+                      <p className="mt-2 text-2xl font-semibold text-gray-950">{selectedReviewProgress}%</p>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+                        <div className="h-full rounded-full bg-brand-primary" style={{ width: `${selectedReviewProgress}%` }} />
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Evidence available</p>
+                      <p className="mt-2 text-2xl font-semibold text-gray-950">{selectedAvailableDocuments}/{selectedRequiredCount}</p>
+                      <p className="mt-1 text-xs text-gray-600">Comment {comment.trim().length >= 5 ? 'ready' : 'still needed'}</p>
+                    </div>
+                  </div>
                   <label className="mt-4 block text-sm font-semibold text-gray-800">
                     Department review comment
                     <textarea
@@ -397,11 +539,11 @@ export default function HodApplicationsWorkspace({
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap sm:gap-3 [&>button]:w-full sm:[&>button]:w-auto">
+              <div className="sticky bottom-20 z-10 mt-4 grid gap-2 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:flex sm:flex-wrap sm:gap-3 lg:bottom-4 [&>button]:w-full sm:[&>button]:w-auto">
                 <button
                   type="button"
                   disabled={saving || !canForward(selectedRequest)}
-                  onClick={() => saveReview('FORWARD_TO_HR')}
+                  onClick={() => confirmAndSaveReview('FORWARD_TO_HR')}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   <Send className="h-4 w-4" aria-hidden="true" />
@@ -410,7 +552,7 @@ export default function HodApplicationsWorkspace({
                 <button
                   type="button"
                   disabled={saving || !canReturn(selectedRequest)}
-                  onClick={() => saveReview('RETURN_FOR_CORRECTION')}
+                  onClick={() => confirmAndSaveReview('RETURN_FOR_CORRECTION')}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-orange-300 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-950 shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                 >
                   <RotateCcw className="h-4 w-4" aria-hidden="true" />
@@ -419,7 +561,7 @@ export default function HodApplicationsWorkspace({
                 <button
                   type="button"
                   disabled={saving || !canMarkFurtherReview(selectedRequest)}
-                  onClick={() => saveReview('REQUIRES_FURTHER_REVIEW')}
+                  onClick={() => confirmAndSaveReview('REQUIRES_FURTHER_REVIEW')}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                 >
                   <Clock3 className="h-4 w-4" aria-hidden="true" />
@@ -428,7 +570,7 @@ export default function HodApplicationsWorkspace({
                 <button
                   type="button"
                   disabled={saving || comment.trim().length < 5}
-                  onClick={() => saveReview('COMMENT_ONLY')}
+                  onClick={() => confirmAndSaveReview('COMMENT_ONLY')}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400"
                 >
                   <MessageSquareText className="h-4 w-4" aria-hidden="true" />
@@ -525,5 +667,48 @@ function ReviewContextBanner({ readiness, request, stats }: { readiness: ReturnT
         </div>
       )}
     </section>
+  );
+}
+
+function SelectControl({ label: title, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: Array<[string, string]> }) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{title}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="brand-input" aria-label={title}>
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={`${title}-${optionValue}`} value={optionValue}>{optionLabel}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function DateControl({ label: title, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{title}</span>
+      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="brand-input" aria-label={title} />
+    </label>
+  );
+}
+
+function FilterChip({ label: title }: { label: string }) {
+  return <span className="rounded-full border border-brand-primary/15 bg-brand-primarySoft px-2.5 py-1 text-brand-primary">{title}</span>;
+}
+
+function WorkspaceEmptyState({ onReset }: { onReset: () => void }) {
+  return (
+    <div className="p-5">
+      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-brand-primary/15 bg-white text-brand-primary">
+          <Search className="h-5 w-5" aria-hidden="true" />
+        </div>
+        <h3 className="mt-4 text-base font-bold text-gray-950">No matching applications</h3>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600">Try clearing filters, widening the submission date range, or searching by applicant name, staff ID, PR number, department, faculty, or rank.</p>
+        <button type="button" onClick={onReset} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
+          Clear filters
+        </button>
+      </div>
+    </div>
   );
 }
