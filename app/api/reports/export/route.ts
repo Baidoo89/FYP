@@ -10,6 +10,7 @@ import {
 import { getAuthSession, type AuthSession } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { writeAuditLog } from '../../../../lib/audit-logger';
+import { getDepartmentReviewScope } from '../../../../lib/department-scope';
 import { loadPromotionAnalytics, promotionAnalyticsToCsv } from '../../../../lib/promotion-analytics';
 
 type ExportType = 'dashboard' | 'promotions' | 'analytics' | 'audit';
@@ -131,9 +132,21 @@ function buildPromotionsCsv(filters: { department?: string; startDate?: string; 
 
 function buildAnalyticsCsv(filters: { department?: string; startDate?: string; endDate?: string }, session: AuthSession) {
   return async () => {
+    const departmentScope = session.role === 'HOD_DEAN'
+      ? await getDepartmentReviewScope(prisma, {
+          userId: session.userId,
+          role: session.role,
+          sessionDepartment: session.department,
+        })
+      : null;
+
     const analytics = await loadPromotionAnalytics(filters, {
       role: session.role,
       department: session.department,
+      where: departmentScope?.where,
+      scopeKind: departmentScope?.scopeKind || 'institution',
+      scopeLabel: departmentScope?.scopeLabel,
+      scopeDetail: departmentScope?.scopeDetail,
     });
 
     return promotionAnalyticsToCsv(analytics);

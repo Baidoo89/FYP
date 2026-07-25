@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { DashboardCard, EmptyState, ErrorState, LoadingState, SectionCard, SimpleBarChart } from '../../components/enterprise-ui';
 import StatusBadge from '../../components/promotion/StatusBadge';
 
 type Tone = 'green' | 'amber' | 'red' | 'blue' | 'slate';
+type ViewerRole = 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 type PromotionAnalyticsSummary = {
   executive: {
@@ -76,7 +78,11 @@ type PromotionAnalyticsSummary = {
     startDate: string;
     endDate: string;
     enforcedDepartment?: string;
+    scopeKind?: 'institution' | 'department' | 'faculty' | 'unassigned';
+    scopeLabel?: string;
+    scopeDetail?: string;
   };
+  viewerRole: ViewerRole;
 };
 
 type AnalyticsResponse = {
@@ -100,6 +106,46 @@ function formatDate(value?: string | null) {
 function activeRows(rows: Array<{ label: string; value: number; tone: Tone }>) {
   const visibleRows = rows.filter((row) => row.value > 0);
   return visibleRows.length ? visibleRows : rows;
+}
+
+function percentValue(part: number, total: number) {
+  if (!total) return 0;
+  return Math.round((part / total) * 100);
+}
+
+function statusTotal(summary: PromotionAnalyticsSummary, statuses: string[]) {
+  return summary.statusBreakdown
+    .filter((row) => statuses.includes(row.status))
+    .reduce((total, row) => total + row.value, 0);
+}
+
+function dateWindow(summary: PromotionAnalyticsSummary) {
+  const start = summary.filters.startDate || '';
+  const end = summary.filters.endDate || '';
+  if (start && end) return `${formatDate(start)} to ${formatDate(end)}`;
+  if (start) return `From ${formatDate(start)}`;
+  if (end) return `Until ${formatDate(end)}`;
+  return 'All available promotion records';
+}
+
+function workspaceHref(role: ViewerRole) {
+  if (role === 'HOD_DEAN') return '/hod/review-queue';
+  if (role === 'COMMITTEE_REVIEWER') return '/committee/review?segment=pending';
+  if (role === 'SYSTEM_ADMIN') return '/hr/requests';
+  return '/hr/requests';
+}
+
+function workspaceLabel(role: ViewerRole) {
+  if (role === 'HOD_DEAN') return 'Open Review Workspace';
+  if (role === 'COMMITTEE_REVIEWER') return 'Open Committee Queue';
+  if (role === 'SYSTEM_ADMIN') return 'Open Administrative Files';
+  return 'Open HR Requests';
+}
+
+function applicationHref(role: ViewerRole, id: number) {
+  if (role === 'HOD_DEAN') return `/hod/review-queue?request=${id}`;
+  if (role === 'COMMITTEE_REVIEWER') return `/committee/review?request=${id}`;
+  return `/hr/requests?request=${id}`;
 }
 
 export default function AnalyticsPage() {
@@ -159,7 +205,31 @@ export default function AnalyticsPage() {
   const committeeDecisionRate = summary.recommendations.totalComments
     ? Math.round((decidedRecommendations / summary.recommendations.totalComments) * 100)
     : 0;
-  const reportScope = summary.filters.enforcedDepartment || summary.filters.department || 'Institution-wide';
+  const viewerRole = summary.viewerRole;
+  const isDepartmentReviewer = viewerRole === 'HOD_DEAN';
+  const reportScope = summary.filters.enforcedDepartment || summary.filters.scopeLabel || summary.filters.department || 'Institution-wide';
+  const departmentPending = statusTotal(summary, ['SUBMITTED', 'UNDER_DEPARTMENT_REVIEW']);
+  const returnedOrFurther = statusTotal(summary, ['RETURNED_FOR_CORRECTION', 'REQUIRES_FURTHER_REVIEW']);
+  const forwardedBeyondDepartment = statusTotal(summary, [
+    'UNDER_HR_VERIFICATION',
+    'UNDER_COMMITTEE_REVIEW',
+    'RECOMMENDED',
+    'NOT_RECOMMENDED',
+    'APPROVED',
+    'APPROVED_BY_AUTHORITY',
+    'COMPLETED',
+  ]);
+  const departmentReviewRate = percentValue(forwardedBeyondDepartment, summary.executive.totalApplications);
+  const nextActionText = departmentPending > 0
+    ? `${departmentPending} application(s) require department review or forwarding.`
+    : returnedOrFurther > 0
+      ? `${returnedOrFurther} application(s) require correction follow-up or further review.`
+      : summary.executive.pendingVerification > 0
+        ? `${summary.executive.pendingVerification} application(s) are awaiting HR verification.`
+        : 'No urgent review action is pending in this report scope.';
+  const nextActionTone: Tone = departmentPending || returnedOrFurther || summary.executive.pendingVerification ? 'amber' : 'green';
+  const scopeDetail = summary.filters.scopeDetail || (isDepartmentReviewer ? 'Department-scoped review analytics' : 'Institution-wide promotion analytics');
+  const hasFilters = Boolean(departmentFilter || startDateFilter || endDateFilter);
 
   return (
     <div className="space-y-6">
@@ -200,9 +270,11 @@ export default function AnalyticsPage() {
             disabled={Boolean(summary.filters.enforcedDepartment)}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500"
           />
-          {summary.filters.enforcedDepartment && (
+          {summary.filters.enforcedDepartment ? (
             <p className="mt-1 text-xs text-slate-500">Scoped to {summary.filters.enforcedDepartment}.</p>
-          )}
+          ) : summary.filters.scopeLabel ? (
+            <p className="mt-1 text-xs text-slate-500">Scope: {summary.filters.scopeLabel}.</p>
+          ) : null}
         </div>
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Start Date</label>
@@ -230,7 +302,8 @@ export default function AnalyticsPage() {
               setStartDateFilter('');
               setEndDateFilter('');
             }}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            disabled={!hasFilters}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
           >
             Clear Filters
           </button>
@@ -261,6 +334,34 @@ export default function AnalyticsPage() {
           </div>
         </SectionCard>
       </div>
+
+      <SectionCard
+        title={isDepartmentReviewer ? 'Department Review Brief' : 'Workflow Operations Brief'}
+        description={`${scopeDetail}. ${dateWindow(summary)}.`}
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <ReportNote label="Current Scope" value={reportScope} tone="blue" />
+          <ExecutiveInsight label="Review Completion" value={`${departmentReviewRate}%`} detail={`${forwardedBeyondDepartment} application(s) have moved beyond department review.`} tone={departmentReviewRate >= 70 ? 'green' : 'amber'} />
+          <ReportNote label="Next Action Required" value={nextActionText} tone={nextActionTone} />
+          <ReportNote label="Evidence Risk" value={`${evidenceAttention} evidence item(s) require attention across this scope.`} tone={evidenceAttention ? 'amber' : 'green'} />
+        </div>
+        <div className="mt-5">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+            <span>Department review movement</span>
+            <span>{forwardedBeyondDepartment}/{summary.executive.totalApplications} moved forward</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-teal-700" style={{ width: `${Math.max(departmentReviewRate, departmentReviewRate ? 8 : 0)}%` }} />
+          </div>
+        </div>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-slate-600">Use this report to identify bottlenecks, then open the relevant workspace to act on the file.</p>
+          <Link href={workspaceHref(viewerRole)} className="inline-flex w-full items-center justify-center rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-900 sm:w-auto">
+            {workspaceLabel(viewerRole)}
+          </Link>
+        </div>
+      </SectionCard>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardCard label="Total Applications" value={summary.executive.totalApplications} description="All promotion requests" code="APP" tone="green" />
         <DashboardCard label="Pending Verification" value={summary.executive.pendingVerification} description="Awaiting HR document checks" code="HR" tone="green" />
@@ -359,6 +460,7 @@ export default function AnalyticsPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Eligibility</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Documents</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Submitted</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -374,6 +476,11 @@ export default function AnalyticsPage() {
                       <td className="px-4 py-3"><StatusBadge status={application.eligibilityStatus} /></td>
                       <td className="px-4 py-3 text-slate-700">{application.verifiedDocumentCount}/{application.documentCount} verified</td>
                       <td className="px-4 py-3 text-slate-700">{formatDate(application.submittedAt || application.createdAt)}</td>
+                      <td className="px-4 py-3">
+                        <Link href={applicationHref(viewerRole, application.id)} className="inline-flex rounded-lg border border-teal-200 bg-white px-3 py-2 text-xs font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50">
+                          Open
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -386,7 +493,7 @@ export default function AnalyticsPage() {
           <div className="space-y-3">
             <MiniMetric label="Recommended" value={summary.recommendations.recommended} tone="green" />
             <MiniMetric label="Not Recommended" value={summary.recommendations.notRecommended} tone="red" />
-            <MiniMetric label="Further Review" value={summary.recommendations.furtherReview} tone="green" />
+            <MiniMetric label="Further Review" value={summary.recommendations.furtherReview} tone="amber" />
             <MiniMetric label="Total Comments" value={summary.recommendations.totalComments} tone="slate" />
           </div>
         </SectionCard>

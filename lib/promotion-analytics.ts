@@ -11,6 +11,10 @@ export type PromotionAnalyticsFilters = {
 export type PromotionAnalyticsScope = {
   role: AuthRole;
   department?: string | null;
+  where?: Prisma.PromotionRequestWhereInput;
+  scopeKind?: 'institution' | 'department' | 'faculty' | 'unassigned';
+  scopeLabel?: string;
+  scopeDetail?: string;
 };
 
 export type PromotionAnalyticsSummary = {
@@ -83,6 +87,9 @@ export type PromotionAnalyticsSummary = {
     startDate: string;
     endDate: string;
     enforcedDepartment?: string;
+    scopeKind?: 'institution' | 'department' | 'faculty' | 'unassigned';
+    scopeLabel?: string;
+    scopeDetail?: string;
   };
 };
 
@@ -158,18 +165,35 @@ function average(values: number[]) {
   return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
 }
 
+function hasWhereClause(where?: Prisma.PromotionRequestWhereInput) {
+  return Boolean(where && Object.keys(where).length > 0);
+}
+
+function mergeWhere(...clauses: Array<Prisma.PromotionRequestWhereInput | undefined>) {
+  const activeClauses = clauses.filter(hasWhereClause) as Prisma.PromotionRequestWhereInput[];
+  if (activeClauses.length === 0) return {};
+  if (activeClauses.length === 1) return activeClauses[0];
+  return { AND: activeClauses } satisfies Prisma.PromotionRequestWhereInput;
+}
+
 function buildWhere(filters: PromotionAnalyticsFilters, scope: PromotionAnalyticsScope) {
   const requestedDepartment = clean(filters.department);
-  const enforcedDepartment = scope.role === 'HOD_DEAN' ? clean(scope.department) : '';
+  const hardDepartmentScope = scope.role === 'HOD_DEAN' && scope.scopeKind === 'department';
+  const fallbackDepartmentScope = scope.role === 'HOD_DEAN' && !scope.where;
+  const enforcedDepartment = hardDepartmentScope
+    ? clean(scope.scopeLabel || scope.department)
+    : fallbackDepartmentScope
+      ? clean(scope.department)
+      : '';
   const activeDepartment = enforcedDepartment || requestedDepartment;
-  const where: Prisma.PromotionRequestWhereInput = {};
+  const filterWhere: Prisma.PromotionRequestWhereInput = {};
 
   if (activeDepartment) {
-    where.lecturer = {
-      department: {
-        contains: activeDepartment,
-        mode: 'insensitive',
-      },
+    filterWhere.lecturer = {
+      OR: [
+        { department: { contains: activeDepartment, mode: 'insensitive' } },
+        { departmentRef: { is: { name: { contains: activeDepartment, mode: 'insensitive' } } } },
+      ],
     };
   }
 
@@ -177,12 +201,19 @@ function buildWhere(filters: PromotionAnalyticsFilters, scope: PromotionAnalytic
   const endDate = parseEndDate(filters.endDate);
 
   if (startDate || endDate) {
-    where.createdAt = {};
-    if (startDate) where.createdAt.gte = startDate;
-    if (endDate) where.createdAt.lte = endDate;
+    filterWhere.createdAt = {};
+    if (startDate) filterWhere.createdAt.gte = startDate;
+    if (endDate) filterWhere.createdAt.lte = endDate;
   }
 
-  return { where, activeDepartment, enforcedDepartment };
+  return {
+    where: mergeWhere(scope.where, filterWhere),
+    activeDepartment,
+    enforcedDepartment,
+    scopeKind: scope.scopeKind,
+    scopeLabel: scope.scopeLabel,
+    scopeDetail: scope.scopeDetail,
+  };
 }
 
 export async function loadPromotionAnalytics(filters: PromotionAnalyticsFilters, scope: PromotionAnalyticsScope): Promise<PromotionAnalyticsSummary> {
@@ -191,7 +222,7 @@ export async function loadPromotionAnalytics(filters: PromotionAnalyticsFilters,
     startDate: clean(filters.startDate),
     endDate: clean(filters.endDate),
   };
-  const { where, activeDepartment, enforcedDepartment } = buildWhere(normalizedFilters, scope);
+  const { where, activeDepartment, enforcedDepartment, scopeKind, scopeLabel, scopeDetail } = buildWhere(normalizedFilters, scope);
 
   const requests = await prisma.promotionRequest.findMany({
     where,
@@ -364,6 +395,9 @@ export async function loadPromotionAnalytics(filters: PromotionAnalyticsFilters,
       startDate: normalizedFilters.startDate,
       endDate: normalizedFilters.endDate,
       enforcedDepartment: enforcedDepartment || undefined,
+      scopeKind,
+      scopeLabel,
+      scopeDetail,
     },
   };
 }
