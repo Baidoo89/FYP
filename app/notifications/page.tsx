@@ -82,7 +82,7 @@ function applicationHref(notification: NotificationItem, viewerRole: ViewerRole)
   if (!notification.promotionRequestId) return null;
 
   if (viewerRole === 'LECTURER') return '/lecturer-portal/application';
-  if (viewerRole === 'HOD_DEAN') return `/hod/applications?request=${notification.promotionRequestId}`;
+  if (viewerRole === 'HOD_DEAN') return `/hod/review-queue?request=${notification.promotionRequestId}`;
   if (viewerRole === 'COMMITTEE_REVIEWER') return `/committee/review?request=${notification.promotionRequestId}`;
   return `/hr/requests?request=${notification.promotionRequestId}`;
 }

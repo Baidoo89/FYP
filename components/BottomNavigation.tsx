@@ -43,8 +43,8 @@ const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
   ],
   HOD_DEAN: [
     { href: '/hod/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/hod/applications?segment=active', label: 'Queue', icon: ClipboardList, key: 'review-queue' },
-    { href: '/hod/applications?segment=all', label: 'Files', icon: BriefcaseBusiness, key: 'applications' },
+    { href: '/hod/review-queue', label: 'Queue', icon: ClipboardList, key: 'review-queue' },
+    { href: '/hod/records', label: 'Files', icon: BriefcaseBusiness, key: 'applications' },
     { href: '/notifications', label: 'Alerts', icon: Bell },
     { href: '/hod/profile', label: 'Profile', icon: UserRound },
   ],
@@ -64,7 +64,7 @@ function normalizedPath(href: string) {
 function isActive(role: PortalRole | null, item: BottomNavItem, pathname: string, segment: string | null) {
   const path = normalizedPath(item.href);
 
-  if ((role === 'HOD_DEAN' && path === '/hod/applications') || (role === 'COMMITTEE_REVIEWER' && path === '/committee/review')) {
+  if (role === 'COMMITTEE_REVIEWER' && path === '/committee/review') {
     if (item.key === 'applications') return pathname === path && segment === 'all';
     return pathname === path && segment !== 'all';
   }

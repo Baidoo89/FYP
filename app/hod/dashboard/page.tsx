@@ -168,13 +168,13 @@ export default async function HodDashboardPage() {
     ? {
         title: `${activeDepartmentAction} application${activeDepartmentAction === 1 ? '' : 's'} need department action`,
         detail: 'Review submitted files, add a formal department comment, then forward complete applications to HR or return incomplete records for correction.',
-        href: '/hod/applications?segment=active',
+        href: '/hod/review-queue',
         tone: 'amber' as const,
       }
     : {
         title: 'No department action waiting',
         detail: 'Your review queue is clear. Continue monitoring forwarded applications and recent recommendation comments.',
-        href: '/hod/applications?segment=all',
+        href: '/hod/records',
         tone: 'green' as const,
       };
 
@@ -190,7 +190,7 @@ export default async function HodDashboardPage() {
               Monitor scoped promotion files, record department recommendations, return incomplete applications, and forward complete records to HR verification.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Link href="/hod/applications?segment=active" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
+              <Link href="/hod/review-queue" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
                 Open Review Queue
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
@@ -235,7 +235,7 @@ export default async function HodDashboardPage() {
               <h2 className="break-words text-lg font-bold text-gray-950">Recent Department Applications</h2>
               <p className="mt-1 text-sm text-gray-600">Latest promotion files in your department or faculty scope.</p>
             </div>
-            <Link href="/hod/applications?segment=all" className="inline-flex min-h-9 w-fit items-center rounded-lg border border-brand-primary/20 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primarySoft">
+            <Link href="/hod/records" className="inline-flex min-h-9 w-fit items-center rounded-lg border border-brand-primary/20 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primarySoft">
               View All
             </Link>
           </div>
@@ -277,12 +277,12 @@ export default async function HodDashboardPage() {
                           </div>
                         </td>
                         <td className="px-5 py-4">
-                          <p className="font-semibold text-gray-900">{counts.verified}/{counts.total} verified</p>
-                          <p className={`mt-1 text-xs ${counts.returned ? 'text-orange-700' : 'text-gray-500'}`}>{counts.returned ? `${counts.returned} needs correction` : `${counts.pending} pending`}</p>
+                          <p className="font-semibold text-gray-900">{counts.total} document{counts.total === 1 ? '' : 's'}</p>
+                          <p className={`mt-1 text-xs ${counts.returned ? 'text-orange-700' : 'text-gray-500'}`}>{counts.returned ? `${counts.returned} returned by HR` : counts.verified ? `${counts.verified} HR verified` : `${counts.pending} pending HR check`}</p>
                         </td>
                         <td className="px-5 py-4 text-gray-600">{formatDate(application.updatedAt)}</td>
                         <td className="px-5 py-4 text-right">
-                          <Link href={`/hod/applications?request=${application.id}&segment=active`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary" aria-label={`Open ${applicationCode(application.id)}`}>
+                          <Link href={`/hod/review-queue?request=${application.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-brand-primary/20 hover:bg-brand-primarySoft hover:text-brand-primary" aria-label={`Open ${applicationCode(application.id)}`}>
                             Open
                             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                           </Link>

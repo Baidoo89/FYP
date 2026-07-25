@@ -5,7 +5,7 @@ import { getDashboardForRole } from '../../lib/rbac';
 
 function getModernWorkspaceForRole(role?: AuthRole | null) {
   if (role === 'LECTURER') return '/lecturer-portal/eligibility';
-  if (role === 'HOD_DEAN') return '/hod/applications?segment=active';
+  if (role === 'HOD_DEAN') return '/hod/review-queue';
   if (role === 'HR_ADMIN') return '/analytics';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/dashboard';
   if (role === 'SYSTEM_ADMIN') return '/analytics';

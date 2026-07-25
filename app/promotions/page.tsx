@@ -5,7 +5,7 @@ import { getDashboardForRole } from '../../lib/rbac';
 
 function getPromotionWorkspaceForRole(role?: AuthRole | null) {
   if (role === 'LECTURER') return '/lecturer-portal/application';
-  if (role === 'HOD_DEAN') return '/hod/applications?segment=active';
+  if (role === 'HOD_DEAN') return '/hod/review-queue';
   if (role === 'HR_ADMIN') return '/hr/requests?segment=all';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/review?segment=pending';
   if (role === 'SYSTEM_ADMIN') return '/hr/requests?segment=all';

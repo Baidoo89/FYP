@@ -276,6 +276,22 @@ export default function PromotionApplicationDetail({ application, role, children
   const currentStep = STATUS_STEP[application.status] || 1;
   const verifiedPercent = completionPercent(stats);
   const issueCount = stats.correction + stats.rejected;
+  const isDepartmentReview = role === 'HOD_DEAN';
+  const attachedRequiredCount = Math.min(stats.total, stats.required);
+  const evidenceProgressPercent = isDepartmentReview
+    ? Math.min(100, Math.round((attachedRequiredCount / Math.max(stats.required, 1)) * 100))
+    : verifiedPercent;
+  const evidenceProgressLabel = isDepartmentReview ? `${attachedRequiredCount}/${stats.required} attached` : `${verifiedPercent}% verified`;
+  const evidenceTitle = isDepartmentReview ? 'Academic Evidence Review' : 'Evidence Readiness';
+  const evidenceDescription = isDepartmentReview
+    ? 'Open uploaded evidence to review academic completeness and relevance before forwarding to HR.'
+    : 'Verified evidence against required promotion categories.';
+  const evidenceMetricLabel = isDepartmentReview ? 'Evidence attached' : 'Verified evidence';
+  const evidenceMetricValue = isDepartmentReview ? `${attachedRequiredCount}/${stats.required}` : `${stats.verified}/${stats.required}`;
+  const documentsDescription = isDepartmentReview
+    ? 'Uploaded files for academic review. HR verification decisions appear here after HR review.'
+    : 'Uploaded files, categories, and HR verification decisions.';
+  const documentActionLabel = isDepartmentReview ? 'Review File' : role === 'HR_ADMIN' ? 'Inspect' : 'Open';
 
   return (
     <div className="min-w-0 space-y-5 print:space-y-3">
@@ -305,7 +321,7 @@ export default function PromotionApplicationDetail({ application, role, children
             <Metric label="Current rank" value={label(application.currentRank)} />
             <Metric label="Target rank" value={label(application.targetRank)} />
             <Metric label="Declared years" value={application.yearsInCurrentRank ?? 'Not set'} />
-            <Metric label="Verified evidence" value={`${stats.verified}/${stats.required}`} />
+            <Metric label={evidenceMetricLabel} value={evidenceMetricValue} />
             <Metric label="Total score" value={scoreDisplay(application.totalScore)} />
           </div>
         </div>
@@ -314,17 +330,17 @@ export default function PromotionApplicationDetail({ application, role, children
           <div className="border-b border-gray-200 p-5 lg:border-b-0 lg:border-r">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-base font-bold text-gray-950">Evidence Readiness</h3>
-                <p className="mt-1 text-sm text-gray-600">Verified evidence against required promotion categories.</p>
+                <h3 className="text-base font-bold text-gray-950">{evidenceTitle}</h3>
+                <p className="mt-1 text-sm text-gray-600">{evidenceDescription}</p>
               </div>
-              <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">{verifiedPercent}% verified</span>
+              <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">{evidenceProgressLabel}</span>
             </div>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-100">
-              <div className="h-full rounded-full bg-teal-700" style={{ width: `${Math.max(verifiedPercent, stats.verified ? 8 : 0)}%` }} />
+              <div className="h-full rounded-full bg-teal-700" style={{ width: `${Math.max(evidenceProgressPercent, evidenceProgressPercent ? 8 : 0)}%` }} />
             </div>
             <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
-              <MiniMetric label="Pending" value={stats.pending} tone="amber" />
-              <MiniMetric label="Verified" value={stats.verified} tone="green" />
+              <MiniMetric label={isDepartmentReview ? "Attached" : "Pending"} value={isDepartmentReview ? stats.total : stats.pending} tone={isDepartmentReview ? "green" : "amber"} />
+              <MiniMetric label={isDepartmentReview ? "HR Verified" : "Verified"} value={stats.verified} tone="green" />
               <MiniMetric label="Returned" value={stats.correction} tone={stats.correction > 0 ? 'amber' : 'green'} />
               <MiniMetric label="Needs Fix" value={issueCount} tone={issueCount > 0 ? 'red' : 'green'} />
             </div>
@@ -355,7 +371,7 @@ export default function PromotionApplicationDetail({ application, role, children
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
               <h3 className="text-lg font-bold text-gray-950">Evidence Documents</h3>
-              <p className="mt-1 text-sm text-gray-600">Uploaded files, categories, and HR verification decisions.</p>
+              <p className="mt-1 text-sm text-gray-600">{documentsDescription}</p>
             </div>
             <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">{stats.total} total</span>
           </div>
@@ -380,7 +396,7 @@ export default function PromotionApplicationDetail({ application, role, children
                       <StatusBadge status={document.verificationStatus || 'PENDING'} />
                       {document.fileUrl && (
                         <a href={document.fileUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
-                          Open
+                          {documentActionLabel}
                         </a>
                       )}
                     </div>

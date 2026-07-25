@@ -158,11 +158,11 @@ export default function AppShell({ children }: AppShellProps) {
           : isHodNav
             ? [
                 { href: '/hod/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Department overview' },
-                { href: '/hod/applications?segment=active', icon: 'RR', label: 'Review Queue', subtitle: 'Pending decisions' },
-                { href: '/hod/applications?segment=all', icon: 'DA', label: 'Applications', subtitle: 'Scoped records' },
-                { href: '/hod/applications?segment=further', icon: 'RC', label: 'Recommendations', subtitle: 'Further review' },
-                { href: '/hod/applications?segment=forwarded', icon: 'FW', label: 'Forwarded Applications', subtitle: 'Sent to HR' },
-                { href: '/analytics', icon: 'RP', label: 'Reports', subtitle: 'Department reports' },
+                { href: '/hod/review-queue', icon: 'RQ', label: 'Review Queue', subtitle: 'Academic action' },
+                { href: '/hod/records', icon: 'DR', label: 'Department Records', subtitle: 'Scoped files' },
+                { href: '/hod/returned', icon: 'RT', label: 'Returned Files', subtitle: 'Corrections' },
+                { href: '/hod/forwarded', icon: 'FW', label: 'Forwarded Files', subtitle: 'Sent to HR' },
+                { href: '/analytics', icon: 'RP', label: 'Reports & Analytics', subtitle: 'Department reports' },
                 { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
                 { href: '/hod/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
               ]

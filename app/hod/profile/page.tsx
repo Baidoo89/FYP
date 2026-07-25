@@ -78,7 +78,7 @@ export default async function HodProfilePage() {
               <p className="mt-1 break-words text-sm text-gray-600">Official department review account for the Digital Staff Promotion Support System.</p>
             </div>
           </div>
-          <Link href="/hod/applications?segment=active" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark sm:w-auto">
+          <Link href="/hod/review-queue" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark sm:w-auto">
             Open Review Queue
           </Link>
         </div>
