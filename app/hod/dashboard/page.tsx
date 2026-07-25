@@ -223,7 +223,7 @@ export default async function HodDashboardPage() {
       <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-5">
         <MetricTile icon={FileText} label="Scoped Applications" value={departmentApplications} detail="Department/faculty records" tone="blue" />
         <MetricTile icon={AlertTriangle} label="Active Action" value={activeDepartmentAction} detail="Needs department decision" tone="amber" />
-        <MetricTile icon={Clock3} label="Pending Review" value={pendingDepartmentReview} detail="Submitted or in review" tone="slate" />
+        <MetricTile icon={Clock3} label="Department Pending" value={pendingDepartmentReview} detail="Still with department" tone="slate" />
         <MetricTile icon={Send} label="Forwarded" value={forwardedApplications} detail="Moved beyond department" tone="green" />
         <MetricTile icon={RotateCcw} label="Returned / Further" value={returnedForCorrection + furtherReview} detail="Corrections or review holds" tone="rose" />
       </section>
@@ -278,7 +278,7 @@ export default async function HodDashboardPage() {
                         </td>
                         <td className="px-5 py-4">
                           <p className="font-semibold text-gray-900">{counts.total} document{counts.total === 1 ? '' : 's'}</p>
-                          <p className={`mt-1 text-xs ${counts.returned ? 'text-orange-700' : 'text-gray-500'}`}>{counts.returned ? `${counts.returned} returned by HR` : counts.verified ? `${counts.verified} HR verified` : `${counts.pending} pending HR check`}</p>
+                          <p className={`mt-1 text-xs ${counts.returned ? 'text-orange-700' : 'text-gray-500'}`}>{counts.returned ? `${counts.returned} returned by HR` : counts.verified ? `${counts.verified} HR verified` : `${counts.pending} awaiting HR check`}</p>
                         </td>
                         <td className="px-5 py-4 text-gray-600">{formatDate(application.updatedAt)}</td>
                         <td className="px-5 py-4 text-right">
@@ -357,7 +357,7 @@ function reviewSignalFor(status: RequestStatus, counts: ReturnType<typeof docume
   }
 
   if (status === RequestStatus.UNDER_HR_VERIFICATION) {
-    return { label: 'Ready for HR', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
+    return { label: 'With HR', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' };
   }
 
   if (forwardedStatuses.includes(status)) {

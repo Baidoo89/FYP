@@ -289,7 +289,7 @@ export default function PromotionApplicationDetail({ application, role, children
   const evidenceMetricLabel = isDepartmentReview ? 'Evidence attached' : 'Verified evidence';
   const evidenceMetricValue = isDepartmentReview ? `${attachedRequiredCount}/${stats.required}` : `${stats.verified}/${stats.required}`;
   const documentsDescription = isDepartmentReview
-    ? 'Uploaded files for academic review. HR verification decisions appear here after HR review.'
+    ? 'Uploaded files for academic review. After forwarding, unverified files are shown as awaiting HR review.'
     : 'Uploaded files, categories, and HR verification decisions.';
   const documentActionLabel = isDepartmentReview ? 'Review File' : role === 'HR_ADMIN' ? 'Inspect' : 'Open';
 
@@ -393,7 +393,7 @@ export default function PromotionApplicationDetail({ application, role, children
                       {document.verificationComment && <p className="mt-3 text-sm leading-6 text-gray-700">{document.verificationComment}</p>}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                      <StatusBadge status={document.verificationStatus || 'PENDING'} />
+                      <DocumentVerificationBadge status={document.verificationStatus} role={role} applicationStatus={application.status} />
                       {document.fileUrl && (
                         <a href={document.fileUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
                           {documentActionLabel}
@@ -467,6 +467,51 @@ export default function PromotionApplicationDetail({ application, role, children
   );
 }
 
+function isBeyondDepartmentReview(status: string) {
+  return [
+    'UNDER_HR_VERIFICATION',
+    'UNDER_COMMITTEE_REVIEW',
+    'ELIGIBLE',
+    'NOT_ELIGIBLE',
+    'RECOMMENDED',
+    'NOT_RECOMMENDED',
+    'APPROVED',
+    'APPROVED_BY_AUTHORITY',
+    'REJECTED',
+    'COMPLETED',
+  ].includes(status);
+}
+
+function DocumentVerificationBadge({ status, role, applicationStatus }: { status?: string | null; role: PromotionApplicationDetailProps['role']; applicationStatus: string }) {
+  const nextStatus = status || 'PENDING';
+
+  if (role !== 'HOD_DEAN') {
+    return <StatusBadge status={nextStatus} />;
+  }
+
+  if (nextStatus === 'PENDING') {
+    const forwarded = isBeyondDepartmentReview(applicationStatus);
+    return (
+      <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${forwarded ? 'border-sky-200 bg-sky-50 text-sky-800' : 'border-teal-200 bg-teal-50 text-teal-800'}`}>
+        {forwarded ? 'Awaiting HR' : 'Attached'}
+      </span>
+    );
+  }
+
+  if (nextStatus === 'VERIFIED') {
+    return <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-teal-800">HR Verified</span>;
+  }
+
+  if (nextStatus === 'REQUIRES_CORRECTION') {
+    return <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-orange-800">HR Returned</span>;
+  }
+
+  if (nextStatus === 'REJECTED') {
+    return <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-rose-800">HR Rejected</span>;
+  }
+
+  return <StatusBadge status={nextStatus} />;
+}
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="min-w-0 rounded-lg border border-gray-200 bg-gray-50 p-3">

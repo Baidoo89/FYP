@@ -278,7 +278,7 @@ export default function HodApplicationsWorkspace({
       <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-5">
         <MetricCard icon={FileText} label="Scoped Files" value={departmentRequests.length} tone="teal" />
         <MetricCard icon={AlertTriangle} label="Active Action" value={activeCount} tone="amber" />
-        <MetricCard icon={Clock3} label="Pending Review" value={pendingCount} tone="blue" />
+        <MetricCard icon={Clock3} label="Department Pending" value={pendingCount} tone="blue" />
         <MetricCard icon={Send} label="Forwarded" value={forwardedCount} tone="green" />
         <MetricCard icon={RotateCcw} label="Returned / Further" value={returnedCount + furtherReviewCount} tone="rose" />
       </section>
@@ -520,7 +520,7 @@ function ReviewContextBanner({ readiness, request, stats }: { readiness: ReturnT
         <div className="grid grid-cols-4 gap-2 rounded-lg bg-white/70 p-2 text-center text-xs font-semibold shadow-sm sm:min-w-64">
           <span><span className="block text-gray-500">Docs</span>{stats.total}</span>
           <span><span className="block text-gray-500">HR Verified</span>{stats.verified}</span>
-          <span><span className="block text-gray-500">HR Pending</span>{stats.pending}</span>
+          <span><span className="block text-gray-500">Awaiting HR</span>{stats.pending}</span>
           <span><span className="block text-gray-500">Returned</span>{stats.returned}</span>
         </div>
       )}
