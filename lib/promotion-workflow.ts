@@ -618,11 +618,24 @@ export async function savePromotionDocumentRecord(
   });
 
   if (request.status !== RequestStatus.DRAFT) {
-    await notifyRoles(client, {
-      roles: ['HOD_DEAN', 'HR_ADMIN', 'SYSTEM_ADMIN'],
+    const departmentRecipientIds = await findDepartmentReviewRecipientIds(client, {
       promotionRequestId: input.requestId,
-      title: 'Promotion evidence uploaded',
-      message: `${request.lecturer.name} uploaded ${formatEnum(input.category)} evidence.`,
+      excludeUserId: input.actor.id,
+    });
+
+    await notifyUserIds(client, {
+      userIds: departmentRecipientIds,
+      promotionRequestId: input.requestId,
+      title: 'Corrected promotion evidence uploaded',
+      message: `${request.lecturer.name} uploaded ${formatEnum(input.category)} evidence for a returned application.`,
+      type: NotificationType.INFO,
+    });
+
+    await notifyRoles(client, {
+      roles: ['HR_ADMIN'],
+      promotionRequestId: input.requestId,
+      title: 'Corrected promotion evidence uploaded',
+      message: `${request.lecturer.name} uploaded ${formatEnum(input.category)} evidence for a returned application.`,
       type: NotificationType.INFO,
       excludeUserId: input.actor.id,
     });
