@@ -79,7 +79,7 @@ export default async function HodProfilePage() {
             </div>
           </div>
           <Link href="/hod/review-queue" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark sm:w-auto">
-            Open Review Queue
+            Open Review Workspace
           </Link>
         </div>
       </section>

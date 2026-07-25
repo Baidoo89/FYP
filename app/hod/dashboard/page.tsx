@@ -173,8 +173,8 @@ export default async function HodDashboardPage() {
       }
     : {
         title: 'No department action waiting',
-        detail: 'Your review queue is clear. Continue monitoring forwarded applications and recent recommendation comments.',
-        href: '/hod/records',
+        detail: 'Your review workspace has no action waiting. Continue monitoring forwarded applications and recent recommendation comments.',
+        href: '/hod/review-queue',
         tone: 'green' as const,
       };
 
@@ -191,7 +191,7 @@ export default async function HodDashboardPage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link href="/hod/review-queue" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
-                Open Review Queue
+                Open Review Workspace
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
@@ -235,8 +235,8 @@ export default async function HodDashboardPage() {
               <h2 className="break-words text-lg font-bold text-gray-950">Recent Department Applications</h2>
               <p className="mt-1 text-sm text-gray-600">Latest promotion files in your department or faculty scope.</p>
             </div>
-            <Link href="/hod/records" className="inline-flex min-h-9 w-fit items-center rounded-lg border border-brand-primary/20 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primarySoft">
-              View All
+            <Link href="/hod/review-queue" className="inline-flex min-h-9 w-fit items-center rounded-lg border border-brand-primary/20 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primarySoft">
+              Open Workspace
             </Link>
           </div>
 

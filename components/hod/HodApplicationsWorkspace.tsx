@@ -123,7 +123,7 @@ type HodApplicationsWorkspaceProps = {
 export default function HodApplicationsWorkspace({
   initialSegment = 'active',
   eyebrow = 'HOD / Dean Review',
-  title = 'Department Applications',
+  title = 'Review Workspace',
   description = 'Review academic promotion files from your area, record formal department comments, return incomplete submissions, and forward complete applications to HR verification.',
 }: HodApplicationsWorkspaceProps) {
   const toast = useToast();
@@ -321,8 +321,8 @@ export default function HodApplicationsWorkspace({
       <div className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(19rem,0.85fr)_minmax(0,1.7fr)]">
         <div className="pro-card min-w-0 overflow-hidden">
           <div className="border-b border-gray-200 p-5">
-            <h2 className="text-lg font-bold text-gray-950">Review Queue</h2>
-            <p className="mt-1 text-sm text-gray-600">Select an application to inspect evidence, history, and academic review actions.</p>
+            <h2 className="text-lg font-bold text-gray-950">Review Workspace</h2>
+            <p className="mt-1 text-sm text-gray-600">Filter and open scoped applications to inspect evidence, history, and academic review actions.</p>
           </div>
           {filteredRequests.length === 0 ? (
             <div className="p-5">

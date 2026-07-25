@@ -5,8 +5,8 @@ export default function HodRoutePage() {
     <HodApplicationsWorkspace
       initialSegment="active"
       eyebrow="HOD / Dean Queue"
-      title="Review Queue"
-      description="Work through submitted and department-review promotion files that require academic action."
+      title="Review Workspace"
+      description="Review scoped promotion applications, filter by status, record academic decisions, and monitor files after forwarding."
     />
   );
 }

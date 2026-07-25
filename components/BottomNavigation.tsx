@@ -43,8 +43,8 @@ const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
   ],
   HOD_DEAN: [
     { href: '/hod/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/hod/review-queue', label: 'Queue', icon: ClipboardList, key: 'review-queue' },
-    { href: '/hod/records', label: 'Files', icon: BriefcaseBusiness, key: 'applications' },
+    { href: '/hod/review-queue', label: 'Review', icon: ClipboardList, key: 'review-workspace' },
+    { href: '/analytics', label: 'Reports', icon: FileText },
     { href: '/notifications', label: 'Alerts', icon: Bell },
     { href: '/hod/profile', label: 'Profile', icon: UserRound },
   ],
