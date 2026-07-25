@@ -234,9 +234,6 @@ export default function EvidencePage() {
   const latestSelectedDoc = selectedDocs[0] || null;
   const selectedInfo = CATEGORY_INFO[selectedCategory];
   const selectedRequired = Boolean(data?.requiredCategories.includes(selectedCategory));
-  const readinessPercent = data?.stats.requiredCategories
-    ? Math.round((data.stats.requiredVerifiedCount / data.stats.requiredCategories) * 100)
-    : 0;
   const missingRequired = useMemo(() => {
     if (!data) return [];
     return data.requiredCategories.filter((category) => categoryDocuments(data, category).length === 0);
@@ -245,9 +242,18 @@ export default function EvidencePage() {
     if (!data) return [];
     return data.documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || ''));
   }, [data]);
+  const isDraftApplication = data?.request?.status === 'DRAFT';
   const isReturnedApplication = data?.request?.status === 'RETURNED_FOR_CORRECTION';
+  const isUploadStage = Boolean(isDraftApplication || isReturnedApplication);
+  const readinessCount = data ? (isUploadStage ? data.stats.requiredUploadedCount : data.stats.requiredVerifiedCount) : 0;
+  const readinessPercent = data?.stats.requiredCategories
+    ? Math.round((readinessCount / data.stats.requiredCategories) * 100)
+    : 0;
+  const readinessMetricLabel = isUploadStage ? 'Required uploaded' : 'Required verified';
+  const readinessMetricDetail = isUploadStage ? `${readinessPercent}% upload readiness` : `${readinessPercent}% verification readiness`;
   const uploadLocked = Boolean(data?.request && !['DRAFT', 'RETURNED_FOR_CORRECTION'].includes(data.request.status));
   const correctionReady = Boolean(isReturnedApplication && data?.request?.id && attentionDocuments.length === 0);
+  const draftReadyForSubmission = Boolean(isDraftApplication && data?.request?.id && data.stats.requiredCategories > 0 && missingRequired.length === 0);
   const needsAttentionCount = (data?.stats.returnedCount || 0) + (data?.stats.rejectedCount || 0);
   const needsAttentionDetail = needsAttentionCount === 0
     ? 'No returned or rejected evidence'
@@ -334,9 +340,12 @@ export default function EvidencePage() {
         throw new Error(payload.error || 'Unable to resubmit corrected application');
       }
 
-      const message = 'Corrected application resubmitted successfully. Department review can now continue.';
+      const isCorrection = data.request.status === 'RETURNED_FOR_CORRECTION';
+      const message = isCorrection
+        ? 'Corrected application resubmitted successfully. Department review can now continue.'
+        : 'Application submitted successfully. Department review can now begin.';
       setResubmitMessage(message);
-      toast.success('Application resubmitted', message);
+      toast.success(isCorrection ? 'Application resubmitted' : 'Application submitted', message);
       await loadEvidence();
     } catch (resubmitError) {
       const message = resubmitError instanceof Error ? resubmitError.message : 'Unable to resubmit corrected application';
@@ -447,7 +456,7 @@ export default function EvidencePage() {
       </section>
 
       <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <PortfolioMetric code="REQ" label="Required verified" value={`${data.stats.requiredVerifiedCount}/${data.stats.requiredCategories}`} detail={`${readinessPercent}% readiness`} />
+        <PortfolioMetric code="REQ" label={readinessMetricLabel} value={`${readinessCount}/${data.stats.requiredCategories}`} detail={readinessMetricDetail} />
         <PortfolioMetric code="DOC" label="Uploaded documents" value={data.stats.totalDocuments} detail="Across active application" />
         <PortfolioMetric code="PEN" label="Pending review" value={data.stats.pendingCount} detail="Awaiting HR decision" tone="amber" />
         <PortfolioMetric code="RET" label="Needs attention" value={needsAttentionCount} detail={needsAttentionDetail} tone={needsAttentionCount > 0 ? 'rose' : 'teal'} />
@@ -481,6 +490,33 @@ export default function EvidencePage() {
           </div>
         )}
       </section>
+
+      {draftReadyForSubmission && (
+        <section className="pro-card border-teal-200 bg-teal-50/60 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">Ready for submission</p>
+              <h2 className="mt-2 text-xl font-bold text-gray-950">Required evidence has been uploaded</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-700">
+                Submit the application to begin HOD/Dean review. HR verification and eligibility calculation will happen after department forwarding.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleResubmit}
+              disabled={resubmitting}
+              className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {resubmitting ? 'Submitting...' : 'Submit Application'}
+            </button>
+          </div>
+          {resubmitMessage && (
+            <p className={`mt-4 text-sm font-semibold ${resubmitMessage.includes('successfully') ? 'text-emerald-800' : 'text-amber-900'}`}>
+              {resubmitMessage}
+            </p>
+          )}
+        </section>
+      )}
 
       {isReturnedApplication && (
         <section className={`pro-card p-5 ${correctionReady ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60'}`}>
