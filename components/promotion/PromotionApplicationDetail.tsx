@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import StatusBadge from './StatusBadge';
 import ProgressStepper from './ProgressStepper';
 
@@ -10,6 +10,8 @@ export type PromotionDocumentItem = {
   category: string;
   fileUrl?: string;
   fileName?: string | null;
+  fileType?: string | null;
+  mimeType?: string | null;
   fileSize?: number | null;
   uploadedAt?: string | null;
   verificationStatus?: string;
@@ -266,13 +268,40 @@ function completionPercent(stats: DocumentStats) {
   return Math.min(100, Math.round((stats.verified / stats.required) * 100));
 }
 
+function formatFileSize(size?: number | null) {
+  if (!size || size <= 0) return null;
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function fileMeta(document: PromotionDocumentItem) {
-  const parts = [document.fileName, document.uploadedAt ? `Uploaded ${formatDate(document.uploadedAt)}` : null].filter(Boolean);
+  const parts = [
+    document.fileName,
+    formatFileSize(document.fileSize),
+    document.uploadedAt ? `Uploaded ${formatDate(document.uploadedAt)}` : null,
+  ].filter(Boolean);
   return parts.length ? parts.join(' | ') : 'Evidence file';
+}
+
+function searchableFileText(document: PromotionDocumentItem) {
+  return `${document.mimeType || ''} ${document.fileType || ''} ${document.fileName || ''} ${document.fileUrl || ''}`.toLowerCase();
+}
+
+function isPdfDocument(document: PromotionDocumentItem) {
+  const text = searchableFileText(document);
+  return text.includes('application/pdf') || text.includes('.pdf');
+}
+
+function isImageDocument(document: PromotionDocumentItem) {
+  const text = searchableFileText(document);
+  return text.includes('image/') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(text);
 }
 
 export default function PromotionApplicationDetail({ application, role, children }: PromotionApplicationDetailProps) {
   const documents = application.documents || [];
+  const previewableDocuments = useMemo(() => documents.filter((document) => Boolean(document.fileUrl)), [documents]);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const reviewComments = application.reviewComments || [];
   const statusHistory = application.statusHistory || [];
   const stats = documentStats(application);
@@ -296,6 +325,24 @@ export default function PromotionApplicationDetail({ application, role, children
     ? 'Uploaded files for academic review. After forwarding, unverified files are shown as awaiting HR review.'
     : 'Uploaded files, categories, and HR verification decisions.';
   const documentActionLabel = isDepartmentReview ? 'Review File' : role === 'HR_ADMIN' ? 'Inspect' : 'Open';
+  const safePreviewIndex = previewableDocuments.length ? Math.min(previewIndex, previewableDocuments.length - 1) : 0;
+  const previewDocument = previewableDocuments[safePreviewIndex] || null;
+
+  useEffect(() => {
+    setPreviewIndex(0);
+  }, [application.id]);
+
+  const selectPreviewDocument = (documentId: number) => {
+    const nextIndex = previewableDocuments.findIndex((document) => document.id === documentId);
+    if (nextIndex >= 0) setPreviewIndex(nextIndex);
+  };
+
+  const movePreviewDocument = (direction: -1 | 1) => {
+    setPreviewIndex((current) => {
+      if (!previewableDocuments.length) return 0;
+      return Math.min(Math.max(current + direction, 0), previewableDocuments.length - 1);
+    });
+  };
 
   return (
     <div className="min-w-0 space-y-5 print:space-y-3">
@@ -379,34 +426,79 @@ export default function PromotionApplicationDetail({ application, role, children
             </div>
             <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">{stats.total} total</span>
           </div>
+
+          {previewDocument ? (
+            <EvidencePreview
+              document={previewDocument}
+              index={safePreviewIndex}
+              total={previewableDocuments.length}
+              role={role}
+              applicationStatus={application.status}
+              onPrevious={() => movePreviewDocument(-1)}
+              onNext={() => movePreviewDocument(1)}
+              disablePrevious={safePreviewIndex === 0}
+              disableNext={safePreviewIndex >= previewableDocuments.length - 1}
+            />
+          ) : (
+            <EmptyLine message="Document preview will appear when an uploaded evidence file is available." />
+          )}
+
           <div className="mt-4 space-y-3">
             {documents.length === 0 ? (
               <EmptyLine message="No evidence documents have been uploaded yet." />
             ) : (
-              documents.map((document) => (
-                <article key={document.id} className="min-w-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="break-words font-semibold text-gray-950">{document.title}</p>
-                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-gray-600">
-                          {label(document.category)}
-                        </span>
+              documents.map((document) => {
+                const isPreviewing = previewDocument?.id === document.id;
+
+                return (
+                  <article
+                    key={document.id}
+                    className={`min-w-0 rounded-lg border p-4 shadow-sm transition ${
+                      isPreviewing ? 'border-teal-300 bg-teal-50/60 ring-1 ring-teal-100' : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="break-words font-semibold text-gray-950">{document.title}</p>
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-gray-600">
+                            {label(document.category)}
+                          </span>
+                        </div>
+                        <p className="mt-1 break-words text-xs text-gray-500">{fileMeta(document)}</p>
+                        {document.verificationComment && <p className="mt-3 text-sm leading-6 text-gray-700">{document.verificationComment}</p>}
                       </div>
-                      <p className="mt-1 break-words text-xs text-gray-500">{fileMeta(document)}</p>
-                      {document.verificationComment && <p className="mt-3 text-sm leading-6 text-gray-700">{document.verificationComment}</p>}
+                      <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                        <DocumentVerificationBadge status={document.verificationStatus} role={role} applicationStatus={application.status} />
+                        {document.fileUrl ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => selectPreviewDocument(document.id)}
+                              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${
+                                isPreviewing ? 'border-teal-700 bg-teal-700 text-white' : 'border-teal-200 text-teal-700 hover:bg-teal-50'
+                              }`}
+                              aria-label={`Preview ${document.title}`}
+                            >
+                              Preview
+                            </button>
+                            <a
+                              href={document.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+                            >
+                              {documentActionLabel}
+                            </a>
+                          </>
+                        ) : (
+                          <span className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-500">No file</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                      <DocumentVerificationBadge status={document.verificationStatus} role={role} applicationStatus={application.status} />
-                      {document.fileUrl && (
-                        <a href={document.fileUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
-                          {documentActionLabel}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              ))
+                  </article>
+                );
+              })
             )}
           </div>
         </section>
@@ -516,6 +608,103 @@ function DocumentVerificationBadge({ status, role, applicationStatus }: { status
 
   return <StatusBadge status={nextStatus} />;
 }
+
+function EvidencePreview({
+  document,
+  index,
+  total,
+  role,
+  applicationStatus,
+  onPrevious,
+  onNext,
+  disablePrevious,
+  disableNext,
+}: {
+  document: PromotionDocumentItem;
+  index: number;
+  total: number;
+  role: PromotionApplicationDetailProps['role'];
+  applicationStatus: string;
+  onPrevious: () => void;
+  onNext: () => void;
+  disablePrevious: boolean;
+  disableNext: boolean;
+}) {
+  const fileUrl = document.fileUrl || '';
+  const canPreviewPdf = isPdfDocument(document);
+  const canPreviewImage = isImageDocument(document);
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 print:hidden">
+      <div className="flex flex-col gap-3 border-b border-gray-200 bg-white p-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="break-words text-sm font-bold text-gray-950">{document.title}</p>
+            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-gray-600">
+              {label(document.category)}
+            </span>
+            <DocumentVerificationBadge status={document.verificationStatus} role={role} applicationStatus={applicationStatus} />
+          </div>
+          <p className="mt-1 break-words text-xs text-gray-500">
+            {fileMeta(document)} | Document {index + 1} of {total}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+          <button
+            type="button"
+            onClick={onPrevious}
+            disabled={disablePrevious}
+            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+            aria-label="Preview previous evidence document"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={disableNext}
+            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+            aria-label="Preview next evidence document"
+          >
+            Next
+          </button>
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg border border-teal-200 bg-white px-3 py-2 text-xs font-semibold text-teal-800 transition hover:bg-teal-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+          >
+            Open
+          </a>
+          <a
+            href={fileUrl}
+            download={document.fileName || undefined}
+            className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+          >
+            Download
+          </a>
+        </div>
+      </div>
+
+      <div className="bg-white p-3">
+        {canPreviewPdf ? (
+          <iframe title={`Preview ${document.title}`} src={fileUrl} className="h-80 w-full rounded-lg border border-gray-200 bg-white sm:h-96" />
+        ) : canPreviewImage ? (
+          <div className="flex max-h-96 items-center justify-center overflow-auto rounded-lg border border-gray-200 bg-gray-50">
+            <img src={fileUrl} alt={`${document.title} evidence preview`} className="max-h-96 w-auto max-w-full object-contain" />
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
+            <p className="text-sm font-semibold text-gray-950">Preview is not available for this file type.</p>
+            <p className="mt-1 text-sm text-gray-600">Open or download the evidence file to review it in the appropriate application.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="min-w-0 rounded-lg border border-gray-200 bg-gray-50 p-3">
