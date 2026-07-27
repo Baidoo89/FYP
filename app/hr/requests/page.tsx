@@ -370,7 +370,14 @@ export default function MasterQueuePage() {
 
           {filteredRequests.length === 0 ? (
             <div className="p-5">
-              <EmptyState title="No matching requests" description="Adjust the segment, status, or search term to view promotion files." />
+              <EmptyState
+                title="No matching requests"
+                description={
+                  selectedRequest
+                    ? `No requests match this filter. Still showing ${applicationCode(selectedRequest.id)} below from outside the current filter — adjust the segment, status, or search term to browse other applications.`
+                    : 'Adjust the segment, status, or search term to view promotion files.'
+                }
+              />
             </div>
           ) : (
             <div className="max-h-[76rem] divide-y divide-gray-100 overflow-y-auto">

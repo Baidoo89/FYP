@@ -1,4 +1,5 @@
 const { execSync } = require('child_process')
+const path = require('path')
 
 function run(command) {
   console.log(`> ${command}`)
@@ -18,4 +19,6 @@ const schemaPath = isProductionBuild
   : 'prisma/schema.prisma'
 
 console.log(`Generating Prisma client from ${schemaPath}`)
-run(`npx prisma generate --schema ${schemaPath}`)
+
+const prismaCli = path.join(__dirname, '..', 'node_modules', 'prisma', 'build', 'index.js')
+run(`"${process.execPath}" "${prismaCli}" generate --schema ${schemaPath}`)

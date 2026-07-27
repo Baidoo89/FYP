@@ -300,7 +300,14 @@ export default function CommitteeReviewPage() {
           </div>
           {filteredRequests.length === 0 ? (
             <div className="p-5">
-              <EmptyState title="No matching applications" description="Adjust the segment or search term to view committee files." />
+              <EmptyState
+                title="No matching applications"
+                description={
+                  selectedRequest
+                    ? `No applications match this filter. Still showing ${applicationCode(selectedRequest.id)} below from outside the current filter — adjust the segment or search term to browse other applications.`
+                    : 'Adjust the segment or search term to view committee files.'
+                }
+              />
             </div>
           ) : (
             <div className="max-h-[72rem] divide-y divide-gray-100 overflow-y-auto">
