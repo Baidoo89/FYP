@@ -465,7 +465,11 @@ export default function VerificationWorkspacePage() {
                           <div>
                             <p className="font-semibold text-gray-950">{selectedDocument.title}</p>
                             <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-gray-500">{label(selectedDocument.category)}</p>
-                            <p className="mt-1 text-xs text-gray-500">{selectedDocument.fileName || 'Evidence file'} | {formatFileSize(selectedDocument.fileSize)}</p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              {[formatFileSize(selectedDocument.fileSize), selectedDocument.uploadedAt ? `Uploaded ${formatDate(selectedDocument.uploadedAt)}` : null]
+                                .filter(Boolean)
+                                .join(' | ') || 'Evidence file'}
+                            </p>
                           </div>
                           <StatusBadge status={selectedDocument.verificationStatus || 'PENDING'} />
                         </div>

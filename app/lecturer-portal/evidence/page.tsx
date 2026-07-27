@@ -732,7 +732,7 @@ export default function EvidencePage() {
                   <tr key={doc.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-5 py-4">
                       <p className="font-semibold text-gray-950">{doc.title}</p>
-                      <p className="mt-1 break-words text-xs text-gray-500">{doc.fileName || formatBytes(doc.size)}</p>
+                      <p className="mt-1 break-words text-xs text-gray-500">{formatBytes(doc.size)}</p>
                     </td>
                     <td className="px-5 py-4">
                       <p className="font-medium text-gray-800">{CATEGORY_INFO[doc.category].title}</p>

@@ -70,9 +70,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as Lecturer;
 
-    console.log('📥 Incoming lecturer:', body);
-
-    // ✅ Validation
+    // Validation
     if (!body.name || !body.email || !body.department || !body.rank) {
       return NextResponse.json(
         {

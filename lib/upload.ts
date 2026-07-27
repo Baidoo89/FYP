@@ -19,7 +19,10 @@ export function sanitizeUploadName(input: string) {
 }
 
 export function createSecureFileName(originalName: string) {
-  const randomPart = crypto.randomUUID().replace(/-/g, '');
+  // 8 hex characters (32 bits) is ample collision resistance for this volume of
+  // uploads and keeps the storage filename shorter than a full UUID; actual
+  // access control is enforced by the API route, not by name obscurity.
+  const randomPart = crypto.randomBytes(4).toString('hex');
   const safeBaseName = sanitizeUploadName(path.parse(originalName).name) || 'document';
   return `${safeBaseName}-${randomPart}.pdf`;
 }

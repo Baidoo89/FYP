@@ -39,8 +39,6 @@ export async function POST(request: NextRequest) {
     const username = (body.username || '').trim();
     const password = (body.password || '').trim();
 
-    console.log('LOGIN ATTEMPT:', username);
-
     if (!username || !password) {
       return NextResponse.json(
         { success: false, error: 'Username and password required' },

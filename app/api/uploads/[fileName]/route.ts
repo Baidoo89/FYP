@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { prisma } from '../../../../lib/prisma';
 import { getAuthSession } from '../../../../lib/auth';
-import { PROMOTION_UPLOAD_DIR } from '../../../../lib/upload';
+import { PROMOTION_UPLOAD_DIR, sanitizeUploadName } from '../../../../lib/upload';
 import { ensureDocumentFileStorage, getDocumentFileBlob } from '../../../../lib/document-file-storage';
 
 function toArrayBuffer(buffer: Buffer) {
@@ -37,11 +37,16 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
   await ensureDocumentFileStorage(prisma);
   const storedFile = await getDocumentFileBlob(prisma, documentRecord.id);
 
+  // The stored fileName carries a random suffix for storage-safety; users should
+  // never see that in a browser tab title or a downloaded file's name, so present
+  // a clean name derived from the document's own title instead.
+  const downloadName = `${sanitizeUploadName(documentRecord.title) || 'evidence-document'}.pdf`;
+
   if (storedFile) {
     return new NextResponse(toArrayBuffer(storedFile.data), {
       headers: {
         'Content-Type': storedFile.mimeType || documentRecord.mimeType || 'application/pdf',
-        'Content-Disposition': `inline; filename="${storedFile.fileName || documentRecord.fileName}"`,
+        'Content-Disposition': `inline; filename="${downloadName}"`,
         'Content-Length': String(storedFile.size || documentRecord.fileSize),
       },
     });
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
     return new NextResponse(toArrayBuffer(fileBuffer), {
       headers: {
         'Content-Type': documentRecord.mimeType || 'application/pdf',
-        'Content-Disposition': `inline; filename="${documentRecord.fileName}"`,
+        'Content-Disposition': `inline; filename="${downloadName}"`,
         'Content-Length': String(documentRecord.fileSize),
       },
     });
