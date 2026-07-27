@@ -370,7 +370,7 @@ export default function AnalyticsPage() {
         <DashboardCard label="Returned" value={summary.executive.returnedForCorrection} description="Needs correction" code="RET" tone="amber" />
         <DashboardCard label="Completed" value={summary.executive.completed} description={`${summary.executive.completionRate}% completion rate`} code="FIN" tone="green" />
         <DashboardCard label="Verified Documents" value={`${summary.documents.verifiedRate}%`} description={`${summary.documents.verified} of ${summary.documents.total} documents`} code="DOC" tone="green" />
-        <DashboardCard label="Average Score" value={`${summary.executive.averageScore}%`} description="Across scored applications" code="SC" tone="slate" />
+        <DashboardCard label="Average Criteria Score" value={`${summary.executive.averageScore}/100`} description="Weighted evidence-category coverage, not a performance grade" code="SC" tone="slate" />
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">

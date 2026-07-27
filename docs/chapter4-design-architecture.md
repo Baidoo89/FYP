@@ -268,6 +268,15 @@ This double check (is the transition legal at all? is *this role* allowed to mak
 
 The eligibility engine implements the rule-based decision support model specified in Chapter 3 §3.17. It never grants a promotion; it computes a recommendation from verified evidence and hands the outcome to HR and the Committee for human decision-making, as required by the approved scope (§1.8 Delimitations of the Study).
 
+**Terminology.** The engine produces two distinct outputs that must not be conflated:
+
+1. **Criteria score** — a weighted figure out of 100, computed from which required evidence categories (Teaching 40, Research 40, Service 20) have been verified by HR. This measures *dossier completeness against configured criteria*, not academic performance quality. A criteria score of 100/100 means all required evidence categories were verified — it is not a percentage grade of the applicant's work.
+2. **Eligibility recommendation** — a status (`ELIGIBLE`, `NOT_ELIGIBLE`, `INCOMPLETE_APPLICATION`, `REQUIRES_FURTHER_REVIEW`) derived from the criteria score together with the minimum-years-in-rank rule and the configured minimum score threshold. This is presented to HR and the Committee as a *recommendation only*; it does not itself decide a promotion.
+
+The interface reflects this distinction directly: role dashboards label the numeric output "Criteria Score" (displayed as `n/100`, not as a percentage) and display the eligibility recommendation as a separate status badge with its own explanatory text (e.g. Figure 4.10). This avoids the numeric score being misread as a performance grade or as GCTU's own qualitative promotion assessment.
+
+**Scope relative to Schedule J and Schedule K.** The implemented prototype operationalises selected academic promotion scenarios under the Schedule J structure (Teaching, Research, Service categories, as set out in Chapter 3 §3.17). The evidence-category model, criteria configuration, and eligibility engine are built to be configurable rather than hard-coded, so the same mechanism can in principle be extended to the administrative and professional staff requirements under Schedule K. However, the complete Schedule K assessment framework was not implemented within the prototype's scope; the demonstrated end-to-end scenario in this chapter is the academic promotion pathway only. This is consistent with the delimitations agreed in the approved proposal (§1.8) and is revisited as future work in Chapter 5.
+
 **Figure 4.5 — Eligibility Calculation Sequence Diagram**
 
 ![Eligibility calculation sequence diagram](images/fig-4-05-eligibility-sequence-diagram.png)
@@ -326,7 +335,7 @@ function scoreBand(score?: number | null) {
 }
 ```
 
-During implementation testing, the initial version of `calculateEligibility` computed `totalScore` from a separate per-category `Score` table that no part of the application ever populated (`request.totalScore ?? request.scores.reduce(...)` against an always-empty relation). The practical effect was that **every application scored 0% the moment HR finished verifying it**, regardless of how complete the evidence was — a defect only visible once the full workflow was exercised end-to-end, not from reading the eligibility rules in isolation. It was corrected to compute the score directly from verified document categories (shown above), matching the approved proposal's own scoring table exactly. Figure 4.10 shows the corrected engine's output on a fully verified application: a computed score of 100% and an `ELIGIBLE` recommendation.
+During implementation testing, the initial version of `calculateEligibility` computed `totalScore` from a separate per-category `Score` table that no part of the application ever populated (`request.totalScore ?? request.scores.reduce(...)` against an always-empty relation). The practical effect was that **every application received a criteria score of 0 the moment HR finished verifying it**, regardless of how complete the evidence was — a defect only visible once the full workflow was exercised end-to-end, not from reading the eligibility rules in isolation. It was corrected to compute the score directly from verified document categories (shown above), matching the approved proposal's own scoring table exactly. Figure 4.10 shows the corrected engine's output on a fully verified application: a criteria score of 100/100 and an `ELIGIBLE` recommendation.
 
 ## 4.8 System Modules
 
@@ -382,7 +391,7 @@ The full promotion queue with segment/status/eligibility filters and per-request
 ![HR master queue](images/fig-4-09-hr-master-queue.png)
 
 **Figure 4.10 — HR Verification and Eligibility Detail**
-The corrected eligibility engine in action on a fully verified application: 6/6 evidence verified, **Total Score 100%**, **Eligible**, complete status history from Draft through Completed, and the committee's recorded recommendation.
+The eligibility engine's output on a fully verified application: 6/6 required evidence categories verified, a **Criteria Score of 100/100**, an **Eligible** recommendation shown as a separate status badge with its own explanatory text, complete status history from Draft through Completed, and the committee's recorded recommendation. The criteria score and the eligibility recommendation are displayed as two distinct values, consistent with the terminology set out in §4.7.1, to avoid the numeric score being read as a performance grade.
 
 ![HR verification detail](images/fig-4-10-hr-verification-detail.png)
 
@@ -426,12 +435,12 @@ Testing was carried out at four levels, all against the actual running applicati
 The complete promotion pipeline was exercised in a real, headless-browser session (Chromium, driven via Playwright) against the running application — not simulated at the code level:
 
 1. **HR verification** — logged in as HR Administrator, opened a real application record, confirmed all six required evidence documents (Teaching, Research, Service, Qualifications, Publications, Professional Development) as verified.
-2. **Eligibility calculation** — confirmed the engine computed `Total Score: 100%` and `Eligible`, and that the application status advanced to `UNDER_COMMITTEE_REVIEW`.
+2. **Eligibility calculation** — confirmed the engine computed a `Criteria Score: 100/100` and an `Eligible` recommendation, and that the application status advanced to `UNDER_COMMITTEE_REVIEW`.
 3. **Committee recommendation** — logged in as Committee Reviewer, located the application in the review queue (score visible in the queue list), submitted a `RECOMMENDED` decision through the actual review form, and confirmed the resulting workflow-history and audit-log entries.
 4. **HR final decision** — logged back in as HR Administrator, used "Record authority approval" and "Complete workflow" (each behind a confirmation dialog) to move the application to `APPROVED_BY_AUTHORITY` and then `COMPLETED`.
 5. **Status history verification** — confirmed the full audit trail was correct and in order end to end: Draft → Submitted → Department Review → HR Verification → Recommended → Approved by Authority → Completed.
 
-This test is what surfaced the scoring defect described in §4.7.2 — the application appeared correct when the eligibility rules were read in isolation, but produced a wrong result (0% score) once actually exercised through the full workflow, which is the justification for testing the running system rather than relying on code review alone.
+This test is what surfaced the scoring defect described in §4.7.2 — the application appeared correct when the eligibility rules were read in isolation, but produced a wrong result (a criteria score of 0 regardless of verified evidence) once actually exercised through the full workflow, which is the justification for testing the running system rather than relying on code review alone.
 
 ### 4.11.4 Access control and responsiveness testing
 - Verified that role-restricted actions (e.g. committee recommendation submission) are rejected server-side when attempted outside the correct workflow state, independent of what the client UI shows.

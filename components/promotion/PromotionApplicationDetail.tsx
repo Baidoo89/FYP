@@ -260,7 +260,7 @@ function getRoleGuidance(application: PromotionApplicationDetailRecord, role: Pr
 
 function scoreDisplay(score?: number | null) {
   if (score === null || score === undefined) return 'Not scored';
-  return `${score}%`;
+  return `${score}/100`;
 }
 
 function completionPercent(stats: DocumentStats) {
@@ -381,7 +381,7 @@ export default function PromotionApplicationDetail({ application, role, children
             <Metric label="Target rank" value={label(application.targetRank)} />
             <Metric label="Declared years" value={application.yearsInCurrentRank ?? 'Not set'} />
             <Metric label={evidenceMetricLabel} value={evidenceMetricValue} />
-            <Metric label="Total score" value={scoreDisplay(application.totalScore)} />
+            <Metric label="Criteria score" value={scoreDisplay(application.totalScore)} />
           </div>
         </div>
 

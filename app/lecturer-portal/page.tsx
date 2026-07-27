@@ -415,7 +415,7 @@ function CurrentApplicationCard({ request, rankPath }: { request: DashboardData[
 
       <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-3">
         <SummaryFact label="Submitted" value={formatDate(request?.submittedAt)} />
-        <SummaryFact label="Total Score" value={request?.totalScore == null ? 'Pending' : `${Math.round(request.totalScore)}%`} />
+        <SummaryFact label="Criteria Score" value={request?.totalScore == null ? 'Pending' : `${Math.round(request.totalScore)}/100`} />
         <SummaryFact label="Latest Evidence" value={request?.latestDocument?.title || 'No upload yet'} />
       </div>
 

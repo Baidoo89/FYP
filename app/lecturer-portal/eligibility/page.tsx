@@ -204,11 +204,11 @@ export default function EligibilityPage() {
             <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-semibold text-teal-950">{action.title}</div>
           </SectionCard>
 
-          <SectionCard title="Criteria Snapshot" description="Current active criteria configured by the system administrator.">
+          <SectionCard title="Criteria Snapshot" description="Current active criteria configured by the system administrator. This score reflects weighted evidence-category coverage, not a performance grade.">
             <div className="grid gap-3 text-sm text-gray-700">
               <InfoRow label="Minimum years in rank" value={`${data.criteria?.minimumYearsInCurrentRank ?? 0} year(s)`} />
-              <InfoRow label="Minimum score" value={data.criteria?.minimumTotalScore ? `${data.criteria.minimumTotalScore}%` : 'Not configured'} />
-              <InfoRow label="Your score" value={data.request?.totalScore ? `${data.request.totalScore}%` : 'Awaiting calculation'} />
+              <InfoRow label="Minimum criteria score" value={data.criteria?.minimumTotalScore ? `${data.criteria.minimumTotalScore}/100` : 'Not configured'} />
+              <InfoRow label="Your criteria score" value={data.request?.totalScore ? `${data.request.totalScore}/100` : 'Awaiting calculation'} />
               <InfoRow label="Last updated" value={formatDate(data.request?.updatedAt)} />
             </div>
           </SectionCard>

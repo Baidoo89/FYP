@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 import StatusBadge from '../../../components/promotion/StatusBadge';
@@ -189,6 +189,7 @@ export default function EvidencePage() {
   const [resubmitting, setResubmitting] = useState(false);
   const [resubmitMessage, setResubmitMessage] = useState('');
   const [fileInputKey, setFileInputKey] = useState(0);
+  const uploadPanelRef = useRef<HTMLDivElement | null>(null);
 
   async function loadEvidence() {
     setLoading(true);
@@ -364,6 +365,12 @@ export default function EvidencePage() {
     setUploadTitle(existing?.title || '');
     setUploadFile(null);
     setFileInputKey((key) => key + 1);
+
+    // Below the xl breakpoint the upload panel stacks under the category grid rather than
+    // sitting beside it, so bring it into view instead of leaving the user to scroll for it.
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1279px)').matches) {
+      uploadPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   function handleFileSelection(file?: File | null) {
@@ -613,7 +620,7 @@ export default function EvidencePage() {
           </div>
         </div>
 
-        <div className="pro-card min-w-0 p-5">
+        <div ref={uploadPanelRef} className="pro-card min-w-0 scroll-mt-4 p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
               <div className="flex min-w-0 items-center gap-2">
