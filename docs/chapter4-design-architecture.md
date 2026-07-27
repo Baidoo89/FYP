@@ -10,6 +10,13 @@ Every diagram, code snippet, and screenshot in this chapter is drawn directly fr
 
 The system follows the three-tier architecture proposed in Chapter 3: a presentation layer, an application layer, and a data layer, implemented as a single Next.js application with a PostgreSQL (Neon) database accessed through Prisma ORM.
 
+**Figure 4.1 — System Architecture**
+
+![System architecture diagram](images/fig-4-01-system-architecture.png)
+
+<details>
+<summary>Diagram source (Mermaid)</summary>
+
 ```mermaid
 flowchart TB
     subgraph Client["Presentation Layer (Browser)"]
@@ -31,6 +38,8 @@ flowchart TB
     DB --> PRISMA --> WF --> API --> UI
 ```
 
+</details>
+
 - **Presentation layer** — role-specific dashboards (Lecturer, HOD/Dean, HR Admin, Committee Reviewer, System Admin), each rendered from shared layout components (`AppShell.tsx`, `BottomNavigation.tsx`) so navigation adapts automatically between a desktop sidebar and a mobile bottom tab bar.
 - **Application layer** — Next.js API routes under `app/api/` handle authentication, promotion-request lifecycle, document verification, committee review, and reporting. Business rules (status transitions, eligibility calculation, audit logging) are isolated in `lib/`, not scattered across route handlers, so the same rules apply regardless of which route calls them.
 - **Data layer** — Prisma ORM maps the domain model to PostgreSQL hosted on Neon. Two schema files exist (`schema.prisma` for local development, `schema.postgres.prisma` for the deployed Postgres target); the correct one is selected automatically at build time by `scripts/prisma-generate.js` based on the `VERCEL` / `NODE_ENV` environment.
@@ -38,6 +47,13 @@ flowchart TB
 ## 4.3 Database Design
 
 The database is relational, modelled with Prisma. The diagram below shows the core promotion-workflow entities (auxiliary tables such as legacy `Lecturer`/`AdminAccount` compatibility records and `SystemSetting` key-value configuration are omitted for clarity).
+
+**Figure 4.2 — Entity Relationship Diagram**
+
+![Entity relationship diagram](images/fig-4-02-er-diagram.png)
+
+<details>
+<summary>Diagram source (Mermaid)</summary>
 
 ```mermaid
 erDiagram
@@ -124,16 +140,25 @@ erDiagram
     }
 ```
 
+</details>
+
 Key design points:
 
 - **`PromotionRequest`** is the aggregate root of the workflow — it carries `status` (the workflow stage, e.g. `UNDER_HR_VERIFICATION`), `eligibilityStatus` and `totalScore` (the decision-support outcome, computed — never entered directly by a user).
 - **`Document`** and **`Verification`** are separate entities, matching the design in Chapter 3 exactly: a `Document` caches its current `verificationStatus` for fast display, while every individual verify/reject decision is additionally recorded as its own `Verification` row (verifier, decision, comment, timestamp) for a complete audit trail. Every document a lecturer uploads must belong to one of the university's evidence categories (`TEACHING`, `RESEARCH`, `SERVICE`, `QUALIFICATIONS`, `PUBLICATIONS`, `PROFESSIONAL_DEVELOPMENT`, `OTHER_SUPPORTING_EVIDENCE`).
-- **`AuditLog`** and **`StatusHistory`** are append-only: every verification decision, status change, and eligibility calculation writes a record, which is what makes the Status History panel shown in Figure 4.5 possible.
+- **`AuditLog`** and **`StatusHistory`** are append-only: every verification decision, status change, and eligibility calculation writes a record, which is what makes the Status History panel shown in Figure 4.10 possible.
 - **`PromotionCriteria`** externalises the promotion rules (required years in rank, required evidence categories, minimum score) per rank transition, so criteria can be reconfigured by a System Administrator without a code change.
 
 ## 4.4 Promotion Workflow State Design
 
 The `PromotionRequest.status` field is a finite state machine. Valid transitions are enforced centrally in `lib/workflow.ts` — a request can only move to a new status if that transition is both a legal state-machine edge *and* permitted for the acting user's role, so a Committee Reviewer, for example, cannot move a request into `UNDER_HR_VERIFICATION`.
+
+**Figure 4.3 — Promotion Workflow State Diagram**
+
+![Promotion workflow state diagram](images/fig-4-03-workflow-state-diagram.png)
+
+<details>
+<summary>Diagram source (Mermaid)</summary>
 
 ```mermaid
 stateDiagram-v2
@@ -156,9 +181,18 @@ stateDiagram-v2
     REQUIRES_FURTHER_REVIEW --> UNDER_DEPARTMENT_REVIEW
 ```
 
+</details>
+
 *(`UNDER_HR_VERIFICATION → UNDER_COMMITTEE_REVIEW` occurs when all required evidence categories are verified and the computed score meets the configured threshold; otherwise the request routes to `REQUIRES_FURTHER_REVIEW`.)*
 
 ## 4.5 Use Case Diagram
+
+**Figure 4.4 — Use Case Diagram**
+
+![Use case diagram](images/fig-4-04-use-case-diagram.png)
+
+<details>
+<summary>Diagram source (Mermaid)</summary>
 
 ```mermaid
 flowchart LR
@@ -190,6 +224,8 @@ flowchart LR
     UC6 -.triggers.-> UC15[Eligibility Engine\ncalculates score]
     UC15 -.enables.-> UC7
 ```
+
+</details>
 
 ## 4.6 Role-Based Access Control Implementation
 
@@ -232,6 +268,13 @@ This double check (is the transition legal at all? is *this role* allowed to mak
 
 The eligibility engine implements the rule-based decision support model specified in Chapter 3 §3.17. It never grants a promotion; it computes a recommendation from verified evidence and hands the outcome to HR and the Committee for human decision-making, as required by the approved scope (§1.8 Delimitations of the Study).
 
+**Figure 4.5 — Eligibility Calculation Sequence Diagram**
+
+![Eligibility calculation sequence diagram](images/fig-4-05-eligibility-sequence-diagram.png)
+
+<details>
+<summary>Diagram source (Mermaid)</summary>
+
 ```mermaid
 sequenceDiagram
     participant HR as HR Admin
@@ -258,6 +301,8 @@ sequenceDiagram
     API-->>HR: 200 OK includes eligibilityStatus, totalScore
 ```
 
+</details>
+
 ### 4.7.2 Implementation and a correction made during development
 
 The score is computed from which required evidence categories (Teaching, Research, Service) have been **verified**, each carrying an institutional weight, then mapped onto the same performance bands defined in the approved proposal (§3.17):
@@ -281,7 +326,7 @@ function scoreBand(score?: number | null) {
 }
 ```
 
-During implementation testing, the initial version of `calculateEligibility` computed `totalScore` from a separate per-category `Score` table that no part of the application ever populated (`request.totalScore ?? request.scores.reduce(...)` against an always-empty relation). The practical effect was that **every application scored 0% the moment HR finished verifying it**, regardless of how complete the evidence was — a defect only visible once the full workflow was exercised end-to-end, not from reading the eligibility rules in isolation. It was corrected to compute the score directly from verified document categories (shown above), matching the approved proposal's own scoring table exactly. Figure 4.5 shows the corrected engine's output on a fully verified application: a computed score of 100% and an `ELIGIBLE` recommendation.
+During implementation testing, the initial version of `calculateEligibility` computed `totalScore` from a separate per-category `Score` table that no part of the application ever populated (`request.totalScore ?? request.scores.reduce(...)` against an always-empty relation). The practical effect was that **every application scored 0% the moment HR finished verifying it**, regardless of how complete the evidence was — a defect only visible once the full workflow was exercised end-to-end, not from reading the eligibility rules in isolation. It was corrected to compute the score directly from verified document categories (shown above), matching the approved proposal's own scoring table exactly. Figure 4.10 shows the corrected engine's output on a fully verified application: a computed score of 100% and an `ELIGIBLE` recommendation.
 
 ## 4.8 System Modules
 
@@ -316,55 +361,55 @@ During implementation testing, the initial version of `calculateEligibility` com
 
 The interface is organised around five role-specific portals sharing one responsive application shell: a collapsible sidebar on desktop that becomes a bottom tab bar on mobile (`components/AppShell.tsx`, `components/BottomNavigation.tsx`), so every role gets the same navigation pattern adapted to screen size rather than a separate mobile app.
 
-**Figure 4.1 — Login**
+**Figure 4.6 — Login**
 Staff sign in with their official GCTU email. Role is resolved server-side from the account, not selected by the user, so the same login screen routes every role to its own dashboard.
 
-![Login screen](images/fig-4-01-login.png)
+![Login screen](images/fig-4-06-login.png)
 
-**Figure 4.2 — HOD/Dean Dashboard**
+**Figure 4.7 — HOD/Dean Dashboard**
 Departmental workload overview: applications pending department-level review, forwarded, or returned.
 
-![HOD dashboard](images/fig-4-04-hod-dashboard.png)
+![HOD dashboard](images/fig-4-07-hod-dashboard.png)
 
-**Figure 4.3 — HR Administrator Dashboard**
+**Figure 4.8 — HR Administrator Dashboard**
 Aggregate view of active HR work, returned applications, and completed decisions.
 
-![HR dashboard](images/fig-4-05-hr-dashboard.png)
+![HR dashboard](images/fig-4-08-hr-dashboard.png)
 
-**Figure 4.4 — HR Master Queue**
+**Figure 4.9 — HR Master Queue**
 The full promotion queue with segment/status/eligibility filters and per-request health indicators.
 
-![HR master queue](images/fig-4-06-hr-master-queue.png)
+![HR master queue](images/fig-4-09-hr-master-queue.png)
 
-**Figure 4.5 — HR Verification and Eligibility Detail**
+**Figure 4.10 — HR Verification and Eligibility Detail**
 The corrected eligibility engine in action on a fully verified application: 6/6 evidence verified, **Total Score 100%**, **Eligible**, complete status history from Draft through Completed, and the committee's recorded recommendation.
 
-![HR verification detail](images/fig-4-07-hr-verification-detail.png)
+![HR verification detail](images/fig-4-10-hr-verification-detail.png)
 
-**Figure 4.6 — Committee Review Queue**
+**Figure 4.11 — Committee Review Queue**
 Applications awaiting or having received a formal committee recommendation.
 
-![Committee review queue](images/fig-4-08-committee-queue.png)
+![Committee review queue](images/fig-4-11-committee-queue.png)
 
-**Figure 4.7 — Analytics and Reports**
+**Figure 4.12 — Analytics and Reports**
 Institution-wide promotion workflow statistics, eligibility outcomes, evidence category breakdowns, and export controls (CSV/PDF).
 
-![Analytics and reports](images/fig-4-10-analytics-reports.png)
+![Analytics and reports](images/fig-4-12-analytics-reports.png)
 
-**Figure 4.8 — System Administrator Dashboard**
+**Figure 4.13 — System Administrator Dashboard**
 System-wide configuration and governance overview.
 
-![System admin dashboard](images/fig-4-11-sysadmin-dashboard.png)
+![System admin dashboard](images/fig-4-13-sysadmin-dashboard.png)
 
-**Figure 4.9 — Promotion Criteria Configuration**
+**Figure 4.14 — Promotion Criteria Configuration**
 Rank-to-rank promotion criteria (minimum years in rank, required evidence categories, minimum score) configured by the System Administrator rather than hard-coded, as specified in the approved proposal's functional requirements.
 
-![Promotion criteria configuration](images/fig-4-12-promotion-criteria-config.png)
+![Promotion criteria configuration](images/fig-4-14-promotion-criteria-config.png)
 
-**Figure 4.10 — Responsive Mobile Layout**
+**Figure 4.15 — Responsive Mobile Layout**
 The same HR dashboard rendered at a 390px mobile viewport width, showing the sidebar collapsed into a bottom tab bar.
 
-![Mobile HR dashboard](images/fig-4-13-mobile-hr-dashboard.png)
+![Mobile HR dashboard](images/fig-4-15-mobile-hr-dashboard.png)
 
 ## 4.11 Testing
 
