@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GctuBrandMark from '../../components/GctuBrandMark';
 import { useToast } from '../../components/Toast';
+
+const POLL_INTERVAL_MS = 4000;
 
 export default function CheckEmailPage() {
   const router = useRouter();
@@ -12,6 +14,48 @@ export default function CheckEmailPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [verificationUrl, setVerificationUrl] = useState('');
+  const [justVerified, setJustVerified] = useState(false);
+  const redirectingRef = useRef(false);
+
+  // The session cookie set at registration has emailVerified:false baked in.
+  // If the verification link is opened on a different device/tab, that
+  // device gets a fresh, verified cookie -- but this page's own session
+  // stays stale until it's refreshed. Poll quietly so this page notices
+  // verification completing elsewhere and moves on without making the user
+  // log out and back in.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function poll() {
+      if (redirectingRef.current) return;
+
+      try {
+        const response = await fetch('/api/auth/refresh-session', { method: 'POST' });
+        const data = await response.json();
+
+        if (!response.ok || cancelled) return;
+
+        if (data.emailVerified) {
+          redirectingRef.current = true;
+          setJustVerified(true);
+          toast.success('Email verified', 'Your account is verified. Continuing...');
+          setTimeout(() => {
+            if (!cancelled) router.push(data.nextPath || '/onboarding');
+          }, 900);
+        }
+      } catch {
+        // Ignore transient network errors; the next poll will retry.
+      }
+    }
+
+    poll();
+    const interval = setInterval(poll, POLL_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [router, toast]);
 
   async function backToLogin() {
     toast.info('Returning to sign in', 'You can sign in after your official staff email has been verified.');
@@ -60,7 +104,9 @@ export default function CheckEmailPage() {
           className="mb-5"
         />
         <p className="mt-3 text-sm leading-6 text-brand-muted dark:text-[#b7c6da]">
-          We sent a verification link to your registered official GCTU staff email. Verify your email before accessing your secure promotion workspace.
+          {justVerified
+            ? 'Email verified. Continuing to your workspace...'
+            : 'We sent a verification link to your registered official GCTU staff email. Verify your email before accessing your secure promotion workspace. If you open the link on a different phone or computer, this page will notice automatically and continue on its own -- no need to log in again here.'}
         </p>
 
         {message && <div className="mt-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>}
