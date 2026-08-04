@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { GCTU_FACULTY_STRUCTURE } from '../lib/institution-structure';
 import type { Lecturer, ApiResponse } from '../types';
 import Toast from './Toast';
 
@@ -148,10 +149,15 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
               className="brand-input"
           >
             <option value="">Select Department</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="Mobile & Pervasive Computing">Mobile &amp; Pervasive Computing</option>
-            <option value="Information Technology">Information Technology</option>
-            <option value="Information Systems">Information Systems</option>
+            {GCTU_FACULTY_STRUCTURE.map((faculty) => (
+              <optgroup key={faculty.name} label={faculty.name}>
+                {faculty.departments.map((department) => (
+                  <option key={department} value={department}>
+                    {department}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </div>
 

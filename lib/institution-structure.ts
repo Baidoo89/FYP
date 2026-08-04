@@ -2,19 +2,31 @@ export const GCTU_FACULTY_STRUCTURE = [
   {
     name: 'Faculty of Computing and Information Systems',
     departments: [
-      'Computer Science',
       'Mobile & Pervasive Computing',
-      'Information Technology',
       'Information Systems',
+      'Computer Science',
+      'Information Technology',
+      'General Studies',
     ],
   },
   {
     name: 'Faculty of Engineering',
-    departments: ['Cyber Security'],
+    departments: [
+      'Electrical and Electronics Engineering',
+      'Computer Engineering',
+      'Telecommunications Engineering',
+      'Mathematics and Statistics',
+    ],
   },
   {
-    name: 'Faculty of Business',
-    departments: ['Business School'],
+    name: 'GCTU Business School',
+    departments: [
+      'Procurement, Logistics and Supply Chain Management',
+      'Management Studies',
+      'Accounting, Banking and Finance',
+      'Marketing',
+      'Economics',
+    ],
   },
 ] as const;
 

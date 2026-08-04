@@ -85,22 +85,30 @@ async function main() {
     },
   });
 
-  const facultyBusiness = await prisma.faculty.upsert({
-    where: { name: 'Faculty of Business' },
+  const businessSchool = await prisma.faculty.upsert({
+    where: { name: 'GCTU Business School' },
     update: { description: 'Business, management, and professional studies programmes.' },
     create: {
-      name: 'Faculty of Business',
+      name: 'GCTU Business School',
       description: 'Business, management, and professional studies programmes.',
     },
   });
 
   const departments = [
-    ['Computer Science', facultyComputing.id],
     ['Mobile & Pervasive Computing', facultyComputing.id],
-    ['Information Technology', facultyComputing.id],
     ['Information Systems', facultyComputing.id],
-    ['Cyber Security', facultyEngineering.id],
-    ['Business School', facultyBusiness.id],
+    ['Computer Science', facultyComputing.id],
+    ['Information Technology', facultyComputing.id],
+    ['General Studies', facultyComputing.id],
+    ['Electrical and Electronics Engineering', facultyEngineering.id],
+    ['Computer Engineering', facultyEngineering.id],
+    ['Telecommunications Engineering', facultyEngineering.id],
+    ['Mathematics and Statistics', facultyEngineering.id],
+    ['Procurement, Logistics and Supply Chain Management', businessSchool.id],
+    ['Management Studies', businessSchool.id],
+    ['Accounting, Banking and Finance', businessSchool.id],
+    ['Marketing', businessSchool.id],
+    ['Economics', businessSchool.id],
   ];
 
   for (const [name, facultyId] of departments) {
