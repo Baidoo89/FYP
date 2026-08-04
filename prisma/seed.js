@@ -132,7 +132,7 @@ async function main() {
 
 
   await upsertSeedUser({
-    name: 'Prof. Kwame Boateng',
+    name: 'Computer Science HOD',
     email: 'hod.dean@live.gctu.edu.gh',
     role: 'HOD_DEAN',
     staffId: 'GCTU-HOD-001',
@@ -140,6 +140,17 @@ async function main() {
     facultyName: 'Faculty of Computing and Information Systems',
     currentRank: 'PROFESSOR',
     phone: '+233 200 000 003',
+  });
+
+  await upsertSeedUser({
+    name: 'FoCIS Dean',
+    email: 'dean.focis@live.gctu.edu.gh',
+    role: 'HOD_DEAN',
+    staffId: 'GCTU-DEAN-001',
+    departmentName: null,
+    facultyName: 'Faculty of Computing and Information Systems',
+    currentRank: 'PROFESSOR',
+    phone: '+233 200 000 006',
   });
 
   const hrAdmin = await upsertSeedUser({
@@ -293,6 +304,7 @@ async function main() {
   console.log('Seed data ready for GCTU Promotion System.');
   console.log(`Seed password for pre-created role accounts: ${SEED_PASSWORD}`);
   console.log('HOD/DEAN: hod.dean@live.gctu.edu.gh');
+  console.log('FOCIS DEAN: dean.focis@live.gctu.edu.gh');
   console.log('HR ADMIN: hr.admin@live.gctu.edu.gh');
   console.log('COMMITTEE: committee.reviewer@live.gctu.edu.gh');
   console.log('SYSTEM ADMIN: system.admin@live.gctu.edu.gh');

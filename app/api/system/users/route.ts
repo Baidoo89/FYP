@@ -44,6 +44,7 @@ const userCreateSchema = z.object({
   ),
   password: z.string().min(8, 'Temporary password must be at least 8 characters'),
   role: z.nativeEnum(Role),
+  appointmentType: z.enum(['HOD', 'DEAN']).nullable().optional(),
   staffId: z.string().trim().optional().nullable(),
   departmentId: z.number().int().positive().nullable().optional(),
   facultyId: z.number().int().positive().nullable().optional(),
@@ -58,6 +59,7 @@ const userCreateSchema = z.object({
 const userUpdateSchema = z.object({
   userId: z.number().int().positive(),
   role: z.nativeEnum(Role).optional(),
+  appointmentType: z.enum(['HOD', 'DEAN']).nullable().optional(),
   isActive: z.boolean().optional(),
   departmentId: z.number().int().positive().nullable().optional(),
   facultyId: z.number().int().positive().nullable().optional(),
@@ -115,6 +117,54 @@ async function resolveInstitutionMapping(input: { facultyId?: number | null; dep
     department,
     facultyId: input.facultyId ?? department?.facultyId ?? null,
   };
+}
+
+async function validateHodDeanAssignment(input: {
+  role: Role;
+  appointmentType?: 'HOD' | 'DEAN' | null;
+  isActive: boolean;
+  facultyId: number | null;
+  department: { id: number; name: string; facultyId: number | null } | null;
+  excludeUserId?: number;
+}) {
+  if (input.role !== Role.HOD_DEAN) return null;
+
+  if (!input.appointmentType) {
+    return 'Choose whether this HOD/Dean account represents a Head of Department or a Dean.';
+  }
+
+  if (!input.facultyId) {
+    return 'HOD and Dean accounts must be assigned to a faculty or school.';
+  }
+
+  if (input.appointmentType === 'HOD' && !input.department) {
+    return 'A Head of Department account must be assigned to a department.';
+  }
+
+  if (input.appointmentType === 'DEAN' && input.department) {
+    return 'A Dean account must be faculty-wide and cannot be assigned to one department.';
+  }
+
+  if (!input.isActive) return null;
+
+  const existing = await prisma.user.findFirst({
+    where: {
+      ...(input.excludeUserId ? { id: { not: input.excludeUserId } } : {}),
+      role: Role.HOD_DEAN,
+      isActive: true,
+      ...(input.appointmentType === 'HOD'
+        ? { departmentId: input.department!.id }
+        : { facultyId: input.facultyId, departmentId: null }),
+    },
+    select: { name: true, email: true },
+  });
+
+  if (!existing) return null;
+
+  const office = input.appointmentType === 'HOD'
+    ? `${input.department!.name} already has an active HOD`
+    : 'This faculty or school already has an active Dean';
+  return `${office} (${existing.name}, ${existing.email}). Deactivate or reassign that account first.`;
 }
 
 export async function GET(request: NextRequest) {
@@ -194,6 +244,15 @@ export async function POST(request: NextRequest) {
     departmentId: parsed.data.departmentId,
   });
   if (mapping.response) return mapping.response;
+
+  const assignmentError = await validateHodDeanAssignment({
+    role: parsed.data.role,
+    appointmentType: parsed.data.appointmentType,
+    isActive: parsed.data.isActive,
+    facultyId: mapping.facultyId,
+    department: mapping.department,
+  });
+  if (assignmentError) return jsonError(assignmentError);
 
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -333,11 +392,26 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  const nextDepartmentId = parsed.data.departmentId !== undefined ? parsed.data.departmentId : current.departmentId;
+  const nextFacultyId = parsed.data.facultyId !== undefined ? parsed.data.facultyId : current.facultyId;
   const mapping = await resolveInstitutionMapping({
-    facultyId: parsed.data.facultyId,
-    departmentId: parsed.data.departmentId,
+    facultyId: nextFacultyId,
+    departmentId: nextDepartmentId,
   });
   if (mapping.response) return mapping.response;
+
+  const nextAppointmentType = nextRole === Role.HOD_DEAN
+    ? parsed.data.appointmentType ?? (nextDepartmentId ? 'HOD' : 'DEAN')
+    : null;
+  const assignmentError = await validateHodDeanAssignment({
+    role: nextRole,
+    appointmentType: nextAppointmentType,
+    isActive: nextActive,
+    facultyId: mapping.facultyId,
+    department: mapping.department,
+    excludeUserId: current.id,
+  });
+  if (assignmentError) return jsonError(assignmentError);
 
   const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.user.update({

@@ -6,6 +6,7 @@ import { useToast } from '../../../components/Toast';
 
 type Department = { id: number; name: string; facultyId?: number | null };
 type Faculty = { id: number; name: string };
+type AppointmentType = 'HOD' | 'DEAN';
 
 type UserRecord = {
   id: number;
@@ -66,6 +67,7 @@ function defaultCreateForm() {
     email: '',
     password: '',
     role: 'LECTURER',
+    appointmentType: 'HOD' as AppointmentType,
     staffId: '',
     departmentId: '',
     facultyId: '',
@@ -102,6 +104,7 @@ export default function UserManagementPage() {
   const [createForm, setCreateForm] = useState(defaultCreateForm());
   const [form, setForm] = useState({
     role: '',
+    appointmentType: 'HOD' as AppointmentType,
     isActive: true,
     departmentId: '',
     facultyId: '',
@@ -158,6 +161,7 @@ export default function UserManagementPage() {
     setMessage('');
     setForm({
       role: user.role,
+      appointmentType: user.role === 'HOD_DEAN' && !user.departmentId ? 'DEAN' : 'HOD',
       isActive: user.isActive,
       departmentId: user.departmentId ? String(user.departmentId) : '',
       facultyId: user.facultyId ? String(user.facultyId) : '',
@@ -384,7 +388,7 @@ export default function UserManagementPage() {
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <Field label="Full name">
-                <input value={createForm.name} onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })} className="brand-input" placeholder="Dr. Ama Mensah" required />
+                <input value={createForm.name} onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })} className="brand-input" placeholder="Benjamin Baidoo" required />
               </Field>
               <Field label="Official email">
                 <input value={createForm.email} onChange={(event) => setCreateForm({ ...createForm, email: event.target.value })} className="brand-input" placeholder="name@live.gctu.edu.gh" type="email" required />
@@ -400,24 +404,38 @@ export default function UserManagementPage() {
                   {roles.map((role) => <option key={role} value={role}>{label(role)}</option>)}
                 </select>
               </Field>
+              {createForm.role === 'HOD_DEAN' && (
+                <Field label="Academic office">
+                  <AppointmentTypeControl
+                    value={createForm.appointmentType}
+                    onChange={(appointmentType) => setCreateForm({
+                      ...createForm,
+                      appointmentType,
+                      departmentId: appointmentType === 'DEAN' ? '' : createForm.departmentId,
+                    })}
+                  />
+                </Field>
+              )}
               <Field label="Current rank">
                 <select value={createForm.currentRank} onChange={(event) => setCreateForm({ ...createForm, currentRank: event.target.value })} className="brand-input">
                   <option value="">No rank</option>
                   {ranks.map((rank) => <option key={rank} value={rank}>{label(rank)}</option>)}
                 </select>
               </Field>
-              <Field label="Faculty">
-                <select value={createForm.facultyId} onChange={(event) => setCreateForm({ ...createForm, facultyId: event.target.value, departmentId: '' })} className="brand-input">
-                  <option value="">No faculty</option>
+              <Field label="Faculty / school">
+                <select value={createForm.facultyId} onChange={(event) => setCreateForm({ ...createForm, facultyId: event.target.value, departmentId: '' })} className="brand-input" required={createForm.role === 'HOD_DEAN'}>
+                  <option value="">{createForm.role === 'HOD_DEAN' ? 'Select faculty or school' : 'No faculty'}</option>
                   {faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}
                 </select>
               </Field>
-              <Field label="Department">
-                <select value={createForm.departmentId} onChange={(event) => setCreateForm({ ...createForm, departmentId: event.target.value })} className="brand-input">
-                  <option value="">No department</option>
-                  {createDepartmentOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
-                </select>
-              </Field>
+              {(createForm.role !== 'HOD_DEAN' || createForm.appointmentType === 'HOD') && (
+                <Field label="Department">
+                  <select value={createForm.departmentId} onChange={(event) => setCreateForm({ ...createForm, departmentId: event.target.value })} className="brand-input" required={createForm.role === 'HOD_DEAN'}>
+                    <option value="">{createForm.role === 'HOD_DEAN' ? 'Select department' : 'No department'}</option>
+                    {createDepartmentOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+                  </select>
+                </Field>
+              )}
               <Field label="Phone">
                 <input value={createForm.phone} onChange={(event) => setCreateForm({ ...createForm, phone: event.target.value })} className="brand-input" placeholder="+233 ..." />
               </Field>
@@ -471,18 +489,32 @@ export default function UserManagementPage() {
                       {roles.map((role) => <option key={role} value={role}>{label(role)}</option>)}
                     </select>
                   </Field>
-                  <Field label="Faculty">
-                    <select value={form.facultyId} onChange={(event) => setForm({ ...form, facultyId: event.target.value, departmentId: '' })} className="brand-input">
-                      <option value="">No faculty</option>
+                  {form.role === 'HOD_DEAN' && (
+                    <Field label="Academic office">
+                      <AppointmentTypeControl
+                        value={form.appointmentType}
+                        onChange={(appointmentType) => setForm({
+                          ...form,
+                          appointmentType,
+                          departmentId: appointmentType === 'DEAN' ? '' : form.departmentId,
+                        })}
+                      />
+                    </Field>
+                  )}
+                  <Field label="Faculty / school">
+                    <select value={form.facultyId} onChange={(event) => setForm({ ...form, facultyId: event.target.value, departmentId: '' })} className="brand-input" required={form.role === 'HOD_DEAN'}>
+                      <option value="">{form.role === 'HOD_DEAN' ? 'Select faculty or school' : 'No faculty'}</option>
                       {faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}
                     </select>
                   </Field>
-                  <Field label="Department">
-                    <select value={form.departmentId} onChange={(event) => setForm({ ...form, departmentId: event.target.value })} className="brand-input">
-                      <option value="">No department</option>
-                      {editDepartmentOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
-                    </select>
-                  </Field>
+                  {(form.role !== 'HOD_DEAN' || form.appointmentType === 'HOD') && (
+                    <Field label="Department">
+                      <select value={form.departmentId} onChange={(event) => setForm({ ...form, departmentId: event.target.value })} className="brand-input" required={form.role === 'HOD_DEAN'}>
+                        <option value="">{form.role === 'HOD_DEAN' ? 'Select department' : 'No department'}</option>
+                        {editDepartmentOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+                      </select>
+                    </Field>
+                  )}
                   <Field label="Current rank">
                     <select value={form.currentRank} onChange={(event) => setForm({ ...form, currentRank: event.target.value })} className="brand-input">
                       <option value="">No rank</option>
@@ -592,5 +624,25 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {label}
       <div className="mt-1">{children}</div>
     </label>
+  );
+}
+
+function AppointmentTypeControl({ value, onChange }: { value: AppointmentType; onChange: (value: AppointmentType) => void }) {
+  return (
+    <div className="grid h-11 grid-cols-2 rounded-lg border border-gray-300 bg-gray-50 p-1">
+      {(['HOD', 'DEAN'] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={value === option}
+          onClick={() => onChange(option)}
+          className={`rounded-md px-3 text-sm font-semibold transition ${
+            value === option ? 'bg-teal-700 text-white shadow-sm' : 'text-gray-700 hover:bg-white'
+          }`}
+        >
+          {option === 'HOD' ? 'HOD' : 'Dean'}
+        </button>
+      ))}
+    </div>
   );
 }

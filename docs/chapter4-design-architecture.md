@@ -392,6 +392,8 @@ flowchart TD
 
 Chapter 3 defines a single `HOD_DEAN` role; in practice it covers two review scopes rather than two separate roles. An account assigned a specific department reviews as an HOD, scoped to that department only; an account assigned only a faculty (no department) reviews as a Dean, scoped to every department within that faculty. Both use the same workspace and the same three decision outcomes.
 
+Verification against GCTU's Conditions of Service (section 10.1) and Basic Laws (Schedule J, section 1.3(2)(c)) confirms that academic promotion applications are submitted to the applicant's Head of Department first; the HOD forwards the application with comments to the Dean, who refers it to the Faculty Appointments and Promotions Sub-Committee. A complete institutional configuration can therefore contain one active HOD account for each of the 14 departments and one active Dean account for each of the three faculties/schools (17 personal accounts, not shared logins). The prototype does not pre-create all officeholders: it seeds one Computer Science HOD and one FoCIS Dean to demonstrate both access scopes. System Admin account creation requires an explicit HOD or Dean appointment type, enforces department assignment for HODs and faculty-only assignment for Deans, and prevents duplicate active office assignments. The current single academic-review stage represents the prototype's combined HOD/Dean handling; a separate sequential Dean and FAPC approval stage remains future work.
+
 **Figure 4.8 — HOD/Dean Review Activity Diagram**
 
 ![HOD/Dean review activity diagram](images/fig-4-08-hod-dean-review-activity.png)

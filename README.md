@@ -70,17 +70,16 @@ Password123!
 
 | Interface | Login | Role |
 | --- | --- | --- |
-| Lecturer Portal | lecturer.demo@live.gctu.edu.gh | LECTURER |
-| HOD / Dean Portal | hod.demo@gctu.edu.gh | HOD_DEAN |
-| HR Admin Portal | hr.admin@gctu.edu.gh | HR_ADMIN |
-| Committee Portal | committee.demo@gctu.edu.gh | COMMITTEE_REVIEWER |
-| System Admin Portal | system.admin@gctu.edu.gh | SYSTEM_ADMIN |
-| Legacy Admin | admin | HR_ADMIN |
+| Computer Science HOD | hod.dean@live.gctu.edu.gh | HOD_DEAN (department scope) |
+| FoCIS Dean | dean.focis@live.gctu.edu.gh | HOD_DEAN (faculty scope) |
+| HR Admin Portal | hr.admin@live.gctu.edu.gh | HR_ADMIN |
+| Committee Portal | committee.reviewer@live.gctu.edu.gh | COMMITTEE_REVIEWER |
+| System Admin Portal | system.admin@live.gctu.edu.gh | SYSTEM_ADMIN |
 
-Additional local lecturer accounts may also be reset to the same demo password with:
+Seeded role-account passwords can be reset with:
 
 ```powershell
-D:\node.exe scripts\reset-demo-auth.js
+npm run reset:seed-auth
 ```
 
 ## Useful Commands
