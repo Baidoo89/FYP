@@ -24,7 +24,8 @@
     "reset:seed-auth": "dotenv -e .env.local -- node scripts/reset-seed-auth.js",
     "defence:prepare": "dotenv -e .env.local -- node scripts/prepare-defence-demo.js",
     "defence:check": "dotenv -e .env.local -- node scripts/prepare-defence-demo.js --check",
-    "defence:live-check": "node scripts/verify-defence-server.js"
+    "defence:live-check": "node scripts/verify-defence-server.js",
+    "defence:team-brief": "node scripts/create-defence-team-brief.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -50,7 +51,9 @@
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.0",
+    "docx": "^9.7.1",
     "dotenv-cli": "^11.0.0",
+    "pdfkit": "^0.19.1",
     "postcss": "^8.4.0",
     "pptxgenjs": "^4.0.1",
     "prisma": "^6.19.3",
