@@ -283,9 +283,6 @@ export default function MasterQueuePage() {
           <div>
             <div className="pro-eyebrow">Queue Management</div>
             <h1 className="mt-3 break-words text-2xl font-semibold tracking-tight text-gray-950 sm:text-3xl">HR Master Queue</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Control verification, committee routing, authority approval, and final administrative close-out from one shared application workspace.
-            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a href="/hr/verify?segment=pending" className="inline-flex min-h-10 w-fit items-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
@@ -374,7 +371,7 @@ export default function MasterQueuePage() {
                 title="No matching requests"
                 description={
                   selectedRequest
-                    ? `No requests match this filter. Still showing ${applicationCode(selectedRequest.id)} below from outside the current filter — adjust the segment, status, or search term to browse other applications.`
+                    ? `No matches. ${applicationCode(selectedRequest.id)} remains open below.`
                     : 'Adjust the segment, status, or search term to view promotion files.'
                 }
               />
@@ -421,13 +418,10 @@ export default function MasterQueuePage() {
             <EmptyState title="Select an application" description="Choose a promotion file from the queue to open the shared application detail workspace." />
           </div>
         ) : (
-          <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN">
+          <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN" showGuidance={false}>
             <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
               <div>
                 <h3 className="text-lg font-bold text-gray-950">HR Administrative Actions</h3>
-                <p className="mt-2 text-sm leading-6 text-gray-600">
-                  Use document verification for evidence decisions. Use final workflow controls only when committee or authority outcomes are ready to record.
-                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <a href={`/hr/verify?requestId=${selectedRequest.id}`} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-900">
                     Open verification workspace
@@ -439,7 +433,7 @@ export default function MasterQueuePage() {
               </div>
 
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Current HR guidance</p>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Current status</p>
                 <HealthPill {...workflowHealth(selectedRequest)} />
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold text-gray-600">
                   <InfoTile label="Required" value={selectedRequest.requiredDocumentCount || 3} />

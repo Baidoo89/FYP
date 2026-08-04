@@ -119,7 +119,7 @@ One module is worth highlighting because it does not appear in Chapter 3's origi
 
 ## 4.4 Database Design
 
-The database is relational, modelled with Prisma. The diagram below shows the core promotion-workflow entities (auxiliary tables such as legacy `Lecturer`/`AdminAccount` compatibility records and `SystemSetting` key-value configuration are omitted for clarity).
+The database is relational and is modelled through Prisma. Figure 4.3 redraws the main operational entities as an entity-relationship model rather than a raw database dump: it highlights the tables that carry the promotion workflow, the key foreign-key paths between them, and the audit records that make each application traceable. Auxiliary compatibility tables such as legacy `Lecturer`/`AdminAccount` records and general `SystemSetting` key-value entries are omitted so the diagram remains focused on the implemented promotion process.
 
 **Figure 4.3 — Entity Relationship Diagram**
 
@@ -261,6 +261,8 @@ stateDiagram-v2
 
 ## 4.6 Use Case Model
 
+Figure 4.5 presents the use case model using the standard UML convention: human actors are placed outside the system boundary, while the use cases supported by the Digital Staff Promotion Support System are placed inside the boundary. This distinction is important because it shows that lecturers, HODs/Deans, HR officers, committee reviewers, and system administrators interact with the system, but the system itself owns the application, verification, eligibility, reporting, and audit functions.
+
 **Figure 4.5 — Use Case Diagram**
 
 ![Use case diagram](images/fig-4-05-use-case-diagram.png)
@@ -307,7 +309,7 @@ The use case diagram (§4.6) shows *what* each role can do; this section shows *
 
 ### 4.7.1 Overall Promotion Process
 
-Figure 4.6 shows the complete cross-role process as a single flow, from lecturer submission through to a recorded institutional decision. To keep the diagram readable, each role's own correction/return branch is shown as a labelled exit pointing to the detailed activity diagram that expands it (§4.7.2–§4.7.5), rather than looping the arrow back across the whole figure.
+Figure 4.6 shows the complete cross-role process as a formal activity model, from lecturer submission through to a recorded institutional decision. The figure is drawn vertically to match a portrait thesis page and to keep each workflow decision readable. It also preserves the main exception paths: missing evidence returns to the lecturer, incomplete academic review returns for correction, failed HR verification requests correction, and committee further-review decisions route back for HR action.
 
 **Figure 4.6 — Overall Promotion Process (Activity Diagram)**
 
@@ -317,64 +319,39 @@ Figure 4.6 shows the complete cross-role process as a single flow, from lecturer
 <summary>Diagram source (Mermaid)</summary>
 
 ```mermaid
-flowchart LR
-    subgraph Lecturer["Lecturer"]
-        direction TB
-        A1([Start]) --> A2[Create or open application]
-        A2 --> A3[Upload evidence per category]
-        A3 --> A4{All required categories attached?}
-        A4 -- No --> A3
-        A4 -- Yes --> A5[Submit application]
-    end
+flowchart TD
+    Start([Start]) --> A1[Lecturer creates or opens application]
+    A1 --> A2[Upload evidence by required category]
+    A2 --> A3{All required evidence attached?}
+    A3 -- No --> A2
+    A3 -- Yes --> A4[Submit application]
 
-    subgraph HOD["HOD / Dean"]
-        direction TB
-        B1[Receive department review notification]
-        B1 --> B2{Evidence academically complete?}
-        B2 -- No --> B3[/Return for correction -\nsee Figure 4.8/]
-        B2 -- Yes --> B4[Forward to HR]
-    end
+    A4 --> B1[HOD/Dean receives department review notification]
+    B1 --> B2[Inspect application and evidence]
+    B2 --> B3{Academically complete?}
+    B3 -- No --> B4[Return for correction]
+    B4 --> A2
+    B3 -- Yes --> B5[Forward application to HR]
 
-    subgraph HR["HR Administrator"]
-        direction TB
-        C1[Open verification queue]
-        C1 --> C2{Verify each document}
-        C2 -- Reject or needs correction --> C3[/Return to lecturer -\nsee Figure 4.9/]
-        C2 -- All required verified --> C4[Trigger eligibility engine]
-    end
+    B5 --> C1[HR opens verification queue]
+    C1 --> C2[Verify each uploaded document]
+    C2 --> C3{Required evidence verified?}
+    C3 -- No --> C4[Reject or request correction]
+    C4 --> A2
+    C3 -- Yes --> D1[Eligibility engine calculates criteria score]
 
-    subgraph Engine["Eligibility Engine"]
-        direction TB
-        D1[Compute criteria score]
-        D1 --> D2{Meets configured threshold?}
-        D2 -- No --> D3[/Requires further review -\nreturned to HR/]
-        D2 -- Yes --> D4[Status: Eligible - route to Committee]
-    end
+    D1 --> D2{Meets configured threshold?}
+    D2 -- No --> D3[Requires further review]
+    D3 --> C1
+    D2 -- Yes --> E1[Route eligible application to committee]
 
-    subgraph Committee["Committee Reviewer"]
-        direction TB
-        E1[Open committee queue]
-        E1 --> E2{Recommendation}
-        E2 -- Requires further review --> E5[/Routed back to HR -\nsee Figure 4.10/]
-        E2 -- Not recommended --> E3[Record NOT_RECOMMENDED]
-        E2 -- Recommended --> E4[Record RECOMMENDED]
-    end
-
-    subgraph Authority["HR / Institutional Authority"]
-        direction TB
-        F1[Record authority approval]
-        F2[Complete workflow]
-        F3([End])
-    end
-
-    A5 --> B1
-    B4 --> C1
-    C4 --> D1
-    D4 --> E1
-    E3 --> F2
-    E4 --> F1
+    E1 --> E2[Committee records recommendation]
+    E2 --> E3{Recommendation outcome}
+    E3 -- Requires further review --> D3
+    E3 -- Not recommended --> F2[Complete workflow]
+    E3 -- Recommended --> F1[HR records authority approval]
     F1 --> F2
-    F2 --> F3
+    F2 --> End([End])
 ```
 
 </details>
@@ -557,6 +534,8 @@ sequenceDiagram
 </details>
 
 ### 4.7.7 Eligibility Calculation (Sequence Diagram)
+
+Figure 4.12 separates the eligibility calculation into the actors and services that participate in the implemented request: HR initiates the calculation after evidence verification, the API validates the request, the workflow service loads and persists the application state, the eligibility engine applies configured criteria to verified documents only, and the audit/notification layer records the outcome for traceability. This makes the diagram useful for implementation review because it shows both the calculation path and the supporting persistence/audit actions.
 
 **Figure 4.12 — Eligibility Calculation Sequence Diagram**
 
@@ -757,7 +736,7 @@ Staff sign in with their official GCTU email and password. The role attached to 
 
 ### 4.12.2 Lecturer Portal
 
-The lecturer-facing pages implement the application-creation and evidence-upload activity shown in Figure 4.7: profile completion, rank selection, per-category evidence upload, submission, and status tracking through to the final recommendation.
+The lecturer-facing pages implement the application-creation and evidence-upload activity shown in Figure 4.7: profile completion, rank selection, per-category evidence upload, submission, and status tracking through to the final recommendation. The documentation screenshots in this section were refreshed from the running system using the author-facing workflow record for Benjamin Baidoo as the main completed case, so the displayed queues and detail pages contain meaningful workflow data rather than empty placeholders.
 
 ### 4.12.3 HOD/Dean Portal
 

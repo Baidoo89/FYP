@@ -243,9 +243,6 @@ export default function CommitteeReviewPage() {
           <div className="min-w-0">
             <div className="pro-eyebrow">Committee Review</div>
             <h1 className="mt-3 break-words text-2xl font-semibold tracking-tight text-gray-950 sm:text-3xl">Application Review Board</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-              Inspect verified evidence, eligibility outcomes, department comments, and record the committee recommendation.
-            </p>
           </div>
           <Link href="/committee/dashboard" className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-brand-primary/20 bg-white px-4 py-2 text-sm font-semibold text-brand-primary shadow-sm transition hover:bg-brand-primarySoft sm:w-auto">
             Dashboard
@@ -304,7 +301,7 @@ export default function CommitteeReviewPage() {
                 title="No matching applications"
                 description={
                   selectedRequest
-                    ? `No applications match this filter. Still showing ${applicationCode(selectedRequest.id)} below from outside the current filter — adjust the segment or search term to browse other applications.`
+                    ? `No matches. ${applicationCode(selectedRequest.id)} remains open below.`
                     : 'Adjust the segment or search term to view committee files.'
                 }
               />
@@ -347,7 +344,7 @@ export default function CommitteeReviewPage() {
             <EmptyState title="Select an application" description="Choose a committee file from the queue to begin review." />
           </div>
         ) : (
-          <PromotionApplicationDetail application={selectedRequest} role="COMMITTEE_REVIEWER">
+          <PromotionApplicationDetail application={selectedRequest} role="COMMITTEE_REVIEWER" showGuidance={false}>
             <form onSubmit={submitReview}>
               <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
                 <section className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -378,9 +375,6 @@ export default function CommitteeReviewPage() {
 
                 <section>
                   <h3 className="text-lg font-bold text-gray-950">Committee Recommendation</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    Record the formal committee position after reviewing evidence, eligibility status, and department/HR comments.
-                  </p>
                   <div className="mt-4 grid gap-2">
                     {recommendationOptions.map((option) => (
                       <label key={option.value} className={`cursor-pointer rounded-lg border p-3 transition ${recommendation === option.value ? optionTone(option.tone, true) : 'border-gray-200 bg-white hover:bg-gray-50'}`}>

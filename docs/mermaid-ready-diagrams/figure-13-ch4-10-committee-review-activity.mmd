@@ -1,0 +1,31 @@
+﻿%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5"},"flowchart":{"htmlLabels":true,"curve":"basis","nodeSpacing":42,"rankSpacing":58}}}%%
+%% Figure 13 / Chapter Figure 4.10 - Committee Review Activity Diagram
+flowchart LR
+    Start([Start]):::terminal
+    Queue["Open committee queue"]:::process
+    Select["Select eligible verified application"]:::process
+    History["Review HOD/Dean comments and HR verification history"]:::process
+    Evidence["Inspect verified evidence and eligibility report"]:::process
+    Conflict{"Conflict of interest?"}:::decision
+    Recuse["Recuse outside current system workflow"]:::exception
+    Recommend["Enter recommendation and justification"]:::process
+    Decision{"Recommendation"}:::decision
+    Further["Request further review"]:::exception
+    NotRec["Record NOT_RECOMMENDED"]:::exception
+    Rec["Record RECOMMENDED"]:::process
+    Audit["Save ReviewComment, StatusHistory, AuditLog, and HR notification"]:::audit
+    End([End]):::terminal
+
+    Start --> Queue --> Select --> History --> Evidence --> Conflict
+    Conflict -- Yes --> Recuse --> End
+    Conflict -- No --> Recommend --> Decision
+    Decision -- Further review --> Further --> Audit
+    Decision -- Not recommended --> NotRec --> Audit
+    Decision -- Recommended --> Rec --> Audit
+    Audit --> End
+
+    classDef terminal fill:#111827,stroke:#111827,color:#FFFFFF,stroke-width:1.5px;
+    classDef process fill:#EFF6FF,stroke:#1D4ED8,stroke-width:1.4px,color:#0F172A;
+    classDef decision fill:#FFF7ED,stroke:#C2410C,stroke-width:1.6px,color:#0F172A;
+    classDef exception fill:#FEF2F2,stroke:#B91C1C,stroke-width:1.5px,color:#0F172A;
+    classDef audit fill:#ECFDF5,stroke:#047857,stroke-width:1.4px,color:#0F172A;

@@ -1,0 +1,21 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5"}}}%%
+%% Figure 7 / Chapter Figure 4.4 - Promotion Workflow State Diagram
+stateDiagram-v2
+    [*] --> DRAFT: Lecturer starts application
+    DRAFT --> SUBMITTED: Required evidence attached
+    SUBMITTED --> UNDER_DEPARTMENT_REVIEW: System routes to scoped HOD/Dean
+    UNDER_DEPARTMENT_REVIEW --> UNDER_HR_VERIFICATION: Academic review forwarded
+    UNDER_DEPARTMENT_REVIEW --> RETURNED_FOR_CORRECTION: Academic evidence incomplete
+    RETURNED_FOR_CORRECTION --> SUBMITTED: Lecturer corrects and resubmits
+    UNDER_HR_VERIFICATION --> UNDER_COMMITTEE_REVIEW: Evidence verified and eligible
+    UNDER_HR_VERIFICATION --> REQUIRES_FURTHER_REVIEW: Criteria not fully satisfied
+    UNDER_HR_VERIFICATION --> RETURNED_FOR_CORRECTION: Evidence rejected or correction requested
+    UNDER_COMMITTEE_REVIEW --> RECOMMENDED: Committee recommends promotion
+    UNDER_COMMITTEE_REVIEW --> NOT_RECOMMENDED: Committee does not recommend
+    UNDER_COMMITTEE_REVIEW --> REQUIRES_FURTHER_REVIEW: Committee requests further review
+    REQUIRES_FURTHER_REVIEW --> UNDER_HR_VERIFICATION: HR re-verifies evidence
+    REQUIRES_FURTHER_REVIEW --> UNDER_DEPARTMENT_REVIEW: Department clarification needed
+    RECOMMENDED --> APPROVED_BY_AUTHORITY: HR records authority approval
+    APPROVED_BY_AUTHORITY --> COMPLETED: HR completes workflow
+    NOT_RECOMMENDED --> COMPLETED: Final outcome recorded
+    COMPLETED --> [*]

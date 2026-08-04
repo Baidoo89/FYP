@@ -1,0 +1,36 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","actorBkg":"#FFFFFF","actorBorder":"#334155","actorTextColor":"#0F172A","activationBkgColor":"#E0F2FE","activationBorderColor":"#0369A1","sequenceNumberColor":"#0F172A"},"sequence":{"showSequenceNumbers":true,"actorMargin":80,"messageMargin":40,"mirrorActors":false}}}%%
+%% Figure 14 / Chapter Figure 4.11 - Application Submission and Routing Sequence Diagram
+sequenceDiagram
+    autonumber
+    actor Lecturer
+    participant Portal as Lecturer Portal
+    participant API as Application and Evidence API
+    participant Workflow as promotion-workflow.ts
+    participant Scope as department-scope.ts
+    participant DB as PostgreSQL
+    participant Notify as Notification Service
+
+    Lecturer->>Portal: Create application with current and target rank
+    Portal->>API: POST application draft
+    API->>DB: Insert PromotionRequest with DRAFT status
+    DB-->>API: Draft request id
+
+    loop For each required evidence category
+        Lecturer->>Portal: Upload PDF evidence
+        Portal->>API: POST evidence document
+        API->>DB: Insert Document and durable file blob
+        DB-->>API: Stored document metadata
+    end
+
+    Lecturer->>Portal: Submit completed application
+    Portal->>API: POST submit request
+    API->>Workflow: Validate required categories and transition from DRAFT
+    Workflow->>DB: Update status to SUBMITTED / UNDER_DEPARTMENT_REVIEW
+    Workflow->>DB: Insert StatusHistory and AuditLog
+    Workflow->>Scope: Resolve HOD/Dean recipients for applicant department
+    Scope->>DB: Match departmentId, department name, then faculty Dean fallback
+    DB-->>Scope: Scoped reviewer user ids
+    Scope-->>Workflow: Recipient ids
+    Workflow->>Notify: Create notifications for scoped reviewers
+    Notify->>DB: Insert Notification rows
+    API-->>Portal: Submission confirmed with current status

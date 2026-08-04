@@ -5,7 +5,7 @@ import Link from 'next/link';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import StartPromotionRequestCard from '../../../components/promotion/StartPromotionRequestCard';
-import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
+import { ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
@@ -227,17 +227,12 @@ export default function ApplicationPage() {
         <section className="pro-hero px-4 py-6 sm:px-6 sm:py-8">
           <div className="pro-eyebrow">Active Application</div>
           <h1 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-4xl">Start Promotion Application</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            Select the rank you are applying for before uploading evidence or submitting the promotion file.
-          </p>
+
         </section>
 
         <StartPromotionRequestCard currentRank={lecturerProfile?.currentRank || null} onCreated={(request) => loadApplications(request.id)} />
 
-        <EmptyState
-          title="No application record yet"
-          description="Once the target rank is selected, your draft application, workflow tracker, evidence checklist, and HOD/Dean visibility will be created from the same database record."
-        />
+
       </div>
     );
   }
@@ -256,9 +251,7 @@ export default function ApplicationPage() {
             <h1 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-4xl">
               {selectedRequest.currentRank} to {selectedRequest.targetRank}
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Track your promotion workflow, evidence decisions, eligibility recommendation, review comments, and next required action.
-            </p>
+
           </div>
           <div className="flex min-w-0 flex-wrap gap-2">
             <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
@@ -300,7 +293,7 @@ export default function ApplicationPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <TrackerMetric code="DOC" label="Uploaded documents" value={documents.length} />
         <TrackerMetric code="VER" label="Verified" value={verified} />
-        <TrackerMetric code="PEN" label="Pending" value={pending} tone="amber" />
+        <TrackerMetric code="UNV" label="Not verified" value={pending} tone="amber" />
         <TrackerMetric code="RET" label="Returned" value={returned} tone="rose" />
       </section>
 
@@ -332,23 +325,7 @@ export default function ApplicationPage() {
         </section>
       )}
 
-      <PromotionApplicationDetail application={selectedRequest} role="LECTURER">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-          <div>
-            <h3 className="text-lg font-bold text-slate-950">Applicant Controls</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Use these actions to keep your promotion record complete and ready for review.
-            </p>
-          </div>
-          <div className="flex min-w-0 flex-wrap gap-2">
-            <StatusBadge status={selectedRequest.status} />
-            <Link href="/lecturer-portal/evidence" className="rounded-lg border border-teal-200 px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50">
-              Evidence Portfolio
-            </Link>
-            <PrintSummaryButton />
-          </div>
-        </div>
-      </PromotionApplicationDetail>
+      <PromotionApplicationDetail application={selectedRequest} role="LECTURER" showGuidance={false} />
 
       <Link href="/lecturer-portal" className="inline-flex rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
         Back to Dashboard

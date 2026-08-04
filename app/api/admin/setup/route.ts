@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { hashPassword } from '../../../../lib/auth';
 import { createLocalAdminAccount } from '../../../../lib/admin-storage';
@@ -51,23 +50,29 @@ export async function POST(request: NextRequest) {
     const passwordHash = hashPassword(password);
 
     try {
-      const existingAdmin = await prisma.adminAccount.findUnique({
-        where: { username },
-        select: { id: true },
-      });
+      const [existingAdminAccount, existingSystemAdmin] = await Promise.all([
+        prisma.adminAccount.findFirst({ select: { id: true } }),
+        prisma.user.findFirst({ where: { role: 'SYSTEM_ADMIN' }, select: { id: true } }),
+      ]);
 
-      if (existingAdmin) {
+      if (existingAdminAccount || existingSystemAdmin) {
         return NextResponse.json(
-          { success: false, error: 'Username already exists' },
-          { status: 409 }
+          { success: false, error: 'Initial administrator setup has already been completed' },
+          { status: 403 }
         );
       }
 
-      await prisma.adminAccount.create({
+      await prisma.user.create({
         data: {
-          username,
-          password_hash: passwordHash,
-          is_active: true,
+          name: username,
+          email: email.toLowerCase(),
+          password: passwordHash,
+          passwordHash,
+          role: 'SYSTEM_ADMIN',
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          isActive: true,
+          onboarded: true,
         },
       });
 
@@ -81,7 +86,7 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       if (dbError instanceof PrismaClientKnownRequestError && dbError.code === 'P2002') {
         return NextResponse.json(
-          { success: false, error: 'Username already exists' },
+          { success: false, error: 'Username or email already exists' },
           { status: 409 }
         );
       }

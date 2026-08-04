@@ -373,9 +373,6 @@ export default function HodApplicationsWorkspace({
           <div className="min-w-0">
             <div className="pro-eyebrow">{eyebrow}</div>
             <h1 className="mt-3 break-words text-2xl font-semibold tracking-tight text-gray-950 sm:text-3xl">{title}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              {description}
-            </p>
           </div>
         </div>
       </div>
@@ -496,13 +493,10 @@ export default function HodApplicationsWorkspace({
               <ReviewContextBanner readiness={selectedReadiness} request={selectedRequest} stats={selectedStats} />
             )}
 
-            <PromotionApplicationDetail application={selectedRequest} role="HOD_DEAN">
+            <PromotionApplicationDetail application={selectedRequest} role="HOD_DEAN" showGuidance={false}>
               <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.9fr)]">
                 <div className="min-w-0">
                   <h3 className="break-words text-lg font-bold text-gray-950">Academic Review Action</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    Open each evidence file, check academic completeness and relevance, then record a clear recommendation or correction note. HR performs the official document verification after forwarding.
-                  </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-brand-primary/15 bg-brand-primarySoft p-3">
                       <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">Review completion</p>
@@ -527,15 +521,13 @@ export default function HodApplicationsWorkspace({
                     />
                   </label>
                 </div>
-
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Decision Guidance</p>
-                  <div className="mt-3 space-y-3 text-sm leading-6 text-gray-700">
-                    <p><span className="font-semibold text-gray-950">Forward:</span> Use when the department is satisfied the file can proceed to HR verification.</p>
-                    <p><span className="font-semibold text-gray-950">Return:</span> Use when the applicant must correct or add evidence before review continues.</p>
-                    <p><span className="font-semibold text-gray-950">Further review:</span> Use when additional department discussion is needed before HR receives the file.</p>
-                    <p><span className="font-semibold text-gray-950">Document verification:</span> HOD/Dean reviews evidence academically. HR marks individual documents as verified, rejected, or requiring correction.</p>
-                  </div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Decision</p>
+                  <dl className="mt-3 space-y-3 text-sm text-gray-700">
+                    <div><dt className="font-semibold text-gray-950">Forward</dt><dd>Send to HR verification.</dd></div>
+                    <div><dt className="font-semibold text-gray-950">Return</dt><dd>Request applicant correction.</dd></div>
+                    <div><dt className="font-semibold text-gray-950">Further review</dt><dd>Request department clarification.</dd></div>
+                  </dl>
                 </div>
               </div>
 

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import StatusBadge from './StatusBadge';
@@ -74,6 +74,8 @@ type PromotionApplicationDetailProps = {
   application: PromotionApplicationDetailRecord;
   role: 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN' | 'LECTURER';
   children?: ReactNode;
+  showGuidance?: boolean;
+  showEvidenceDocuments?: boolean;
 };
 
 type DocumentStats = {
@@ -306,7 +308,7 @@ function isImageDocument(document: PromotionDocumentItem) {
   return text.includes('image/') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(text);
 }
 
-export default function PromotionApplicationDetail({ application, role, children }: PromotionApplicationDetailProps) {
+export default function PromotionApplicationDetail({ application, role, children, showGuidance = true, showEvidenceDocuments = true }: PromotionApplicationDetailProps) {
   const documents = application.documents || [];
   const previewableDocuments = useMemo(() => documents.filter((document) => Boolean(document.fileUrl)), [documents]);
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -314,6 +316,7 @@ export default function PromotionApplicationDetail({ application, role, children
   const statusHistory = application.statusHistory || [];
   const stats = documentStats(application);
   const guidance = getRoleGuidance(application, role, stats);
+  const showContextPanel = showGuidance || Boolean(application.adminComment);
   const currentStep = STATUS_STEP[application.status] || 1;
   const verifiedPercent = completionPercent(stats);
   const issueCount = stats.correction + stats.rejected;
@@ -385,8 +388,8 @@ export default function PromotionApplicationDetail({ application, role, children
           </div>
         </div>
 
-        <div className="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <div className="border-b border-gray-200 p-5 lg:border-b-0 lg:border-r">
+        <div className={showContextPanel ? "grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]" : "grid min-w-0 gap-0"}>
+          <div className={showContextPanel ? "border-b border-gray-200 p-5 lg:border-b-0 lg:border-r" : "p-5"}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-base font-bold text-gray-950">{evidenceTitle}</h3>
@@ -398,22 +401,24 @@ export default function PromotionApplicationDetail({ application, role, children
               <div className="h-full rounded-full bg-teal-700" style={{ width: `${Math.max(evidenceProgressPercent, evidenceProgressPercent ? 8 : 0)}%` }} />
             </div>
             <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
-              <MiniMetric label={isDepartmentReview ? "Attached" : "Pending"} value={isDepartmentReview ? stats.total : stats.pending} tone={isDepartmentReview ? "green" : "amber"} />
+              <MiniMetric label={isDepartmentReview ? "Attached" : "Not verified"} value={isDepartmentReview ? stats.total : stats.pending} tone={isDepartmentReview ? "green" : "amber"} />
               <MiniMetric label={isDepartmentReview ? "HR Verified" : "Verified"} value={stats.verified} tone="green" />
               <MiniMetric label="Returned" value={stats.correction} tone={stats.correction > 0 ? 'amber' : 'green'} />
               <MiniMetric label="Needs Fix" value={issueCount} tone={issueCount > 0 ? 'red' : 'green'} />
             </div>
           </div>
 
-          <div className="p-5">
-            <RoleGuidance title={guidance.title} description={guidance.description} tone={guidance.tone} />
-            {application.adminComment && (
-              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-                <p className="font-semibold">Latest administrative note</p>
-                <p className="mt-1 leading-6">{application.adminComment}</p>
-              </div>
-            )}
-          </div>
+          {showContextPanel && (
+            <div className="p-5">
+              {showGuidance && <RoleGuidance title={guidance.title} description={guidance.description} tone={guidance.tone} />}
+              {application.adminComment && (
+                <div className={showGuidance ? "mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" : "rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"}>
+                  <p className="font-semibold">Latest administrative note</p>
+                  <p className="mt-1 leading-6">{application.adminComment}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -425,8 +430,9 @@ export default function PromotionApplicationDetail({ application, role, children
         </section>
       )}
 
-      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <section className="pro-card min-w-0 p-5 print:shadow-none">
+      <div className={showEvidenceDocuments ? "grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]" : "grid min-w-0 items-start gap-5"}>
+        {showEvidenceDocuments && (
+          <section className="pro-card min-w-0 p-5 print:shadow-none">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
             <div>
               <h3 className="text-lg font-bold text-gray-950">Evidence Documents</h3>
@@ -509,7 +515,8 @@ export default function PromotionApplicationDetail({ application, role, children
               })
             )}
           </div>
-        </section>
+          </section>
+        )}
 
         <div className="space-y-5">
           <section className="pro-card min-w-0 p-5 print:shadow-none">

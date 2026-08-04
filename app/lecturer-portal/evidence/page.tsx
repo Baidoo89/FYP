@@ -418,21 +418,11 @@ export default function EvidencePage() {
             <div>
               <div className="pro-eyebrow">Evidence Portfolio</div>
               <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-gray-950 sm:text-4xl">Start Your Promotion Application</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-                Select the promotion rank you are applying for before uploading evidence. This keeps your workflow, eligibility rules, and HOD/Dean review aligned.
-              </p>
             </div>
           </div>
         </section>
 
         <StartPromotionRequestCard currentRank={data.currentRank} onCreated={() => loadEvidence()} />
-
-        <section className="pro-card p-5">
-          <EmptyState
-            title="Evidence upload is locked until an application is started"
-            description="After you select the target promotion rank, the required evidence categories and PDF upload controls will appear here."
-          />
-        </section>
 
         <Link href="/lecturer-portal" className="inline-flex rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
           Back to Dashboard
@@ -447,9 +437,6 @@ export default function EvidencePage() {
           <div>
             <div className="pro-eyebrow">Evidence Portfolio</div>
             <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-gray-950 sm:text-4xl">Promotion Evidence Workspace</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Upload, replace, and track official promotion evidence. Required categories must be verified before eligibility can be calculated.
-            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/lecturer-portal/application" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">
@@ -465,7 +452,7 @@ export default function EvidencePage() {
       <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <PortfolioMetric code="REQ" label={readinessMetricLabel} value={`${readinessCount}/${data.stats.requiredCategories}`} detail={readinessMetricDetail} />
         <PortfolioMetric code="DOC" label="Uploaded documents" value={data.stats.totalDocuments} detail="Across active application" />
-        <PortfolioMetric code="PEN" label="Pending review" value={data.stats.pendingCount} detail="Awaiting HR decision" tone="amber" />
+        <PortfolioMetric code="UNV" label="Not verified" value={data.stats.pendingCount} detail="Document status" tone="amber" />
         <PortfolioMetric code="RET" label="Needs attention" value={needsAttentionCount} detail={needsAttentionDetail} tone={needsAttentionCount > 0 ? 'rose' : 'teal'} />
       </section>
 
@@ -505,7 +492,7 @@ export default function EvidencePage() {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">Ready for submission</p>
               <h2 className="mt-2 text-xl font-bold text-gray-950">Required evidence has been uploaded</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-700">
-                Submit the application to begin HOD/Dean review. HR verification and eligibility calculation will happen after department forwarding.
+                Submit to begin department review.
               </p>
             </div>
             <button
@@ -537,8 +524,8 @@ export default function EvidencePage() {
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-700">
                 {correctionReady
-                  ? 'All returned evidence has been replaced and is pending verification. Resubmit the application so the department review can continue.'
-                  : 'Replace each returned or rejected evidence file. Once all issues are cleared, you can resubmit the corrected application.'}
+                  ? 'All corrections are ready. Resubmit for department review.'
+                  : 'Replace every returned document.'}
               </p>
             </div>
             {correctionReady && (

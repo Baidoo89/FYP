@@ -71,7 +71,7 @@ const iconMap = {
   VQ: FileCheck2,
 } as const;
 
-export default function SidebarNavLink({ href, icon, children, subtitle, onNavigate }: SidebarNavLinkProps) {
+export default function SidebarNavLink({ href, icon, children, onNavigate }: SidebarNavLinkProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const normalizedHref = href.split('#')[0].split('?')[0];
@@ -108,7 +108,6 @@ export default function SidebarNavLink({ href, icon, children, subtitle, onNavig
         </span>
         <div className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold leading-tight">{children}</span>
-          {subtitle && <span className="mt-0.5 block truncate text-[11px] text-blue-50/60 group-hover:text-blue-50/90">{subtitle}</span>}
         </div>
       </Link>
     </li>

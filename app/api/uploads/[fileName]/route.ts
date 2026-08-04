@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { prisma } from '../../../../lib/prisma';
@@ -8,6 +8,72 @@ import { ensureDocumentFileStorage, getDocumentFileBlob } from '../../../../lib/
 
 function toArrayBuffer(buffer: Buffer) {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
+}
+
+function fileResponse(request: NextRequest, data: Buffer, contentType: string, downloadName: string) {
+  const totalSize = data.byteLength;
+  const rangeHeader = request.headers.get('range');
+  const commonHeaders = {
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': 'private, no-store',
+    'Content-Disposition': `inline; filename="${downloadName}"`,
+    'Content-Type': contentType,
+    'X-Content-Type-Options': 'nosniff',
+  };
+
+  if (!rangeHeader) {
+    return new NextResponse(toArrayBuffer(data), {
+      headers: {
+        ...commonHeaders,
+        'Content-Length': String(totalSize),
+      },
+    });
+  }
+
+  const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+  if (!match || (!match[1] && !match[2]) || totalSize === 0) {
+    return new NextResponse(null, {
+      status: 416,
+      headers: { ...commonHeaders, 'Content-Range': `bytes */${totalSize}` },
+    });
+  }
+
+  let start: number;
+  let end: number;
+
+  if (!match[1]) {
+    const suffixLength = Number(match[2]);
+    if (!Number.isSafeInteger(suffixLength) || suffixLength <= 0) {
+      return new NextResponse(null, {
+        status: 416,
+        headers: { ...commonHeaders, 'Content-Range': `bytes */${totalSize}` },
+      });
+    }
+    start = Math.max(totalSize - suffixLength, 0);
+    end = totalSize - 1;
+  } else {
+    start = Number(match[1]);
+    end = match[2] ? Number(match[2]) : totalSize - 1;
+  }
+
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start >= totalSize || end < start) {
+    return new NextResponse(null, {
+      status: 416,
+      headers: { ...commonHeaders, 'Content-Range': `bytes */${totalSize}` },
+    });
+  }
+
+  end = Math.min(end, totalSize - 1);
+  const chunk = data.subarray(start, end + 1);
+
+  return new NextResponse(toArrayBuffer(chunk), {
+    status: 206,
+    headers: {
+      ...commonHeaders,
+      'Content-Length': String(chunk.byteLength),
+      'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+    },
+  });
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ fileName: string }> }) {
@@ -43,26 +109,19 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
   const downloadName = `${sanitizeUploadName(documentRecord.title) || 'evidence-document'}.pdf`;
 
   if (storedFile) {
-    return new NextResponse(toArrayBuffer(storedFile.data), {
-      headers: {
-        'Content-Type': storedFile.mimeType || documentRecord.mimeType || 'application/pdf',
-        'Content-Disposition': `inline; filename="${downloadName}"`,
-        'Content-Length': String(storedFile.size || documentRecord.fileSize),
-      },
-    });
+    return fileResponse(
+      request,
+      storedFile.data,
+      storedFile.mimeType || documentRecord.mimeType || 'application/pdf',
+      downloadName,
+    );
   }
 
   const absolutePath = path.join(PROMOTION_UPLOAD_DIR, fileName);
 
   try {
     const fileBuffer = await fs.readFile(absolutePath);
-    return new NextResponse(toArrayBuffer(fileBuffer), {
-      headers: {
-        'Content-Type': documentRecord.mimeType || 'application/pdf',
-        'Content-Disposition': `inline; filename="${downloadName}"`,
-        'Content-Length': String(documentRecord.fileSize),
-      },
-    });
+    return fileResponse(request, fileBuffer, documentRecord.mimeType || 'application/pdf', downloadName);
   } catch {
     return NextResponse.json({ error: 'File unavailable' }, { status: 404 });
   }

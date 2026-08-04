@@ -73,27 +73,17 @@ export default function QueriesPage() {
             HR Feedback Inbox
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Review Queries</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            Documents flagged by HR for revision. Read feedback carefully and re-upload corrected versions.
-          </p>
         </div>
       </section>
-
-      {/* Inbox Badge */}
-      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-6">
-        <div>
-          <p className="text-sm font-semibold text-slate-900">Attention Required</p>
-          <p className="mt-1 text-lg font-bold text-slate-900">{data.count} flagged document(s)</p>
-        </div>
-        <div className="text-5xl"></div>
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <p className="font-semibold text-slate-900">Needs correction</p>
+        <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-900">{data.count}</span>
       </div>
 
       {/* Queries List */}
       {data.count === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
-          <div className="text-5xl mb-4"></div>
-          <p className="font-semibold text-slate-950">All Clear!</p>
-          <p className="mt-2 text-sm text-slate-900">No flagged documents. Great job on your submissions!</p>
+          <p className="font-semibold text-slate-950">No documents need correction.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -116,7 +106,7 @@ export default function QueriesPage() {
 
               {/* HR Comment */}
               <div className="rounded-xl border border-slate-200 bg-white p-4 my-4">
-                <p className="text-sm font-semibold text-slate-900 mb-2">HR Admin Comment:</p>
+                <p className="text-sm font-semibold text-slate-900 mb-2">HR Comment</p>
                 <p className="text-slate-700">{query.adminComment || 'No comment provided'}</p>
               </div>
 
@@ -126,7 +116,7 @@ export default function QueriesPage() {
                   href={`/lecturer-portal/evidence?category=${encodeURIComponent(query.category)}&title=${encodeURIComponent(query.title)}`}
                   className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
                 >
-                  Re-upload File
+                  Replace Document
                 </Link>
                 <a
                   href={query.fileUrl}
@@ -142,28 +132,7 @@ export default function QueriesPage() {
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-        <h3 className="font-semibold text-slate-900">How to Fix Flagged Documents</h3>
-        <ol className="mt-3 space-y-2 text-sm text-slate-700">
-          <li className="flex gap-3">
-            <span className="font-bold">1.</span>
-            <span>Read the HR comment carefully to understand why the document was rejected.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold">2.</span>
-            <span>Make the necessary corrections or improvements to your document.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold">3.</span>
-            <span>Click "Re-upload File" and select your corrected document.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold">4.</span>
-            <span>HR will review again and update the status once processed.</span>
-          </li>
-        </ol>
-      </div>
+
 
       {/* Back Link */}
       <Link href="/lecturer-portal" className="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">

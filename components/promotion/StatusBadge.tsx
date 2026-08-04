@@ -7,8 +7,8 @@ type StatusBadgeProps = {
 
 const statusMap: Record<string, { label: string; className: string }> = {
   DRAFT: { label: 'Draft', className: 'border-slate-200 bg-slate-100 text-slate-700' },
-  PENDING: { label: 'Pending', className: 'border-amber-200 bg-amber-50 text-amber-800' },
-  PENDING_REVIEW: { label: 'Pending', className: 'border-amber-200 bg-amber-50 text-amber-800' },
+  PENDING: { label: 'Not Verified', className: 'border-amber-200 bg-amber-50 text-amber-800' },
+  PENDING_REVIEW: { label: 'Pending Review', className: 'border-amber-200 bg-amber-50 text-amber-800' },
   SUBMITTED: { label: 'Submitted', className: 'border-sky-200 bg-sky-50 text-sky-800' },
   UNDER_REVIEW: { label: 'Under Review', className: 'border-sky-200 bg-sky-50 text-sky-800' },
   UNDER_DEPARTMENT_REVIEW: { label: 'Department Review', className: 'border-sky-200 bg-sky-50 text-sky-800' },

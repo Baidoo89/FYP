@@ -295,7 +295,7 @@ export default function AppShell({ children }: AppShellProps) {
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-yellow-100/85">Promotion System</p>
             </div>
           </div>
-          <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2">
+          <div className="mt-5 border-t border-white/10 pt-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-yellow-100">{portalTitle}</p>
             <p className="mt-1 text-sm text-blue-50/80">{portalSubtitle}</p>
           </div>
@@ -311,19 +311,13 @@ export default function AppShell({ children }: AppShellProps) {
           </ul>
         </Suspense>
 
-        <div className="mx-4 mt-4 rounded-lg border border-white/10 bg-white/[0.06] p-4 text-xs text-blue-50/80">
-          <p className="font-semibold text-white">Need help?</p>
-          <p className="mt-1 leading-5">Contact support for account, evidence, and workflow assistance.</p>
-        </div>
 
         <div className="mx-4 mt-3 lg:hidden">
           <LogoutButton className="w-full border-white/10 bg-white/10 text-white hover:border-white/20 hover:bg-white/15 hover:text-white" />
         </div>
 
         <div className="mt-4 border-t border-white/10 p-4 text-xs text-blue-50/55">
-          <p>&copy; 2026 Ghana Communication Technology University</p>
-          <p>Digital Staff Promotion Support System</p>
-          <p>Version 1.0</p>
+          <p>&copy; 2026 GCTU | Version 1.0</p>
         </div>
       </nav>
 
@@ -348,9 +342,7 @@ export default function AppShell({ children }: AppShellProps) {
             )}
           </div>
           <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-            <div className="hidden w-64 items-center rounded-lg border border-brand-border bg-brand-background px-3 py-2 text-sm text-brand-muted xl:flex">
-              Search anything...
-            </div>
+
             <ThemeToggle compact />
             <a href={isLecturerNav ? "/lecturer-portal/notifications" : "/notifications"} className="relative hidden h-10 w-10 items-center justify-center rounded-lg border border-brand-border bg-white text-sm font-bold text-brand-muted shadow-sm hover:bg-brand-background sm:flex" aria-label={`${notificationCount} unread notifications`}>
               <Bell className="h-4 w-4" aria-hidden="true" />
@@ -378,8 +370,7 @@ export default function AppShell({ children }: AppShellProps) {
         </main>
 
         <footer className="border-t border-brand-border bg-white px-4 py-4 pb-20 text-center text-xs text-brand-muted md:px-8 lg:pb-4">
-          <p>&copy; 2026 Ghana Communication Technology University</p>
-          <p className="mt-1">Digital Staff Promotion Support System | Version 1.0</p>
+          <p>&copy; 2026 GCTU | Promotion System v1.0</p>
         </footer>
         <Suspense fallback={null}>
           <BottomNavigation role={effectivePortalRole} notificationCount={notificationCount} />

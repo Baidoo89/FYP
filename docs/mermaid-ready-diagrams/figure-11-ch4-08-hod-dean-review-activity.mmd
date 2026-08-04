@@ -1,0 +1,32 @@
+﻿%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5"},"flowchart":{"htmlLabels":true,"curve":"basis","nodeSpacing":42,"rankSpacing":58}}}%%
+%% Figure 11 / Chapter Figure 4.8 - HOD/Dean Review Activity Diagram
+flowchart LR
+    Start([Start]):::terminal
+    Scope{"Reviewer scope"}:::decision
+    Hod["Department-scoped HOD queue"]:::process
+    Dean["Faculty-scoped Dean queue"]:::process
+    Filter["Apply access filter"]:::process
+    Select["Select application"]:::process
+    Inspect["Inspect profile and evidence"]:::process
+    Comment["Enter academic review comment"]:::process
+    Decision{"Review decision"}:::decision
+    Return["Return for correction"]:::exception
+    Further["Require further review"]:::exception
+    Forward["Forward to HR verification"]:::process
+    Audit["Save StatusHistory, AuditLog, and notification"]:::audit
+    End([End]):::terminal
+
+    Start --> Scope
+    Scope -- Department --> Hod --> Filter
+    Scope -- Faculty --> Dean --> Filter
+    Filter --> Select --> Inspect --> Comment --> Decision
+    Decision -- Incomplete --> Return --> Audit
+    Decision -- Clarification needed --> Further --> Audit
+    Decision -- Complete --> Forward --> Audit
+    Audit --> End
+
+    classDef terminal fill:#111827,stroke:#111827,color:#FFFFFF,stroke-width:1.5px;
+    classDef process fill:#EFF6FF,stroke:#1D4ED8,stroke-width:1.4px,color:#0F172A;
+    classDef decision fill:#FFF7ED,stroke:#C2410C,stroke-width:1.6px,color:#0F172A;
+    classDef exception fill:#FEF2F2,stroke:#B91C1C,stroke-width:1.5px,color:#0F172A;
+    classDef audit fill:#ECFDF5,stroke:#047857,stroke-width:1.4px,color:#0F172A;

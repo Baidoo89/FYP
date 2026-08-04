@@ -1,0 +1,33 @@
+﻿%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5"},"flowchart":{"htmlLabels":true,"curve":"basis","nodeSpacing":42,"rankSpacing":58}}}%%
+%% Figure 12 / Chapter Figure 4.9 - HR Verification and Eligibility Activity Diagram
+flowchart LR
+    Start([Start]):::terminal
+    Queue["Open HR master queue"]:::process
+    Select["Select application"]:::process
+    Staff["Confirm staff record and rank history"]:::process
+    Doc["Verify uploaded evidence documents"]:::process
+    Valid{"Document valid?"}:::decision
+    Reject["Reject or request correction"]:::exception
+    Required{"Required categories verified?"}:::decision
+    Wait["Keep under HR verification"]:::exception
+    Engine["Run eligibility engine"]:::process
+    Score["Compute criteria score from verified evidence"]:::process
+    Outcome{"Eligibility outcome"}:::decision
+    Committee["Route eligible file to committee"]:::process
+    Further["Mark not eligible or requires further review"]:::exception
+    Audit["Save verification, audit trail, status history, and notifications"]:::audit
+    End([End]):::terminal
+
+    Start --> Queue --> Select --> Staff --> Doc --> Valid
+    Valid -- No --> Reject --> Audit --> End
+    Valid -- Yes --> Required
+    Required -- No --> Wait --> Audit --> End
+    Required -- Yes --> Engine --> Score --> Outcome
+    Outcome -- Eligible --> Committee --> Audit --> End
+    Outcome -- Not eligible / further review --> Further --> Audit --> End
+
+    classDef terminal fill:#111827,stroke:#111827,color:#FFFFFF,stroke-width:1.5px;
+    classDef process fill:#EFF6FF,stroke:#1D4ED8,stroke-width:1.4px,color:#0F172A;
+    classDef decision fill:#FFF7ED,stroke:#C2410C,stroke-width:1.6px,color:#0F172A;
+    classDef exception fill:#FEF2F2,stroke:#B91C1C,stroke-width:1.5px,color:#0F172A;
+    classDef audit fill:#ECFDF5,stroke:#047857,stroke-width:1.4px,color:#0F172A;

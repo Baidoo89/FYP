@@ -1,0 +1,39 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5","clusterBkg":"#FFFFFF","clusterBorder":"#CBD5E1"},"flowchart":{"htmlLabels":true,"curve":"basis"}}}%%
+%% Figure 27 / Chapter Figure 4.24 - Deployment Diagram
+flowchart LR
+    Developer["Developer Workstation<br/>Source code, Prisma schema, tests"]:::dev
+    Git["Git Repository<br/>Version-controlled project"]:::dev
+    DNS["Cloudflare DNS<br/>promotion.techdalt.com"]:::network
+    Browser["User Device<br/>Modern web browser"]:::client
+
+    subgraph Vercel["Vercel Production Environment"]
+        direction TB
+        Build["Build pipeline<br/>Next.js build and Prisma generate"]:::runtime
+        App["Next.js application<br/>App Router, Server Components, API routes"]:::runtime
+        Health["/api/health<br/>Application and database check"]:::runtime
+        Build --> App
+        App --> Health
+    end
+
+    Neon[("Neon Serverless PostgreSQL<br/>Application data and audit records")]:::data
+    Blob[("document_file_blobs<br/>Durable uploaded evidence files")]:::data
+    Resend["Resend<br/>Transactional verification email"]:::external
+    Env["Vercel Environment Variables<br/>AUTH_SECRET, DATABASE_URL, APP_URL, EMAIL settings"]:::secure
+
+    Developer -->|git push| Git
+    Git -->|deployment trigger| Build
+    Browser -->|HTTPS| DNS
+    DNS -->|CNAME route| App
+    App -->|Prisma / DATABASE_URL| Neon
+    App -->|binary evidence storage| Blob
+    App -->|verification email| Resend
+    Env -. injected at runtime .-> App
+    App -->|health response| Browser
+
+    classDef client fill:#EFF6FF,stroke:#1D4ED8,stroke-width:1.4px,color:#0F172A;
+    classDef network fill:#F0FDFA,stroke:#0F766E,stroke-width:1.4px,color:#0F172A;
+    classDef runtime fill:#ECFDF5,stroke:#047857,stroke-width:1.4px,color:#0F172A;
+    classDef data fill:#FEFCE8,stroke:#A16207,stroke-width:1.4px,color:#0F172A;
+    classDef external fill:#FDF2F8,stroke:#BE185D,stroke-width:1.4px,color:#0F172A;
+    classDef secure fill:#F8FAFC,stroke:#334155,stroke-width:1.4px,color:#0F172A;
+    classDef dev fill:#F5F3FF,stroke:#6D28D9,stroke-width:1.4px,color:#0F172A;

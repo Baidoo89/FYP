@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
@@ -332,9 +332,6 @@ export default function VerificationWorkspacePage() {
           <div>
             <div className="pro-eyebrow">HR Document Verification</div>
             <h1 className="mt-3 break-words text-2xl font-semibold tracking-tight text-gray-950 sm:text-3xl">Verification Workspace</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-              Verify promotion evidence, request corrections, reject invalid documents, and trigger eligibility routing only after required evidence is verified.
-            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a href="/hr/requests" className="inline-flex min-h-10 items-center justify-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">Master Queue</a>
@@ -419,8 +416,8 @@ export default function VerificationWorkspacePage() {
           {!selectedRequest ? (
             <div className="pro-card p-6"><EmptyState title="Select an application" description="Choose an application from the verification queue to inspect its evidence." /></div>
           ) : (
-            <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN">
-              <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+            <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN" showGuidance={false} showEvidenceDocuments={false}>
+              <div className="space-y-5">
                 <div>
                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                     <div>
@@ -430,7 +427,7 @@ export default function VerificationWorkspacePage() {
                     <span className="w-fit rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">{readiness}% ready</span>
                   </div>
 
-                  <div className="mt-4 grid gap-2">
+                  <div className="mt-4 grid gap-2 md:grid-cols-2">
                     {selectedRequest.documents.length === 0 ? (
                       <EmptyState title="No evidence attached" description="The applicant has not uploaded evidence for this request." />
                     ) : (
@@ -475,19 +472,23 @@ export default function VerificationWorkspacePage() {
                         </div>
                       </div>
 
+                      {selectedDocument.fileUrl ? (
+                        <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                          <div className="flex flex-col justify-between gap-2 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center">
+                            <p className="text-sm font-semibold text-gray-950">Document Preview</p>
+                            <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="w-fit text-sm font-semibold text-blue-800 hover:underline">Open full size</a>
+                          </div>
+                          <iframe title={`Preview ${selectedDocument.title}`} src={selectedDocument.fileUrl} className="h-[30rem] w-full bg-white sm:h-[38rem]" />
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-600">
+                          No preview file is available for this evidence record.
+                        </div>
+                      )}
+
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         <InfoTile label="Uploaded" value={formatDate(selectedDocument.uploadedAt)} />
                         <InfoTile label="Verified by" value={selectedDocument.verifiedBy?.name || 'Not verified'} />
-                      </div>
-
-                      <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
-                        <p className="font-bold uppercase tracking-[0.14em] text-blue-800">Routing rule</p>
-                        <p className="mt-1">When required evidence is verified, the system calculates eligibility and routes eligible applications to committee review automatically.</p>
-                        {selectedDocument.fileUrl && (
-                          <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-semibold text-blue-800 hover:bg-blue-100">
-                            Open source file
-                          </a>
-                        )}
                       </div>
 
                       <label className="mt-4 block text-sm font-semibold text-gray-800">
@@ -528,18 +529,6 @@ export default function VerificationWorkspacePage() {
             </PromotionApplicationDetail>
           )}
 
-          {selectedDocument?.fileUrl && (
-            <section className="pro-card p-5">
-              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-950">Document Preview</h2>
-                  <p className="mt-1 text-sm text-gray-600">{selectedDocument.title}</p>
-                </div>
-                <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer" className="w-fit rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50">Open in new tab</a>
-              </div>
-              <iframe title="Document preview" src={selectedDocument.fileUrl} className="mt-4 h-[640px] w-full rounded-xl border border-gray-200 bg-white" />
-            </section>
-          )}
         </div>
       </section>
     </div>

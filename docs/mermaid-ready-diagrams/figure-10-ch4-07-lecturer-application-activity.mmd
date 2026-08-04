@@ -1,0 +1,29 @@
+﻿%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5"},"flowchart":{"htmlLabels":true,"curve":"basis","nodeSpacing":40,"rankSpacing":55}}}%%
+%% Figure 10 / Chapter Figure 4.7 - Lecturer Application Activity Diagram
+flowchart LR
+    Start([Start]):::terminal
+    Login["Sign in with official GCTU email"]:::process
+    Profile{"Profile complete?"}:::decision
+    Complete["Complete staff profile"]:::process
+    Rank["Select current and target rank"]:::process
+    Draft["Create draft application"]:::process
+    Upload["Upload PDF evidence by category"]:::process
+    Valid{"File and category valid?"}:::decision
+    Fix["Replace invalid evidence"]:::exception
+    Required{"All required categories present?"}:::decision
+    Submit["Submit application"]:::process
+    Track["Track status, comments, and final outcome"]:::process
+    End([End]):::terminal
+
+    Start --> Login --> Profile
+    Profile -- No --> Complete --> Profile
+    Profile -- Yes --> Rank --> Draft --> Upload --> Valid
+    Valid -- No --> Fix --> Upload
+    Valid -- Yes --> Required
+    Required -- No --> Upload
+    Required -- Yes --> Submit --> Track --> End
+
+    classDef terminal fill:#111827,stroke:#111827,color:#FFFFFF,stroke-width:1.5px;
+    classDef process fill:#EFF6FF,stroke:#1D4ED8,stroke-width:1.4px,color:#0F172A;
+    classDef decision fill:#FFF7ED,stroke:#C2410C,stroke-width:1.6px,color:#0F172A;
+    classDef exception fill:#FEF2F2,stroke:#B91C1C,stroke-width:1.5px,color:#0F172A;

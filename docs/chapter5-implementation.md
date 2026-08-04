@@ -50,6 +50,8 @@ The study set out to determine whether a digital staff promotion support system 
 
 The project also demonstrates, concretely, why testing a running system matters more than reviewing its code in isolation: the eligibility engine's defect (§4.9.2) was invisible from a static reading of the scoring rules and would not have been caught without deliberately exercising the full application through a real browser session across all five roles.
 
+A further conclusion from the implementation is that the strongest value of the system is not only the eligibility score, but the structure it gives to the promotion process. By separating application submission, departmental academic review, HR evidence verification, committee recommendation, authority approval, and final close-out into distinct logged stages, the system reduces ambiguity about responsibility. This separation is important in a university context because promotion decisions involve both administrative completeness and academic judgement; the implemented system supports both by preserving evidence, comments, status history, and audit records without pretending that a software score can replace the statutory review bodies.
+
 ## 5.6 Limitations of the Implemented System
 
 Consistent with the delimitations declared in Chapter One (§1.8–§1.9), the implemented prototype has the following known limitations:

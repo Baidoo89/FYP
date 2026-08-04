@@ -1,0 +1,74 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5","clusterBkg":"#FFFFFF","clusterBorder":"#CBD5E1"},"flowchart":{"htmlLabels":true,"curve":"basis"}}}%%
+%% Figure 5 / Chapter Figure 4.2 - Component Diagram
+flowchart TB
+    subgraph Portals["Role-specific Portals"]
+        direction LR
+        LecturerPortal["Lecturer Portal"]:::portal
+        HodPortal["HOD/Dean Portal"]:::portal
+        HrPortal["HR Portal"]:::portal
+        CommitteePortal["Committee Portal"]:::portal
+        AdminPortal["System Admin Portal"]:::portal
+    end
+
+    subgraph Core["Core Domain Modules"]
+        direction TB
+        Auth["Authentication Module"]:::core
+        RBAC["RBAC Module"]:::core
+        Workflow["Promotion Workflow Module"]:::core
+        Scope["Department Scope Module"]:::core
+        Upload["Evidence Upload Module"]:::core
+        Verify["Verification Module"]:::core
+        Eligibility["Eligibility Engine"]:::core
+        Review["Committee Review Module"]:::core
+        Criteria["Criteria Configuration Module"]:::core
+        Reports["Reporting and Analytics Module"]:::core
+        Audit["Audit Logging Module"]:::core
+        Notify["Notification Module"]:::core
+    end
+
+    subgraph DataAccess["Data Access and External Services"]
+        direction LR
+        Prisma["Prisma ORM"]:::data
+        DB[("Neon PostgreSQL")]:::store
+        Blob[("document_file_blobs")]:::store
+        Email["Resend Email"]:::external
+    end
+
+    LecturerPortal --> Auth
+    LecturerPortal --> Upload
+    LecturerPortal --> Workflow
+    HodPortal --> Auth
+    HodPortal --> Scope
+    HodPortal --> Workflow
+    HrPortal --> Auth
+    HrPortal --> Verify
+    HrPortal --> Eligibility
+    HrPortal --> Reports
+    CommitteePortal --> Auth
+    CommitteePortal --> Review
+    AdminPortal --> Auth
+    AdminPortal --> RBAC
+    AdminPortal --> Criteria
+    AdminPortal --> Reports
+
+    Auth --> RBAC
+    Workflow --> Scope
+    Workflow --> Audit
+    Workflow --> Notify
+    Upload --> Prisma
+    Upload --> Blob
+    Verify --> Prisma
+    Eligibility --> Prisma
+    Review --> Prisma
+    Criteria --> Prisma
+    Reports --> Prisma
+    Audit --> Prisma
+    Notify --> Prisma
+    Notify -. verification and workflow email .-> Email
+    Prisma --> DB
+
+    classDef portal fill:#EFF6FF,stroke:#1D4ED8,stroke-width:1.4px,color:#0F172A;
+    classDef core fill:#ECFDF5,stroke:#047857,stroke-width:1.4px,color:#0F172A;
+    classDef data fill:#F8FAFC,stroke:#334155,stroke-width:1.4px,color:#0F172A;
+    classDef store fill:#FEFCE8,stroke:#A16207,stroke-width:1.4px,color:#0F172A;
+    classDef external fill:#FDF2F8,stroke:#BE185D,stroke-width:1.4px,color:#0F172A;

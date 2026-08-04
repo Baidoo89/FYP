@@ -1,0 +1,37 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","actorBkg":"#FFFFFF","actorBorder":"#334155","actorTextColor":"#0F172A","activationBkgColor":"#E0F2FE","activationBorderColor":"#0369A1","sequenceNumberColor":"#0F172A"},"sequence":{"showSequenceNumbers":true,"actorMargin":80,"messageMargin":40,"mirrorActors":false}}}%%
+%% Figure 15 / Chapter Figure 4.12 - Eligibility Calculation Sequence Diagram
+sequenceDiagram
+    autonumber
+    actor HR as HR Administrator
+    participant API as Verification API
+    participant Workflow as promotion-workflow.ts
+    participant Engine as promotion-engine.ts
+    participant DB as PostgreSQL
+    participant Audit as Audit and Notification Layer
+
+    HR->>API: Verify evidence document
+    API->>Workflow: verifyPromotionDocument(requestId, documentId, decision)
+    Workflow->>DB: Update Document.verificationStatus
+    Workflow->>DB: Insert Verification record
+    Workflow->>DB: Load required criteria and request evidence
+    Workflow->>Workflow: Check whether required categories are verified
+
+    alt Required evidence is complete
+        Workflow->>Engine: calculateEligibility(requestId)
+        Engine->>DB: Fetch verified documents and active criteria
+        Engine->>Engine: Sum Teaching, Research, and Service category weights
+        Engine->>Engine: Apply minimum-years and minimum-score rules
+        Engine->>DB: Save totalScore, eligibilityStatus, and reason
+        Engine-->>Workflow: Eligibility recommendation
+        alt Recommendation is ELIGIBLE
+            Workflow->>DB: Transition request to UNDER_COMMITTEE_REVIEW
+        else Recommendation is not eligible or needs review
+            Workflow->>DB: Transition request to REQUIRES_FURTHER_REVIEW
+        end
+    else Required evidence is incomplete
+        Workflow->>DB: Keep request under HR verification or return for correction
+    end
+
+    Workflow->>Audit: Record audit trail, status history, and notifications
+    Audit->>DB: Insert AuditLog, StatusHistory, and Notification rows
+    API-->>HR: Return updated request, criteria score, and recommendation

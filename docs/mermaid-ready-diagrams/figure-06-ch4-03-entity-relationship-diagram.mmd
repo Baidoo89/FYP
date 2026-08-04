@@ -1,0 +1,148 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","tertiaryColor":"#EEF2FF"}}}%%
+%% Figure 6 / Chapter Figure 4.3 - Entity Relationship Diagram
+erDiagram
+    FACULTY ||--o{ DEPARTMENT : contains
+    FACULTY ||--o{ USER : scopes
+    DEPARTMENT ||--o{ USER : assigns
+    DEPARTMENT ||--o{ LECTURER : maps_legacy_staff
+    USER ||--o{ PROMOTION_REQUEST : lecturer
+    USER ||--o{ PROMOTION_REQUEST : requested_by
+    USER ||--o{ DOCUMENT : uploads
+    USER ||--o{ VERIFICATION : verifies
+    USER ||--o{ REVIEW_COMMENT : reviews
+    USER ||--o{ STATUS_HISTORY : changes_status
+    USER ||--o{ AUDIT_LOG : performs_action
+    USER ||--o{ NOTIFICATION : receives
+    USER ||--o{ SCORE : creates_score
+    USER ||--o{ PROMOTION_CRITERIA : maintains_criteria
+    PROMOTION_REQUEST ||--o{ DOCUMENT : contains_evidence
+    PROMOTION_REQUEST ||--o{ SCORE : stores_scores
+    PROMOTION_REQUEST ||--o{ REVIEW_COMMENT : has_review
+    PROMOTION_REQUEST ||--o{ STATUS_HISTORY : tracks_status
+    PROMOTION_REQUEST ||--o{ AUDIT_LOG : logs_events
+    PROMOTION_REQUEST ||--o{ NOTIFICATION : triggers
+    DOCUMENT ||--o{ VERIFICATION : has_decisions
+    DOCUMENT ||--o| DOCUMENT_FILE_BLOB : stores_pdf_blob
+
+    FACULTY {
+        int id PK
+        string name UK
+        string description
+    }
+    DEPARTMENT {
+        int id PK
+        string name UK
+        int facultyId FK
+        string description
+    }
+    LECTURER {
+        int id PK
+        string name
+        string email UK
+        string department
+        int departmentId FK
+        string rank
+        boolean is_active
+    }
+    USER {
+        int id PK
+        string name
+        string email UK
+        string staffId UK
+        Role role
+        string currentRank
+        int departmentId FK
+        int facultyId FK
+        boolean emailVerified
+        boolean isActive
+    }
+    PROMOTION_REQUEST {
+        int id PK
+        int lecturerId FK
+        int applicantId FK
+        int requestedById FK
+        string currentRank
+        string targetRank
+        int yearsInCurrentRank
+        RequestStatus status
+        EligibilityStatus eligibilityStatus
+        float totalScore
+        string eligibilityReason
+    }
+    DOCUMENT {
+        int id PK
+        int requestId FK
+        int uploadedById FK
+        DocumentCategory category
+        string title
+        string fileName
+        int fileSize
+        VerificationStatus status
+        int verifiedById FK
+    }
+    DOCUMENT_FILE_BLOB {
+        int documentId PK
+        string fileName
+        string mimeType
+        int size
+        bytes data
+    }
+    VERIFICATION {
+        int id PK
+        int documentId FK
+        int verifierId FK
+        VerificationStatus decision
+        string comment
+    }
+    PROMOTION_CRITERIA {
+        int id PK
+        AcademicRank currentRank
+        AcademicRank targetRank
+        int minimumYearsInCurrentRank
+        DocumentCategory requiredDocumentCategories
+        boolean scoringEnabled
+        float minimumTotalScore
+        boolean isActive
+    }
+    SCORE {
+        int id PK
+        int promotionRequestId FK
+        DocumentCategory category
+        float score
+        float weight
+        float weightedScore
+        PerformanceCategory performanceCategory
+    }
+    REVIEW_COMMENT {
+        int id PK
+        int promotionRequestId FK
+        int reviewerId FK
+        string comment
+        ReviewRecommendation recommendation
+    }
+    STATUS_HISTORY {
+        int id PK
+        int promotionRequestId FK
+        int changedById FK
+        RequestStatus oldStatus
+        RequestStatus newStatus
+        string comment
+    }
+    AUDIT_LOG {
+        int id PK
+        int requestId FK
+        int actorId FK
+        string action
+        string entityType
+        string description
+        json metadata
+    }
+    NOTIFICATION {
+        int id PK
+        int userId FK
+        int promotionRequestId FK
+        string title
+        string message
+        NotificationType type
+        boolean isRead
+    }

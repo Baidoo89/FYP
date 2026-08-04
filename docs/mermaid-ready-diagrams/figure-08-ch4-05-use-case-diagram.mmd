@@ -1,0 +1,66 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","primaryColor":"#F8FAFC","primaryTextColor":"#0F172A","primaryBorderColor":"#334155","lineColor":"#334155","secondaryColor":"#EEF2FF","tertiaryColor":"#ECFDF5","clusterBkg":"#FFFFFF","clusterBorder":"#CBD5E1"},"flowchart":{"htmlLabels":true,"curve":"basis"}}}%%
+%% Figure 8 / Chapter Figure 4.5 - Use Case Diagram
+flowchart TB
+    subgraph Actors["External Actors"]
+        direction LR
+        Lecturer["Lecturer"]:::actor
+        HodDean["HOD / Dean"]:::actor
+        HR["HR Administrator"]:::actor
+        Committee["Committee Reviewer"]:::actor
+        Admin["System Administrator"]:::actor
+    end
+
+    subgraph System["Digital Staff Promotion Support System"]
+        direction TB
+        subgraph LecturerCases["Lecturer Functions"]
+            direction LR
+            UC1([Create promotion request]):::usecase
+            UC2([Upload categorized PDF evidence]):::usecase
+            UC3([Track application status and outcome]):::usecase
+        end
+        subgraph AcademicCases["Academic Review Functions"]
+            direction LR
+            UC4([Review departmental application]):::usecase
+            UC5([Return, request review, or forward to HR]):::usecase
+        end
+        subgraph HrCases["HR and Decision-Support Functions"]
+            direction LR
+            UC6([Verify evidence documents]):::usecase
+            UC7([Run eligibility recommendation]):::usecase
+            UC8([Record authority approval and close workflow]):::usecase
+            UC9([Generate workflow reports]):::usecase
+        end
+        subgraph CommitteeCases["Committee Functions"]
+            direction LR
+            UC10([Review eligible application]):::usecase
+            UC11([Record committee recommendation]):::usecase
+        end
+        subgraph AdminCases["Administration and Governance Functions"]
+            direction LR
+            UC12([Manage users, roles, faculties, and departments]):::usecase
+            UC13([Configure promotion criteria]):::usecase
+            UC14([View audit logs and governance records]):::usecase
+        end
+    end
+
+    Lecturer --> UC1
+    Lecturer --> UC2
+    Lecturer --> UC3
+    HodDean --> UC4
+    HodDean --> UC5
+    HR --> UC6
+    HR --> UC7
+    HR --> UC8
+    HR --> UC9
+    Committee --> UC10
+    Committee --> UC11
+    Admin --> UC12
+    Admin --> UC13
+    Admin --> UC14
+    Admin --> UC9
+    UC6 -. verified documents .-> UC7
+    UC7 -. eligible application .-> UC10
+    UC11 -. recommendation .-> UC8
+
+    classDef actor fill:#FFFFFF,stroke:#111827,stroke-width:1.8px,color:#111827;
+    classDef usecase fill:#EEF2FF,stroke:#4338CA,stroke-width:1.5px,color:#111827;

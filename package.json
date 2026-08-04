@@ -20,6 +20,7 @@
     "db:health": "dotenv -e .env.local -- node scripts/db-health-check.js",
     "db:clean-test-data": "dotenv -e .env.local -- node scripts/cleanup-test-data.js",
     "db:fresh-start": "dotenv -e .env.local -- node scripts/cleanup-test-data.js --fresh-start",
+    "db:wipe:fresh": "dotenv -e .env.local -- node scripts/wipe-fresh-install.js --confirm",
     "reset:seed-auth": "dotenv -e .env.local -- node scripts/reset-seed-auth.js"
   },
   "dependencies": {

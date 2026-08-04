@@ -304,7 +304,7 @@ export default function LecturerDashboardOverview() {
       <section className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
         <MetricCard label="Documents" value={data.documentStats.totalDocuments} detail="Total uploaded" icon={FileText} />
         <MetricCard label="Verified" value={data.documentStats.verifiedCount} detail="Approved by HR" icon={CheckCircle2} tone="green" />
-        <MetricCard label="Pending" value={data.documentStats.pendingCount} detail="Awaiting review" icon={Clock3} tone="amber" />
+        <MetricCard label="Not verified" value={data.documentStats.pendingCount} detail="Document status" icon={Clock3} tone="amber" />
         <MetricCard label="Returned" value={data.documentStats.returnedCount} detail="Needs correction" icon={RotateCcw} tone="rose" />
       </section>
 
@@ -322,16 +322,8 @@ export default function LecturerDashboardOverview() {
       </section>
 
       <div className="grid min-w-0 max-w-full gap-5 2xl:grid-cols-[minmax(0,1fr)_23rem]">
-        <div className="min-w-0 max-w-full space-y-5">
-          <CurrentApplicationCard request={request} rankPath={rankPath} />
-          <RecentActivity documents={data.recentDocuments} />
-        </div>
-
-        <aside className="min-w-0 max-w-full space-y-5">
-          <EligibilityPanel request={request} />
-          <FeedbackPanel feedback={data.recentFeedback} />
-          <QuickActionPanel unreadNotifications={data.documentStats.unreadNotifications} />
-        </aside>
+        <CurrentApplicationCard request={request} rankPath={rankPath} />
+        <QuickActionPanel unreadNotifications={data.documentStats.unreadNotifications} />
       </div>
     </div>
   );
@@ -390,7 +382,7 @@ function NoRequestPanel() {
       <div className="max-w-2xl">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">Promotion Workflow</p>
         <h2 className="mt-2 text-xl font-semibold text-slate-950">No active promotion application yet</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Start an application by selecting the rank you are applying for. The workflow tracker will appear here after the request is created.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Select a target rank to create your draft.</p>
         <Link href="/lecturer-portal/application" className="mt-4 inline-flex rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-primaryDark">
           Start Application
         </Link>
@@ -496,67 +488,12 @@ function ActionNotificationBanner({ action }: { action: ReturnType<typeof nextAc
   );
 }
 
-function EligibilityPanel({ request }: { request: DashboardData['activeRequest'] }) {
-  return (
-    <section className="pro-card min-w-0 p-5">
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Eligibility Status</p>
-          <h2 className="mt-2 break-words text-lg font-semibold text-slate-950">{formatEnum(request?.eligibilityStatus || 'NOT_CALCULATED')}</h2>
-        </div>
-        <StatusBadge status={request?.eligibilityStatus || 'NOT_CALCULATED'} />
-      </div>
-      <p className="mt-3 text-sm leading-6 text-slate-600">
-        {request?.eligibilityReason || 'Eligibility will be calculated after the required evidence has been verified by HR.'}
-      </p>
-      <Link href="/lecturer-portal/eligibility" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primaryDark">
-        View eligibility details
-      </Link>
-    </section>
-  );
-}
-
-function FeedbackPanel({ feedback }: { feedback: DashboardData['recentFeedback'] }) {
-  return (
-    <section className="pro-card min-w-0 p-5">
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Recent Feedback</p>
-          <h2 className="mt-2 break-words text-lg font-semibold text-slate-950">HR remarks and corrections</h2>
-        </div>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{feedback.length}</span>
-      </div>
-
-      <div className="mt-4 space-y-3">
-        {feedback.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">No correction feedback at the moment.</div>
-        ) : (
-          feedback.map((item) => (
-            <div key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={item.verificationStatus} />
-                <span className="text-xs font-medium text-slate-500">{formatDate(item.updatedAt)}</span>
-              </div>
-              <p className="mt-2 text-sm font-semibold text-slate-950">{item.title}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">{item.comment || 'HR reviewed this document and left a verification update.'}</p>
-            </div>
-          ))
-        )}
-      </div>
-
-      <Link href="/lecturer-portal/queries" className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:text-brand-primaryDark">
-        Open feedback inbox
-      </Link>
-    </section>
-  );
-}
-
 function QuickActionPanel({ unreadNotifications }: { unreadNotifications: number }) {
   const links = [
-    { href: '/lecturer-portal/evidence', label: 'Upload Evidence', detail: 'Add or replace promotion documents', icon: UploadCloud },
-    { href: '/lecturer-portal/application', label: 'Track Application', detail: 'View workflow and status history', icon: BriefcaseBusiness },
-    { href: '/lecturer-portal/queries', label: 'View Feedback', detail: 'Read HR comments and corrections', icon: MessageSquareText },
-    { href: '/lecturer-portal/notifications', label: 'Notifications', detail: `${unreadNotifications} unread update(s)`, icon: Bell },
+    { href: '/lecturer-portal/evidence', label: 'Upload Evidence', icon: UploadCloud },
+    { href: '/lecturer-portal/application', label: 'Track Application', icon: BriefcaseBusiness },
+    { href: '/lecturer-portal/queries', label: 'View Feedback', icon: MessageSquareText },
+    { href: '/lecturer-portal/notifications', label: 'Notifications (' + unreadNotifications + ')', icon: Bell },
   ];
 
   return (
@@ -571,10 +508,7 @@ function QuickActionPanel({ unreadNotifications }: { unreadNotifications: number
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand-primary/20 bg-white text-brand-primary">
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <span className="min-w-0">
-                  <span className="block break-words">{link.label}</span>
-                  <span className="mt-0.5 block break-words text-xs font-normal text-slate-500">{link.detail}</span>
-                </span>
+                <span className="min-w-0 break-words">{link.label}</span>
               </span>
               <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
             </Link>

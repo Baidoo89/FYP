@@ -173,7 +173,7 @@ export default function EligibilityPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard code="RD" label="Readiness" value={`${readiness}%`} detail="Required evidence verified" tone="teal" />
         <MetricCard code="REQ" label="Required Verified" value={`${stats.requiredVerifiedCount}/${stats.requiredCategories}`} detail="Core categories" tone="green" />
-        <MetricCard code="PEN" label="Pending Review" value={stats.pendingCount} detail="Awaiting HR decision" tone="amber" />
+        <MetricCard code="UNV" label="Not Verified" value={stats.pendingCount} detail="Document status" tone="amber" />
         <MetricCard code="RET" label="Returned" value={stats.returnedCount + stats.rejectedCount} detail="Needs correction" tone="rose" />
       </section>
 
