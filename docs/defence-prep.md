@@ -1,91 +1,209 @@
-# Defence Preparation
+# Defence Master Guide
 
-This document is a practical prep sheet for the oral defence: a one-paragraph pitch, a live demo script, and prepared answers to the questions a supervisor/examiner is likely to ask. It is written against the final state of the project (Chapter 4/5 rebuilt with activity/sequence diagrams, formal test tables, and the corrected eligibility-score terminology).
+## Project identity
 
-## 1. The 60-second pitch
+- **Title:** Design and Implementation of a Digital Staff Promotion Support System for GCTU
+- **Main presenter:** Benjamin Baidoo
+- **Student ID:** 4231230141
+- **Programme:** BSc Software Engineering / BSc Computer Science
+- **Presentation target:** 9-10 minutes, followed by a controlled 4-5 minute demonstration
 
-"GCTU's staff promotion process today is largely manual: physical documents, inconsistent routing, and no shared visibility into where an application is. This project is a Digital Staff Promotion Support System — it digitises submission, evidence upload, department review, HR verification, committee recommendation, and the final institutional decision, with a rule-based engine that checks evidence completeness against configured criteria and produces a recommendation. It does not replace GCTU's decision-makers — HOD/Dean, HR, the Committee, and the institutional authority still make every real decision; the system gives them a shared, auditable record to make those decisions against. It's built as a production Next.js/TypeScript app on PostgreSQL, deployed live, and was tested end-to-end through the real browser UI, which is how a genuine scoring defect was found and fixed during development."
+## The central defence position
 
-## 2. Live demo script (~12–15 minutes)
+The system is a secure, role-based decision-support platform for GCTU's academic staff promotion process. It digitises application submission, evidence management, department review, HR verification, rule-based eligibility support, committee recommendation, final-decision recording, notifications, reporting, and audit history.
 
-Before the defence: seed a fresh demo lecturer account and, ideally, walk it partway through the workflow yourself once beforehand so you know exactly what each screen looks like with real data (the previous demo account used during development was deliberately deleted to give a clean account for fresh testing — see the note at the end of this section).
+It does **not** automatically promote a lecturer. It supports authorised officers with complete, consistent, and traceable information while leaving qualitative assessment and final authority with the university.
 
-1. **Login (Figure 17)** — show that role is resolved server-side; log in as the lecturer.
-2. **Lecturer portal** — create an application (current → target rank), open Evidence Categories, upload one PDF under Teaching. Point out the required-vs-optional category badges and that the upload panel now auto-scrolls into view on a narrow window.
-3. **Submit** — submit the application; show the status change and mention that this triggers the routing logic (Figure 14) that finds the correct HOD/Dean for this lecturer's specific department.
-4. **Switch to HOD/Dean** — open the review workspace, show the department-scoping (mention: a different HOD account only sees their own department — this is a good moment to preempt the "does routing actually work" question).
-5. **Forward to HR.**
-6. **Switch to HR** — open the master queue, verify each document, and when the last required category is verified, show the eligibility result. **This is the moment to explicitly narrate the terminology**: "Criteria Score is 100 out of 100 — that means every required evidence category was verified, not that this person's work was graded 100%. The Eligible badge next to it is the actual recommendation, and it's shown separately on purpose."
-7. **Switch to Committee** — open the eligible application, show the recommendation form, submit Recommended with a comment.
-8. **Switch back to HR** — Record authority approval, then Complete workflow. Show the Status History panel end to end (Draft → … → Completed) as the audit trail.
-9. **Analytics** — show the institution-wide dashboard, and if time allows, log in as a department-scoped HOD again to show the same page automatically scoped to just their department.
-10. **Close** on the eligibility engine defect story if asked, or proactively if there's time: "This exact workflow is what surfaced a real scoring bug during development — the engine was silently giving everyone a score of zero. It only showed up once we ran the full workflow, not from reading the code, which is the argument in Chapter Four for why we tested the running system rather than trusting a code review."
+## 45-second opening
 
-**Data note for whoever runs the demo**: the lecturer test account used throughout earlier development was intentionally deleted (at the student's request) to remove leftover test data before final testing. Before the defence, either (a) run steps 2–9 once yourself in advance to leave a real Completed application in the system for a faster live walkthrough, or (b) do the whole walkthrough live during the defence itself — both are legitimate, but decide in advance rather than discovering an empty database on the day.
+> Good morning. My name is Benjamin Baidoo, and I am presenting the Design and Implementation of a Digital Staff Promotion Support System for GCTU. The study addressed three connected problems in the largely manual process: fragmented evidence, slow and inconsistent routing, and limited visibility into application status. I developed a web-based platform that gives each authorised role a controlled workspace, verifies evidence before rule-based eligibility support is calculated, and records every important action in a status and audit history. The system is not an automatic promotion engine. It standardises and supports the process while the HOD or Dean, HR, the committee, and the institutional authority retain their proper decision-making responsibilities.
 
-## 3. Anticipated questions and prepared answers
+Pause. Make eye contact. Then move directly to the problem slide.
 
-**Q: Why is eligibility shown as a score if it's not a grade?**
-A: It's now explicitly labelled "Criteria Score" and shown as n/100, separate from the "Eligible/Not Eligible" recommendation badge — Chapter Four §4.9.1 explains the terminology and why the two are never conflated on screen.
+## Ten-minute presentation script
 
-**Q: Does 100 mean the lecturer deserves promotion?**
-A: No — it means the required evidence categories were verified as present. It's a completeness measure, not a quality grade. The actual promotion decision is made by HR, the Committee, and the institutional authority, not the engine.
+### Slide 1 - Title (0:00-0:30)
 
-**Q: Which parts of Schedule J have been implemented? Where is Schedule K?**
-A: The academic pathway (Teaching, Research, Service) under Schedule J is fully implemented and demonstrated end-to-end. Schedule K (administrative/professional staff) was out of scope for this prototype — the criteria model is configurable so it could be extended, but that extension wasn't built. This is stated directly in Chapter Four §4.9.1 and listed as future work in Chapter Five §5.8.
+Say the project title, your name, and one sentence of scope:
 
-**Q: Who enters or confirms scores?**
-A: No one enters a score directly. It's computed automatically from which evidence categories HR has verified. A human can't type in an arbitrary score — that was a deliberate design choice to keep the number tied to actual verified evidence.
+> This project focuses on academic staff promotion support, from digital evidence submission to the recording of the authorised final outcome.
 
-**Q: What's the difference between department review (HOD/Dean) and HR verification?**
-A: HOD/Dean review is an academic completeness check within the department — is this evidence relevant and complete for this applicant's field. HR verification is the official, binding verification of each document. They're sequential and distinct steps; the system labels them separately so they aren't treated as interchangeable (Chapter Four §4.7.3–§4.7.4).
+Do not read the whole title slide.
 
-**Q: Why does HR record the final authority decision instead of the Committee?**
-A: The Committee's role is to record a recommendation. GCTU's actual institutional authority (not modelled as a separate system role in this prototype) makes the real decision; HR records that outcome into the system on the authority's behalf. This separation is shown explicitly in the sequence diagram in Figure 16.
+### Slide 2 - Problem and motivation (0:30-1:20)
 
-**Q: Is the committee recommendation final?**
-A: No — see above. It's a recommendation; the workflow has a distinct "Record authority approval" step after it.
+> The existing process depends heavily on physical or fragmented records. This makes evidence difficult to trace, creates avoidable delays between offices, and gives applicants little visibility into progress. It also makes it harder to reconstruct who reviewed what and when. Therefore, the research problem was not simply the absence of a website; it was the absence of a consistent, secure, and auditable workflow.
 
-**Q: What happens when a policy changes (e.g. required evidence categories)?**
-A: A System Administrator reconfigures the promotion criteria (required categories, weights, minimum years, minimum score) through the admin UI — no code change or redeploy needed (Chapter Four §4.12.7, Figure 25).
+Emphasise: delay, fragmented evidence, limited status visibility, weak auditability.
 
-**Q: How are promotion criteria versioned?**
-A: They currently aren't versioned historically — changing criteria affects future eligibility calculations going forward. This wasn't explicitly required in the approved scope; if asked, acknowledge it as a reasonable extension rather than claiming it's handled.
+### Slide 3 - Aim and objectives (1:20-2:05)
 
-**Q: How do you prevent lecturers from editing evidence after submission?**
-A: Evidence upload is locked once the application is under active review; it only reopens if HR or the department explicitly returns the file for correction (visible in the lecturer evidence page — the "upload locked" state).
+> The aim was to design and implement a digital support system adapted to GCTU's promotion process. The objectives covered process analysis, workflow design, centralised data management, role-based access, rule-based eligibility support, and transparency through tracking and reporting. All six objectives were achieved; the eligibility objective was achieved within the declared prototype scope because the score checks verified evidence completeness, not qualitative academic merit.
 
-**Q: What happens when evidence is returned?**
-A: The application status changes to Returned for Correction, the lecturer is notified with the specific reason, and they can then re-upload just the affected category before resubmitting.
+### Slide 4 - Method and requirements (2:05-2:55)
 
-**Q: How was user acceptance tested?**
-A: Honestly: a task-based UAT script and feedback form were prepared (Chapter Four §4.13.7, `docs/uat-materials.md`), but the exercise had not been run with real participants at the time of writing — this is disclosed as an explicit limitation (Chapter Five §5.6, item 7) rather than claimed as completed. If it has since been run, be ready to summarise real results instead.
+> I used a prototyping methodology because some requirements were institutional and became clearer through repeated implementation and review. Requirements were derived from the study, GCTU policy documents, and the responsibilities of the main actors. The cycle was requirements analysis, interface and data modelling, implementation, testing, and refinement. This approach was useful because a real scoring defect was discovered only when the complete running workflow was tested.
 
-**Q: How many users participated in requirement gathering?**
-A: Point to Chapter Three's methodology section (Population of the Study / Sample and Sampling Technique / Data Collection Methods) for the actual figures used during requirements gathering — this is separate from UAT, which tests the built system rather than gathering requirements for it.
+If asked about data collection, use the exact sample figures already stated in Chapter 3. Do not invent participant numbers.
 
-**Q: What testing evidence confirms the system meets the objectives?**
-A: Chapter Four §4.13 — 36 formal functional/integration test cases (Table 4), a scripted database health check, and a full end-to-end browser-driven workflow test that is what actually caught the scoring defect described in §4.9.2.
+### Slide 5 - Architecture and security (2:55-3:50)
 
-**Q: Why is an unused Score table still in the database?**
-A: It was superseded when the eligibility engine was corrected to compute scores directly from verified document categories instead of that table. It's flagged explicitly as a cleanup item in Chapter Five §5.8 rather than silently left in.
+> The solution uses Next.js and TypeScript for the web application and server-side API, Prisma for controlled database access, and PostgreSQL for persistent records and uploaded PDF binaries. Authentication creates an HTTP-only role session. Authorisation is enforced again on the server for every protected operation, so hiding a button is not the security mechanism. Passwords are hashed, role and organisational scope restrict access, validation is applied to requests, and significant actions are written to the audit log.
 
-**Q: How are uploaded confidential files protected?**
-A: Files are stored as binary data in the database (not on a public filesystem), access is gated by the same role/session checks as everything else, and downloaded filenames were changed during this study to no longer expose internal storage identifiers (Chapter Four §4.13.8 defects table).
+Use the architecture diagram. Point only to the presentation layer, application/API layer, and database layer.
 
-**Q: Is the health endpoint exposing sensitive information?**
-A: It reports only application/database connectivity status for post-deploy verification, not any promotion or personal data.
+### Slide 6 - Workflow and governance (3:50-4:55)
 
-**Q: Why was the Prototyping methodology appropriate here?**
-A: Point to Chapter Three's methodology justification — the short version: requirements were partly tacit/institutional (GCTU's own documents had to be interpreted), so building and revising a working system was more effective than a single up-front specification, and the corrected eligibility defect is itself an example of that iterative discovery.
+> A lecturer prepares and submits an application. The relevant HOD performs the department review and forwards it to HR. HR verifies the evidence; only verified evidence enters the eligibility calculation. An eligible case is routed to the committee for recommendation. HR then records the decision of the institutional authority and closes the workflow. In the prototype, HOD and Dean share one technical role and workspace, but accounts are separately scoped: an HOD is restricted to a department while a Dean is restricted to a faculty. A full institutional deployment can therefore create up to fourteen HOD and three Dean officeholder accounts without creating seventeen different software roles.
 
-**Q: What is genuinely novel about the project?**
-A: Not the individual techniques (RBAC, workflow engines, and rule-based decision support all exist elsewhere) but the localisation: a promotion workflow and evidence model built directly from GCTU's own Basic Laws, Conditions of Service, and Handbook, with department/faculty-aware routing so it works correctly across GCTU's actual organisational structure rather than a generic one-size-fits-all HR tool.
+Important limitation:
 
-**Q: If I click into the queue with multiple applications from the same department, is it usable?**
-A: Yes — demonstrate live if possible: filters (department, faculty, rank, workflow stage, date range), search, sort, and a list-then-detail layout, not a flat dump. The one honest caveat is that on narrow mobile widths it's a single stacked column rather than a dedicated mobile navigation pattern — disclosed as a limitation, not hidden.
+> The prototype represents department/faculty academic review as one combined stage. A future production version should model HOD and Dean as two explicit sequential stages before the faculty committee.
 
-## 4. If something goes wrong during the live demo
+### Slide 7 - Eligibility support (4:55-5:55)
 
-- If the database is empty or in an unexpected state, don't improvise data — say plainly "let me switch to the screenshots in Chapter Four while I reset this," and use the figures in the document as a fallback narrative. This is more credible than a panicked live fix.
-- If a network hiccup makes Vercel slow, mention it's a live serverless deployment (not a local mockup) and give it a moment rather than apologising repeatedly.
+> The engine checks the configured minimum years in rank and six required evidence categories. For the core completeness score, verified Teaching contributes 40 percent, Research 40 percent, and Service 20 percent. A Criteria Score of 100 means all required core evidence categories are verified. It does not mean the lecturer's academic work was graded 100 percent, and it does not grant promotion. Qualifications, publications, and professional development are mandatory completeness gates, while human reviewers assess quality and institutional suitability.
+
+Never call the Criteria Score a performance score or a promotion score.
+
+### Slide 8 - Implemented system (5:55-6:45)
+
+> The implemented interfaces are role-specific. Lecturers can prepare evidence and track feedback; HODs and Deans receive only applications within their organisational scope; HR manages verification and final recording; committee reviewers record recommendations; and System Administrators manage users, structure, criteria, and settings. The queue uses search, filtering, clear status labels, and a list-detail workflow so users are not required to understand the internal process before completing a normal task.
+
+Allow the screenshots to carry the proof. Do not describe every button.
+
+### Slide 9 - Testing and results (6:45-7:45)
+
+> Verification included 36 formal functional and integration test cases, TypeScript checking, a production build, database health checking, a full browser workflow, and responsive checks at desktop and mobile widths. The most important result was the discovery that the initial eligibility implementation could produce a zero score despite verified evidence. End-to-end testing exposed the mismatch, and the engine was corrected to calculate directly from verified document categories. This demonstrates why testing the complete operational workflow was necessary.
+
+### Slide 10 - Limitations and future work (7:45-8:45)
+
+> The main limitations are that eligibility measures completeness rather than qualitative academic merit; the HOD and Dean are combined into one prototype review stage; Schedule K for administrative and professional staff is not implemented; criteria history is not versioned; and formal real-user UAT was prepared but not completed. Future work should add the full statutory routing, configurable qualitative assessment, criteria versioning, Schedule K, institutional single sign-on, staff-record integration, and formal user evaluation.
+
+State limitations calmly. Acknowledging a boundary is stronger than defending something the prototype does not do.
+
+### Slide 11 - Conclusion and demo transition (8:45-9:30)
+
+> In conclusion, the project demonstrates that GCTU's promotion process can be represented as a secure, centralised, and auditable digital workflow. The main contribution is the localisation of role scope, evidence verification, criteria support, and traceability to GCTU's institutional context. The system supports decisions; it does not replace decision-makers. I will now demonstrate the completed audit trail and the controlled role-based workflow using Benjamin Baidoo's representative defence record.
+
+Stop. Do not add a second conclusion.
+
+## High-probability examiner questions
+
+**What exactly is the contribution of the project?**
+
+The contribution is a working, GCTU-adapted workflow that combines organisationally scoped RBAC, centralised evidence, verification-gated eligibility support, notifications, status history, and audit logging. The individual technologies are established; the value lies in their integration and localisation to the university process.
+
+**Is this a promotion system or a lecturer performance system?**
+
+The implemented and documented system is a Digital Staff Promotion Support System. The repository name is an earlier development label. The final scope is promotion workflow and eligibility decision support, not continuous lecturer performance appraisal.
+
+**Does the software decide who is promoted?**
+
+No. It checks configured, objective preconditions from verified evidence and produces an eligibility support result. The committee recommends and the institutional authority decides.
+
+**Does a Criteria Score of 100 mean excellent performance?**
+
+No. It means the required core evidence categories used by the prototype's completeness calculation were verified. It is intentionally displayed separately from eligibility and from the final decision.
+
+**Why are Teaching and Research 40 each and Service 20?**
+
+Those are configurable prototype weights used to demonstrate rule-based completeness scoring. They are not presented as a complete qualitative implementation of every rating in GCTU's policy. A production rollout must validate and approve the configured model with the university.
+
+**Why are qualifications, publications, and professional development required but not directly weighted?**
+
+They operate as mandatory evidence gates. The score summarises verified core areas, while eligibility also requires every configured category and the minimum years in rank. Their academic quality remains a human-review responsibility.
+
+**Why is a document still Pending after the application is Submitted?**
+
+Those are two different states. Submitted is the application workflow state. Pending is the document verification state. The documents should remain Pending until HR checks them; submission must never silently mark evidence as verified.
+
+**Why did you combine HOD and Dean?**
+
+The prototype uses one technical `HOD_DEAN` role because both use the same academic-review permissions and interface. Account scope distinguishes the offices: HOD by department, Dean by faculty. The limitation is that the current workflow has one combined review stage; a statutory production workflow should route HOD then Dean as separate stages.
+
+**How many HOD and Dean accounts are required?**
+
+The software needs one account per current officeholder, not one account per technical role. With the verified structure represented in the project, a full setup can have fourteen HOD accounts and three Dean accounts. The seeded defence setup intentionally includes one Computer Science HOD and one FoCIS Dean.
+
+**Why does HR record the final decision?**
+
+The prototype does not model the institutional authority as a separate login. The committee records a recommendation; HR acts as the authorised record keeper for the authority's outcome. These are deliberately separate workflow events.
+
+**Why use the prototyping methodology?**
+
+The process included tacit workflow and policy interpretation that benefited from repeated user-interface and rules refinement. The eligibility defect found in the running end-to-end workflow is concrete evidence that iteration improved correctness.
+
+**What security controls are implemented?**
+
+Hashed passwords, HTTP-only sessions, server-side role checks, department/faculty scope checks, request validation, protected document retrieval, database-backed PDF storage, and audit logging. Client-side visibility is for usability; server-side checks enforce security.
+
+**Why store PDFs in the database?**
+
+It keeps evidence under the same access-controlled data boundary and avoids publicly addressable upload folders. The trade-off is database growth, so production should use retention rules, backups, size limits, malware scanning, and possibly private object storage with equivalent authorisation.
+
+**What happens when evidence is wrong?**
+
+HR can reject it or request correction with a comment. The application returns to the lecturer, the affected evidence can be replaced, and the application must be resubmitted. The action is retained in history and audit records.
+
+**How was the system tested?**
+
+The report records 36 functional and integration tests, TypeScript checking, production build verification, database health checking, end-to-end browser testing, and desktop/mobile checks. The complete workflow test found and drove correction of the zero-score defect.
+
+**Did you perform user acceptance testing?**
+
+UAT tasks and feedback materials were prepared, but a formal exercise with real institutional users was not completed at the time of submission. This is disclosed as a limitation and is the next validation step before production adoption.
+
+**What is not implemented?**
+
+Full qualitative Schedule J scoring, Schedule K, separate sequential HOD and Dean stages, criteria version history, institutional SSO/staff database integration, and completed formal UAT.
+
+**What would you improve first?**
+
+First, validate the workflow and criteria with HR and faculty officers through formal UAT. Second, separate HOD and Dean into sequential stages. Third, version criteria so each application remains tied to the rules in force when it was submitted.
+
+**Can users bypass the interface and call an API directly?**
+
+A direct request still passes server-side authentication, role, ownership, scope, and workflow-transition checks. Interface controls alone are not trusted.
+
+**What makes the system usable without training?**
+
+Role-specific dashboards, a single next-action workflow, plain status labels, required-category indicators, validation messages, filters, document preview, and visible feedback. Help content exists, but normal tasks should be discoverable from the screen itself.
+
+**What is the meaning of an Eligible result?**
+
+The applicant meets the configured years-in-rank and verified-evidence conditions within prototype scope. It means the case may proceed to human review, not that promotion is guaranteed.
+
+## Claims to avoid
+
+Do not say:
+
+- "The system automatically promotes qualified lecturers."
+- "A score of 100 means excellent performance."
+- "The complete Schedule J and Schedule K policies are implemented."
+- "HOD and Dean are already separate sequential workflow stages."
+- "Formal user acceptance testing was completed" unless real signed results are available.
+- "The application is live on Vercel" unless that deployment has been verified immediately before the defence.
+- "All uploaded files are automatically genuine." HR verifies them; the prototype does not perform forensic document authentication.
+
+Prefer:
+
+- "decision-support system"
+- "criteria completeness score"
+- "representative defence data"
+- "server-enforced role and organisational scope"
+- "committee recommendation"
+- "institutional authority decision recorded by HR"
+
+## Closing answer when challenged
+
+Use this structure:
+
+1. Answer the exact question in one sentence.
+2. Point to the implemented evidence.
+3. State the limitation, if any.
+4. Give the next production step.
+
+Example:
+
+> No, the score is not a quality grade. The implemented engine derives it from HR-verified core evidence and shows eligibility separately. Qualitative policy ratings remain outside this prototype, and the next step is to configure and validate them with GCTU before production adoption.

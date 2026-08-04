@@ -49,9 +49,9 @@ In Vercel Project Settings -> Environment Variables, set `APP_URL`, `NEXT_PUBLIC
 Run:
 
 ```bash
-npx dotenv -e .env.local -- prisma db push --schema prisma/schema.prisma --accept-data-loss
+npm run db:deploy
 npm run db:seed
-npm run seed:demo
+npm run defence:prepare
 ```
 
 For controlled production migrations, replace `db push` with a reviewed Prisma migration workflow.
@@ -59,9 +59,11 @@ For controlled production migrations, replace `db push` with a reviewed Prisma m
 ## Verification Commands
 
 ```bash
-npm run smoke
+npm run db:health
+npm run defence:check
 npx tsc --noEmit
-npx next build
+npm run build
+npm run defence:live-check
 ```
 
 ## Health Check
@@ -84,8 +86,8 @@ Expected:
 
 ## Pre-Demo Checklist
 
-- Confirm `npm run smoke` passes.
-- Run `npm run seed:demo` if you need a populated promotion application for demonstration.
+- Confirm `npm run db:health`, `npm run defence:check`, and `npm run defence:live-check` pass.
+- Run `npm run defence:prepare` to restore the representative Benjamin Baidoo demonstration applications.
 - Confirm all demo users can log in.
 - Confirm System Admin can manage users, structure, criteria, and settings.
 - Confirm Lecturer can create request and upload evidence.

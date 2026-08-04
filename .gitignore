@@ -18,3 +18,5 @@ yarn-error.log*
 storage/audit-log.jsonl
 storage/local-db.json
 storage/promotion-uploads/*
+defence-pack/rendered-slides/
+defence-pack/*-preview.jpg
