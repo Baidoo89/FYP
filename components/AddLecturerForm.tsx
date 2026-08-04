@@ -149,10 +149,9 @@ export default function AddLecturerForm({ onSuccess }: LecturerFormProps) {
           >
             <option value="">Select Department</option>
             <option value="Computer Science">Computer Science</option>
+            <option value="Mobile & Pervasive Computing">Mobile &amp; Pervasive Computing</option>
+            <option value="Information Technology">Information Technology</option>
             <option value="Information Systems">Information Systems</option>
-            <option value="Software Engineering">Software Engineering</option>
-            <option value="Data Science">Data Science</option>
-            <option value="Cyber Security">Cyber Security</option>
           </select>
         </div>
 

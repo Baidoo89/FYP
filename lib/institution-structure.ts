@@ -1,7 +1,12 @@
 export const GCTU_FACULTY_STRUCTURE = [
   {
     name: 'Faculty of Computing and Information Systems',
-    departments: ['Computer Science', 'Software Engineering', 'Information Technology'],
+    departments: [
+      'Computer Science',
+      'Mobile & Pervasive Computing',
+      'Information Technology',
+      'Information Systems',
+    ],
   },
   {
     name: 'Faculty of Engineering',

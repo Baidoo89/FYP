@@ -96,8 +96,9 @@ async function main() {
 
   const departments = [
     ['Computer Science', facultyComputing.id],
-    ['Software Engineering', facultyComputing.id],
+    ['Mobile & Pervasive Computing', facultyComputing.id],
     ['Information Technology', facultyComputing.id],
+    ['Information Systems', facultyComputing.id],
     ['Cyber Security', facultyEngineering.id],
     ['Business School', facultyBusiness.id],
   ];
@@ -149,7 +150,7 @@ async function main() {
     email: 'committee.reviewer@live.gctu.edu.gh',
     role: 'COMMITTEE_REVIEWER',
     staffId: 'GCTU-COM-001',
-    departmentName: 'Software Engineering',
+    departmentName: 'Computer Science',
     facultyName: 'Faculty of Computing and Information Systems',
     currentRank: 'ASSOCIATE_PROFESSOR',
     phone: '+233 200 000 005',
