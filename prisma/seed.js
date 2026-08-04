@@ -18,11 +18,14 @@ function rankLabel(rank) {
 
 async function upsertSeedUser(input) {
   const passwordHash = hashPassword(SEED_PASSWORD);
-  const department = input.departmentName
-    ? await prisma.department.findUnique({ where: { name: input.departmentName } })
+  const departmentName = input.departmentName || null;
+  const facultyName = input.facultyName || null;
+  const currentRank = input.currentRank || null;
+  const department = departmentName
+    ? await prisma.department.findUnique({ where: { name: departmentName } })
     : null;
-  const faculty = input.facultyName
-    ? await prisma.faculty.findUnique({ where: { name: input.facultyName } })
+  const faculty = facultyName
+    ? await prisma.faculty.findUnique({ where: { name: facultyName } })
     : null;
 
   return prisma.user.upsert({
@@ -33,10 +36,10 @@ async function upsertSeedUser(input) {
       passwordHash,
       role: input.role,
       staffId: input.staffId,
-      department: input.departmentName,
-      departmentId: department && department.id,
-      facultyId: faculty && faculty.id,
-      currentRank: input.currentRank,
+      department: departmentName,
+      departmentId: department ? department.id : null,
+      facultyId: faculty ? faculty.id : null,
+      currentRank,
       phone: input.phone,
       emailVerified: true,
       emailVerifiedAt: new Date(),
@@ -50,10 +53,10 @@ async function upsertSeedUser(input) {
       passwordHash,
       role: input.role,
       staffId: input.staffId,
-      department: input.departmentName,
-      departmentId: department && department.id,
-      facultyId: faculty && faculty.id,
-      currentRank: input.currentRank,
+      department: departmentName,
+      departmentId: department ? department.id : null,
+      facultyId: faculty ? faculty.id : null,
+      currentRank,
       phone: input.phone,
       emailVerified: true,
       emailVerifiedAt: new Date(),
@@ -135,9 +138,9 @@ async function main() {
     email: 'hr.admin@live.gctu.edu.gh',
     role: 'HR_ADMIN',
     staffId: 'GCTU-HR-001',
-    departmentName: 'Business School',
-    facultyName: 'Faculty of Business',
-    currentRank: 'SENIOR_LECTURER',
+    departmentName: null,
+    facultyName: null,
+    currentRank: null,
     phone: '+233 200 000 004',
   });
 
