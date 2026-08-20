@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AcademicRank, Prisma, RequestStatus, Role } from '@prisma/client';
 import { z } from 'zod';
 import { getAuthSession } from '../../../../lib/auth';
+import { isApplicantAccountRole } from '../../../../lib/access-roles';
 import { hashPassword } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { writeAuditLog } from '../../../../lib/audit-logger';
@@ -239,6 +240,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isApplicantAccountRole(parsed.data.role)) {
+    return jsonError('Applicant access must be provisioned from a verified HRODD staff record.');
+  }
+
   const mapping = await resolveInstitutionMapping({
     facultyId: parsed.data.facultyId,
     departmentId: parsed.data.departmentId,
@@ -377,6 +382,10 @@ export async function PATCH(request: NextRequest) {
 
   const nextRole = parsed.data.role ?? current.role;
   const nextActive = parsed.data.isActive ?? current.isActive;
+
+  if (isApplicantAccountRole(nextRole) && !isApplicantAccountRole(current.role)) {
+    return jsonError('Applicant access must be provisioned from a verified HRODD staff record.');
+  }
 
   if (current.role === Role.SYSTEM_ADMIN && (nextRole !== Role.SYSTEM_ADMIN || !nextActive)) {
     const otherActiveAdmins = await prisma.user.count({

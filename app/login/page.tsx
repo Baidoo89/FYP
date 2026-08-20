@@ -8,12 +8,13 @@ import { useToast } from '../../components/Toast';
 type LoginResponse = {
   success: boolean;
   error?: string;
-  role?: 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
+  role?: 'STAFF' | 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
   name?: string;
 };
 
 const DASHBOARD_BY_ROLE: Record<NonNullable<LoginResponse['role']>, string> = {
   LECTURER: '/lecturer-portal',
+  STAFF: '/lecturer-portal',
   HOD_DEAN: '/hod/dashboard',
   HR_ADMIN: '/hr/dashboard',
   COMMITTEE_REVIEWER: '/committee/dashboard',
@@ -22,7 +23,6 @@ const DASHBOARD_BY_ROLE: Record<NonNullable<LoginResponse['role']>, string> = {
 
 const inputClass = 'brand-input h-12 rounded-xl px-3.5 text-sm shadow-sm placeholder:text-slate-400 hover:border-brand-primary/40 dark:placeholder:text-[#8394ad] dark:hover:border-[#5d789d]';
 const primaryButtonClass = 'mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 text-sm font-semibold text-white shadow-lg shadow-brand-primary/15 outline-none transition duration-200 hover:-translate-y-0.5 hover:bg-brand-primaryDark focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 dark:bg-[#315f9f] dark:hover:bg-[#244a80] dark:focus-visible:ring-[#93b7f0] dark:focus-visible:ring-offset-[#0e1a2b]';
-const linkClass = 'rounded-sm font-semibold text-brand-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 dark:text-[#bfd7ff] dark:focus-visible:ring-offset-[#0e1a2b]';
 const passwordToggleClass = 'absolute inset-y-1 right-1 rounded-lg px-3 text-xs font-semibold text-brand-muted outline-none transition hover:bg-brand-primarySoft hover:text-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary dark:text-[#b7c6da] dark:hover:bg-[#132239] dark:hover:text-white dark:focus-visible:ring-[#93b7f0]';
 
 export default function LoginPage() {
@@ -158,11 +158,8 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-brand-muted dark:text-[#b7c6da]">
-        New lecturer?{' '}
-        <a href="/register" className={linkClass}>
-          Create account
-        </a>
+      <p className="mt-6 border-t border-brand-border pt-5 text-center text-sm leading-6 text-brand-muted dark:border-[#26364d] dark:text-[#b7c6da]">
+        Staff access is issued from an HRODD-verified employment record.
       </p>
     </AuthPageShell>
   );

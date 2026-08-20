@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 import { sendVerificationEmail } from '../../../../lib/email-verification';
+import { canExposeLocalVerificationUrl } from '../../../../lib/local-verification';
 
 function safeDeliveryMessage(message?: string | null) {
   if (!message) {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Verification email sent',
       emailProvider: verification.emailProvider,
-      verificationUrl: process.env.NODE_ENV === 'production' ? undefined : verification.verificationUrl,
+      verificationUrl: canExposeLocalVerificationUrl(request, verification.emailProvider) ? verification.verificationUrl : undefined,
     });
   } catch (error) {
     const deliveryMessage = safeDeliveryMessage(error instanceof Error ? error.message : null);

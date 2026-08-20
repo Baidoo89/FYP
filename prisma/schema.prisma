@@ -8,6 +8,7 @@ datasource db {
 }
 
 enum Role {
+  STAFF
   LECTURER
   HOD_DEAN
   HR_ADMIN
@@ -89,6 +90,214 @@ enum NotificationType {
   ERROR
 }
 
+enum StaffCategory {
+  ACADEMIC_SENIOR_MEMBER
+  ADMINISTRATIVE_SENIOR_MEMBER
+  PROFESSIONAL_SENIOR_MEMBER
+  SENIOR_STAFF
+  JUNIOR_STAFF
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  RETIRED
+  RESIGNED
+  TERMINATED
+  DECEASED
+}
+
+enum RecordVerificationState {
+  PENDING
+  VERIFIED
+  DISPUTED
+  SUPERSEDED
+}
+
+enum OrganizationUnitType {
+  UNIVERSITY
+  FACULTY
+  SCHOOL
+  INSTITUTE
+  CENTRE
+  DIRECTORATE
+  DEPARTMENT
+  UNIT
+  SECTION
+  CAMPUS
+  LIBRARY
+  OTHER
+}
+
+enum PolicyAuthority {
+  ACT
+  BASIC_LAWS
+  COUNCIL_POLICY
+  CONDITIONS_OF_SERVICE
+  OFFICIAL_FORM
+  MANUAL_HANDBOOK
+  IMPLEMENTATION_DIRECTIVE
+  DESIGN_STANDARD
+}
+
+enum PolicyVersionStatus {
+  DRAFT
+  PROVISIONAL
+  ACTIVE
+  SUPERSEDED
+  RETIRED
+  BLOCKED
+}
+
+enum PolicyEvidenceState {
+  VERIFIED
+  VERIFIED_CONFLICT
+  CONFIRMATION_REQUIRED
+  DESIGN_CONTROL
+  DISABLED_PENDING_POLICY
+}
+
+enum StaffAccessRole {
+  APPLICANT
+  HOD
+  DEAN
+  HEAD_OF_UNIT
+  HRODD_OFFICER
+  REGISTRAR_OFFICER
+  FAPC_MEMBER
+  RAPC_MEMBER
+  UAPC_MEMBER
+  COUNCIL_MEMBER
+  SENIOR_STAFF_COMMITTEE_MEMBER
+  JUNIOR_STAFF_COMMITTEE_MEMBER
+  APPEALS_BOARD_MEMBER
+  RECORDS_OFFICER
+  LIBRARY_VERIFIER
+  QA_VERIFIER
+}
+
+enum PromotionTrackType {
+  SCHEDULE_J
+  SCHEDULE_K
+  SENIOR_STAFF_UNIFIED_SCHEME
+  JUNIOR_STAFF_UNIFIED_SCHEME
+}
+
+enum DecisionAuthority {
+  HRODD
+  FAPC
+  RAPC
+  SENIOR_STAFF_APPOINTMENTS_AND_PROMOTIONS_COMMITTEE
+  JUNIOR_STAFF_APPOINTMENTS_AND_PROMOTIONS_COMMITTEE
+  UAPC
+  ACADEMIC_BOARD
+  COUNCIL
+  APPEALS_BOARD
+}
+
+enum PolicyRequirementType {
+  MINIMUM_YEARS_IN_RANK
+  OUTPUTS_SUBMITTED_MINIMUM
+  OUTPUTS_SUBMITTED_MAXIMUM
+  REFEREED_OUTPUTS_MINIMUM
+  BEST_OUTPUTS_COUNT
+  MINIMUM_AREA_CLASSIFICATION
+  CLASSIFICATION_COMBINATION
+  EXTERNAL_ASSESSOR_COUNT
+  ASSESSOR_OUTSIDE_GHANA_MINIMUM
+  RETIREMENT_LEAD_MONTHS
+  EFFECTIVE_DATE_WINDOW
+  SPECIAL_ROUTE_CONDITION
+  OTHER
+}
+
+enum PolicyConflictStatus {
+  OPEN
+  PROVISIONALLY_RESOLVED
+  RESOLVED
+  ACCEPTED_RISK
+}
+
+enum PromotionStage {
+  DEPARTMENT
+  FACULTY
+  RAPC
+  EXTERNAL_ASSESSMENT
+  UAPC
+  COUNCIL
+  ACADEMIC_BOARD
+  FINAL_NOTIFICATION
+  APPEAL
+}
+
+enum PromotionStageStatus {
+  PENDING
+  IN_PROGRESS
+  RETURNED
+  COMPLETED
+  WAIVED
+  BLOCKED
+}
+
+enum ExternalAssessorStatus {
+  NOMINATED
+  CONFLICTED
+  INVITED
+  ACCEPTED
+  DECLINED
+  REPORT_REQUESTED
+  REPORT_RECEIVED
+  REPLACED
+  WITHDRAWN
+}
+
+enum AssessmentType {
+  APPLICANT_SELF
+  HEAD_OF_UNIT
+  HOD_TEACHING
+  DEAN
+  FAPC
+  RAPC
+  EXTERNAL_ASSESSOR
+  UAPC
+  COUNCIL
+}
+
+enum AppealStatus {
+  FILED
+  UNDER_REVIEW
+  HEARING_SCHEDULED
+  DECIDED
+  WITHDRAWN
+  CLOSED
+}
+
+enum DossierStatus {
+  DRAFT
+  READY_FOR_SUBMISSION
+  FROZEN
+  SUPERSEDED
+}
+
+enum AcademicPacketStatus {
+  DRAFT
+  FROZEN
+  SUPERSEDED
+}
+
+enum ScholarlyOutputType {
+  REFEREED_JOURNAL_ARTICLE
+  PEER_REVIEWED_HIGHER_EDUCATION_BOOK
+  PEER_REVIEWED_EXHIBITION
+  INDEXED_CONFERENCE_PROCEEDING
+  NON_INDEXED_CONFERENCE_PROCEEDING
+  DEPLOYED_TECHNOLOGY_PRODUCT_DESIGN
+  PATENTED_INVENTION
+  PEER_REVIEWED_BOOK_CHAPTER
+  NON_PEER_REVIEWED_BOOK_CHAPTER
+}
+
 model AdminAccount {
   id            Int      @id @default(autoincrement())
   username      String   @unique
@@ -112,73 +321,85 @@ model Faculty {
 }
 
 model Department {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
   description String?
   facultyId   Int?
-  faculty     Faculty? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  faculty     Faculty?   @relation(fields: [facultyId], references: [id], onDelete: SetNull)
   users       User[]
   lecturers   Lecturer[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@index([facultyId])
   @@map("departments")
 }
 
 model Lecturer {
-  id           Int         @id @default(autoincrement())
-  name         String
-  email        String      @unique
-  department   String
-  departmentId Int?
+  id            Int         @id @default(autoincrement())
+  name          String
+  email         String      @unique
+  department    String
+  departmentId  Int?
   departmentRef Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  rank         String
-  hire_date    DateTime
-  is_active    Boolean     @default(true)
-  created_at   DateTime    @default(now())
-  updated_at   DateTime    @updatedAt
+  rank          String
+  hire_date     DateTime
+  is_active     Boolean     @default(true)
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
 
   @@map("lecturers")
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
-  name         String
-  email        String        @unique
-  password     String?
-  passwordHash String?
-  role         Role          @default(LECTURER)
-  staffId      String?       @unique
-  department   String?
-  departmentId Int?
-  departmentRef Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  facultyId    Int?
-  faculty      Faculty?      @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  currentRank  AcademicRank?
-  phone        String?
-  emailVerified Boolean       @default(false)
+  id              Int           @id @default(autoincrement())
+  name            String
+  email           String        @unique
+  password        String?
+  passwordHash    String?
+  role            Role          @default(LECTURER)
+  staffId         String?       @unique
+  department      String?
+  departmentId    Int?
+  departmentRef   Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  facultyId       Int?
+  faculty         Faculty?      @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  currentRank     AcademicRank?
+  phone           String?
+  emailVerified   Boolean       @default(false)
   emailVerifiedAt DateTime?
-  isActive     Boolean       @default(true)
-  onboarded    Boolean       @default(false)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  isActive        Boolean       @default(true)
+  onboarded       Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  lecturerRequests      PromotionRequest[] @relation("LecturerPromotionRequests")
-  applicantRequests     PromotionRequest[] @relation("ApplicantPromotionRequests")
-  requestedPromotions   PromotionRequest[] @relation("RequestedPromotions")
-  completedReviews      PromotionRequest[] @relation("CompletedPromotionReviews")
-  verifiedDocuments     Document[]         @relation("VerifiedDocuments")
-  uploadedDocuments     Document[]         @relation("UploadedDocuments")
-  verifications         Verification[]     @relation("VerifierVerifications")
-  reviewComments        ReviewComment[]    @relation("ReviewerComments")
-  auditLogs             AuditLog[]         @relation("AuditActor")
-  statusChanges         StatusHistory[]    @relation("StatusChangedBy")
-  notifications         Notification[]
-  emailVerificationTokens EmailVerificationToken[]
-  scores                Score[]            @relation("ScoreCreatedBy")
-  criteriaCreated       PromotionCriteria[] @relation("CriteriaCreatedBy")
-  criteriaUpdated       PromotionCriteria[] @relation("CriteriaUpdatedBy")
+  lecturerRequests          PromotionRequest[]         @relation("LecturerPromotionRequests")
+  applicantRequests         PromotionRequest[]         @relation("ApplicantPromotionRequests")
+  requestedPromotions       PromotionRequest[]         @relation("RequestedPromotions")
+  completedReviews          PromotionRequest[]         @relation("CompletedPromotionReviews")
+  verifiedDocuments         Document[]                 @relation("VerifiedDocuments")
+  uploadedDocuments         Document[]                 @relation("UploadedDocuments")
+  verifications             Verification[]             @relation("VerifierVerifications")
+  reviewComments            ReviewComment[]            @relation("ReviewerComments")
+  auditLogs                 AuditLog[]                 @relation("AuditActor")
+  statusChanges             StatusHistory[]            @relation("StatusChangedBy")
+  notifications             Notification[]
+  emailVerificationTokens   EmailVerificationToken[]
+  scores                    Score[]                    @relation("ScoreCreatedBy")
+  criteriaCreated           PromotionCriteria[]        @relation("CriteriaCreatedBy")
+  criteriaUpdated           PromotionCriteria[]        @relation("CriteriaUpdatedBy")
+  staffMember               StaffMember?
+  departmentVerifiedOutputs ScholarlyOutput[]          @relation("DepartmentOutputVerifier")
+  libraryVerifiedOutputs    ScholarlyOutput[]          @relation("LibraryOutputVerifier")
+  frozenAcademicPackets     AcademicAssessmentPacket[] @relation("AcademicPacketFreezer")
+  promotionStageAssignments PromotionStageRecord[]     @relation("PromotionStageAssignments")
+  promotionAssessments      PromotionAssessment[]      @relation("PromotionAssessments")
+  assessorNominations       ExternalAssessor[]         @relation("AssessorNominators")
+  assessorAppointments      ExternalAssessor[]         @relation("AssessorAppointers")
+  committeeChairs           CommitteeMeeting[]         @relation("CommitteeChairs")
+  committeeSecretaries      CommitteeMeeting[]         @relation("CommitteeSecretaries")
+  promotionAppealFilers     AppealCase[]               @relation("PromotionAppealFilers")
+  promotionAppealDeciders   AppealCase[]               @relation("PromotionAppealDeciders")
 
   @@index([role])
   @@index([departmentId])
@@ -187,18 +408,28 @@ model User {
 }
 
 model PromotionRequest {
-  id                 Int                @id @default(autoincrement())
+  id                 Int                          @id @default(autoincrement())
   applicantId        Int?
   lecturerId         Int
-  applicant          User?              @relation("ApplicantPromotionRequests", fields: [applicantId], references: [id], onDelete: SetNull)
-  lecturer           User               @relation("LecturerPromotionRequests", fields: [lecturerId], references: [id], onDelete: Cascade)
+  applicant          User?                        @relation("ApplicantPromotionRequests", fields: [applicantId], references: [id], onDelete: SetNull)
+  lecturer           User                         @relation("LecturerPromotionRequests", fields: [lecturerId], references: [id], onDelete: Cascade)
   requestedById      Int?
-  requestedBy        User?              @relation("RequestedPromotions", fields: [requestedById], references: [id], onDelete: SetNull)
+  requestedBy        User?                        @relation("RequestedPromotions", fields: [requestedById], references: [id], onDelete: SetNull)
+  promotionRouteId   Int?
+  promotionRoute     PromotionRoute?              @relation(fields: [promotionRouteId], references: [id], onDelete: Restrict)
+  staffRankHistoryId Int?
+  staffRankHistory   StaffRankHistory?            @relation(fields: [staffRankHistoryId], references: [id], onDelete: Restrict)
+  staffAssignmentId  Int?
+  staffAssignment    StaffOrganizationAssignment? @relation(fields: [staffAssignmentId], references: [id], onDelete: Restrict)
+  policySnapshot     Json?
+  dossierVersion     Int?
+  dossierSnapshot    Json?
+  receiptNumber      String?                      @unique
   currentRank        String
   targetRank         String
-  yearsInCurrentRank Int                @default(0)
-  status             RequestStatus      @default(DRAFT)
-  eligibilityStatus  EligibilityStatus  @default(NOT_CALCULATED)
+  yearsInCurrentRank Int                          @default(0)
+  status             RequestStatus                @default(DRAFT)
+  eligibilityStatus  EligibilityStatus            @default(NOT_CALCULATED)
   eligibilityReason  String?
   totalScore         Float?
   adminComment       String?
@@ -206,18 +437,27 @@ model PromotionRequest {
   verifiedAt         DateTime?
   reviewedAt         DateTime?
   reviewedById       Int?
-  reviewedBy         User?              @relation("CompletedPromotionReviews", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedBy         User?                        @relation("CompletedPromotionReviews", fields: [reviewedById], references: [id], onDelete: SetNull)
   completedAt        DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
 
-  documents          Document[]
-  scores             Score[]
-  reviewComments     ReviewComment[]
-  auditLogs          AuditLog[]
-  statusHistory      StatusHistory[]
-  notifications      Notification[]
+  documents         Document[]
+  scores            Score[]
+  reviewComments    ReviewComment[]
+  auditLogs         AuditLog[]
+  statusHistory     StatusHistory[]
+  notifications     Notification[]
+  academicDossier   AcademicDossier?
+  workflowStages    PromotionStageRecord[]
+  assessments       PromotionAssessment[]
+  externalAssessors ExternalAssessor[]
+  committeeMeetings CommitteeMeeting[]
+  appealCases       AppealCase[]
 
+  @@index([promotionRouteId])
+  @@index([staffRankHistoryId])
+  @@index([staffAssignmentId])
   @@index([applicantId])
   @@index([lecturerId])
   @@index([status])
@@ -250,7 +490,11 @@ model Document {
   updatedAt           DateTime           @updatedAt
   uploadedAt          DateTime           @default(now())
 
-  verifications       Verification[]
+  verifications           Verification[]
+  fileBlob                DocumentFileBlob?
+  externalAssessorReports ExternalAssessor[]        @relation("ExternalAssessorReports")
+  committeeMinutes        CommitteeMeeting[]        @relation("CommitteeMinutes")
+  scholarlyOutputEvidence ScholarlyOutputEvidence[]
 
   @@unique([requestId, category])
   @@index([promotionRequestId])
@@ -260,6 +504,20 @@ model Document {
   @@index([category])
   @@index([status])
   @@map("documents")
+}
+
+model DocumentFileBlob {
+  documentId Int      @id
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fileName   String
+  mimeType   String
+  size       Int
+  data       Bytes
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([fileName])
+  @@map("document_file_blobs")
 }
 
 model Verification {
@@ -278,27 +536,27 @@ model Verification {
 }
 
 model PromotionCriteria {
-  id                                  Int                  @id @default(autoincrement())
+  id                                  Int                 @id @default(autoincrement())
   currentRank                         AcademicRank
   targetRank                          AcademicRank
-  minimumYearsInCurrentRank            Int
-  requiredDocumentCategories           DocumentCategory[]
-  requiredTeachingEvidence             Int                  @default(1)
-  requiredResearchPublicationEvidence  Int                  @default(1)
-  requiredServiceEvidence              Int                  @default(1)
-  minimumPerformanceCategory           PerformanceCategory
-  scoringEnabled                       Boolean              @default(true)
-  minimumTotalScore                    Float?
-  publicationRequirement               String?
-  professionalDevelopmentRequirement   String?
-  optionalReviewerNotes                String?
-  isActive                             Boolean              @default(true)
-  createdById                          Int?
-  createdBy                            User?                @relation("CriteriaCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedById                          Int?
-  updatedBy                            User?                @relation("CriteriaUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
-  createdAt                            DateTime             @default(now())
-  updatedAt                            DateTime             @updatedAt
+  minimumYearsInCurrentRank           Int
+  requiredDocumentCategories          DocumentCategory[]
+  requiredTeachingEvidence            Int                 @default(1)
+  requiredResearchPublicationEvidence Int                 @default(1)
+  requiredServiceEvidence             Int                 @default(1)
+  minimumPerformanceCategory          PerformanceCategory
+  scoringEnabled                      Boolean             @default(true)
+  minimumTotalScore                   Float?
+  publicationRequirement              String?
+  professionalDevelopmentRequirement  String?
+  optionalReviewerNotes               String?
+  isActive                            Boolean             @default(true)
+  createdById                         Int?
+  createdBy                           User?               @relation("CriteriaCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById                         Int?
+  updatedBy                           User?               @relation("CriteriaUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt                           DateTime            @default(now())
+  updatedAt                           DateTime            @updatedAt
 
   @@unique([currentRank, targetRank])
   @@index([isActive])
@@ -306,18 +564,18 @@ model PromotionCriteria {
 }
 
 model Score {
-  id                 Int                 @id @default(autoincrement())
-  promotionRequestId Int
-  promotionRequest   PromotionRequest    @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
-  category           DocumentCategory
-  score              Float
-  weight             Float
-  weightedScore      Float
+  id                  Int                  @id @default(autoincrement())
+  promotionRequestId  Int
+  promotionRequest    PromotionRequest     @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  category            DocumentCategory
+  score               Float
+  weight              Float
+  weightedScore       Float
   performanceCategory PerformanceCategory?
-  createdById        Int?
-  createdBy          User?               @relation("ScoreCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdById         Int?
+  createdBy           User?                @relation("ScoreCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@unique([promotionRequestId, category])
   @@index([promotionRequestId])
@@ -340,18 +598,18 @@ model ReviewComment {
 }
 
 model AuditLog {
-  id          Int       @id @default(autoincrement())
+  id          Int               @id @default(autoincrement())
   requestId   Int?
   request     PromotionRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
   actorId     Int?
-  actor       User?     @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actor       User?             @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
   action      String
   entityType  String?
   entityId    String?
   description String?
   ipAddress   String?
   metadata    Json?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime          @default(now())
 
   @@index([requestId])
   @@index([actorId])
@@ -377,13 +635,13 @@ model Notification {
 }
 
 model EmailVerificationToken {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@index([expiresAt])
@@ -391,15 +649,15 @@ model EmailVerificationToken {
 }
 
 model StatusHistory {
-  id                 Int            @id @default(autoincrement())
+  id                 Int              @id @default(autoincrement())
   promotionRequestId Int
   promotionRequest   PromotionRequest @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
   changedById        Int
-  changedBy          User           @relation("StatusChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
+  changedBy          User             @relation("StatusChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
   oldStatus          RequestStatus?
   newStatus          RequestStatus
   comment            String?
-  createdAt          DateTime       @default(now())
+  createdAt          DateTime         @default(now())
 
   @@index([promotionRequestId])
   @@index([changedById])
@@ -415,4 +673,617 @@ model SystemSetting {
   updatedAt   DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+model StaffMember {
+  id                  Int                     @id @default(autoincrement())
+  userId              Int?                    @unique
+  user                User?                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  staffNumber         String                  @unique
+  officialEmail       String                  @unique
+  category            StaffCategory
+  employmentStatus    EmploymentStatus        @default(ACTIVE)
+  employmentStartedAt DateTime?
+  retirementDate      DateTime?
+  authoritativeSource String                  @default("HRODD")
+  sourceRecordId      String?
+  verificationState   RecordVerificationState @default(PENDING)
+  recordVerifiedAt    DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  rankHistory             StaffRankHistory[]
+  organizationAssignments StaffOrganizationAssignment[]
+  officeAppointments      OfficeAppointment[]
+  accessAssignments       StaffAccessAssignment[]
+
+  @@index([category, employmentStatus])
+  @@index([retirementDate])
+  @@map("staff_members")
+}
+
+model StaffAccessAssignment {
+  id                  Int                     @id @default(autoincrement())
+  staffMemberId       Int
+  staffMember         StaffMember             @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+  role                StaffAccessRole
+  organizationUnitId  Int?
+  organizationUnit    OrganizationUnit?       @relation(fields: [organizationUnitId], references: [id], onDelete: Restrict)
+  startedAt           DateTime
+  endedAt             DateTime?
+  appointingAuthority String?
+  sourceReference     String?
+  verificationState   RecordVerificationState @default(PENDING)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@unique([staffMemberId, role, organizationUnitId, startedAt], map: "staff_access_assignments_staffMemberId_role_organizationUnitId_")
+  @@index([staffMemberId, endedAt])
+  @@index([role, organizationUnitId, endedAt])
+  @@map("staff_access_assignments")
+}
+
+model RankDefinition {
+  id         Int           @id @default(autoincrement())
+  code       String        @unique
+  name       String
+  category   StaffCategory
+  family     String?
+  level      Int
+  isTerminal Boolean       @default(false)
+  isActive   Boolean       @default(true)
+  validFrom  DateTime?
+  validTo    DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  rankHistory   StaffRankHistory[]
+  currentRoutes PromotionRoute[]   @relation("CurrentPromotionRank")
+  targetRoutes  PromotionRoute[]   @relation("TargetPromotionRank")
+
+  @@unique([category, name])
+  @@index([category, level])
+  @@index([family])
+  @@map("rank_definitions")
+}
+
+model StaffRankHistory {
+  id                  Int                     @id @default(autoincrement())
+  staffMemberId       Int
+  staffMember         StaffMember             @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+  rankId              Int
+  rank                RankDefinition          @relation(fields: [rankId], references: [id], onDelete: Restrict)
+  startedAt           DateTime
+  endedAt             DateTime?
+  appointmentRef      String?
+  authoritativeSource String                  @default("HRODD")
+  verificationState   RecordVerificationState @default(PENDING)
+  verifiedAt          DateTime?
+  notes               String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  promotionRequests PromotionRequest[]
+
+  @@unique([staffMemberId, rankId, startedAt])
+  @@index([staffMemberId, endedAt])
+  @@index([rankId])
+  @@map("staff_rank_history")
+}
+
+model OrganizationUnit {
+  id        Int                  @id @default(autoincrement())
+  code      String               @unique
+  name      String
+  type      OrganizationUnitType
+  parentId  Int?
+  parent    OrganizationUnit?    @relation("OrganizationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children  OrganizationUnit[]   @relation("OrganizationHierarchy")
+  isActive  Boolean              @default(true)
+  validFrom DateTime?
+  validTo   DateTime?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  assignments        StaffOrganizationAssignment[]
+  officeAppointments OfficeAppointment[]
+  accessAssignments  StaffAccessAssignment[]
+
+  @@unique([parentId, name])
+  @@index([type, isActive])
+  @@index([parentId])
+  @@map("organization_units")
+}
+
+model StaffOrganizationAssignment {
+  id                 Int                     @id @default(autoincrement())
+  staffMemberId      Int
+  staffMember        StaffMember             @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+  organizationUnitId Int
+  organizationUnit   OrganizationUnit        @relation(fields: [organizationUnitId], references: [id], onDelete: Restrict)
+  positionTitle      String?
+  isPrimary          Boolean                 @default(false)
+  startedAt          DateTime
+  endedAt            DateTime?
+  verificationState  RecordVerificationState @default(PENDING)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  promotionRequests PromotionRequest[]
+
+  @@unique([staffMemberId, organizationUnitId, startedAt])
+  @@index([staffMemberId, isPrimary, endedAt])
+  @@index([organizationUnitId, endedAt])
+  @@map("staff_organization_assignments")
+}
+
+model OfficeDefinition {
+  id              Int                   @id @default(autoincrement())
+  code            String                @unique
+  name            String
+  description     String?
+  defaultUnitType OrganizationUnitType?
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  appointments OfficeAppointment[]
+
+  @@map("office_definitions")
+}
+
+model OfficeAppointment {
+  id                 Int                     @id @default(autoincrement())
+  staffMemberId      Int
+  staffMember        StaffMember             @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+  officeDefinitionId Int
+  officeDefinition   OfficeDefinition        @relation(fields: [officeDefinitionId], references: [id], onDelete: Restrict)
+  organizationUnitId Int?
+  organizationUnit   OrganizationUnit?       @relation(fields: [organizationUnitId], references: [id], onDelete: Restrict)
+  startedAt          DateTime
+  endedAt            DateTime?
+  isActing           Boolean                 @default(false)
+  appointmentRef     String?
+  verificationState  RecordVerificationState @default(PENDING)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@unique([staffMemberId, officeDefinitionId, startedAt])
+  @@index([organizationUnitId, endedAt])
+  @@index([officeDefinitionId, endedAt])
+  @@map("office_appointments")
+}
+
+model PolicySource {
+  id          Int             @id @default(autoincrement())
+  code        String          @unique
+  title       String
+  authority   PolicyAuthority
+  issuingBody String          @default("GCTU")
+  sourceUrl   String?
+  issuedOn    DateTime?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  versions PolicyVersion[]
+
+  @@index([authority])
+  @@map("policy_sources")
+}
+
+model PolicyVersion {
+  id             Int                 @id @default(autoincrement())
+  policySourceId Int
+  policySource   PolicySource        @relation(fields: [policySourceId], references: [id], onDelete: Restrict)
+  versionLabel   String
+  status         PolicyVersionStatus @default(DRAFT)
+  effectiveFrom  DateTime?
+  effectiveTo    DateTime?
+  approvedBy     String?
+  contentHash    String?
+  notes          String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  promotionTracks PromotionTrack[]
+
+  @@unique([policySourceId, versionLabel])
+  @@index([status, effectiveFrom])
+  @@map("policy_versions")
+}
+
+model PromotionTrack {
+  id              Int                 @id @default(autoincrement())
+  policyVersionId Int
+  policyVersion   PolicyVersion       @relation(fields: [policyVersionId], references: [id], onDelete: Restrict)
+  code            String
+  name            String
+  type            PromotionTrackType
+  staffCategory   StaffCategory
+  status          PolicyVersionStatus @default(DRAFT)
+  description     String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  routes          PromotionRoute[]
+  assessmentAreas AssessmentAreaDefinition[]
+
+  @@unique([policyVersionId, code])
+  @@index([type, staffCategory, status])
+  @@map("promotion_tracks")
+}
+
+model PromotionRoute {
+  id                 Int                 @id @default(autoincrement())
+  promotionTrackId   Int
+  promotionTrack     PromotionTrack      @relation(fields: [promotionTrackId], references: [id], onDelete: Restrict)
+  code               String
+  name               String
+  currentRankId      Int?
+  currentRank        RankDefinition?     @relation("CurrentPromotionRank", fields: [currentRankId], references: [id], onDelete: Restrict)
+  targetRankId       Int
+  targetRank         RankDefinition      @relation("TargetPromotionRank", fields: [targetRankId], references: [id], onDelete: Restrict)
+  minimumYearsInRank Int?
+  normalProgression  Boolean             @default(true)
+  finalAuthority     DecisionAuthority?
+  evidenceState      PolicyEvidenceState @default(CONFIRMATION_REQUIRED)
+  status             PolicyVersionStatus @default(DRAFT)
+  sourceClause       String?
+  effectiveFrom      DateTime?
+  effectiveTo        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  requirements      PromotionRouteRequirement[]
+  areaRequirements  PromotionRouteAreaRequirement[]
+  promotionRequests PromotionRequest[]
+  academicPackets   AcademicAssessmentPacket[]
+
+  @@unique([promotionTrackId, code])
+  @@index([currentRankId, targetRankId, status])
+  @@index([finalAuthority])
+  @@map("promotion_routes")
+}
+
+model AssessmentAreaDefinition {
+  id               Int            @id @default(autoincrement())
+  promotionTrackId Int
+  promotionTrack   PromotionTrack @relation(fields: [promotionTrackId], references: [id], onDelete: Cascade)
+  code             String
+  name             String
+  description      String?
+  sortOrder        Int            @default(0)
+  isCore           Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  routeRequirements PromotionRouteAreaRequirement[]
+
+  @@unique([promotionTrackId, code])
+  @@index([promotionTrackId, sortOrder])
+  @@map("assessment_area_definitions")
+}
+
+model PromotionRouteAreaRequirement {
+  id               Int                      @id @default(autoincrement())
+  promotionRouteId Int
+  promotionRoute   PromotionRoute           @relation(fields: [promotionRouteId], references: [id], onDelete: Cascade)
+  assessmentAreaId Int
+  assessmentArea   AssessmentAreaDefinition @relation(fields: [assessmentAreaId], references: [id], onDelete: Restrict)
+  minimumCategory  PerformanceCategory?
+  required         Boolean                  @default(true)
+  evidenceState    PolicyEvidenceState      @default(VERIFIED)
+  sourceClause     String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@unique([promotionRouteId, assessmentAreaId])
+  @@index([assessmentAreaId])
+  @@map("promotion_route_area_requirements")
+}
+
+model PromotionRouteRequirement {
+  id               Int                   @id @default(autoincrement())
+  promotionRouteId Int
+  promotionRoute   PromotionRoute        @relation(fields: [promotionRouteId], references: [id], onDelete: Cascade)
+  code             String
+  name             String
+  type             PolicyRequirementType
+  numberValue      Float?
+  textValue        String?
+  booleanValue     Boolean?
+  jsonValue        Json?
+  evidenceState    PolicyEvidenceState   @default(VERIFIED)
+  sourceClause     String?
+  notes            String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@unique([promotionRouteId, code])
+  @@index([type, evidenceState])
+  @@map("promotion_route_requirements")
+}
+
+model PolicyConflict {
+  id                    Int                  @id @default(autoincrement())
+  code                  String               @unique
+  title                 String
+  description           String
+  status                PolicyConflictStatus @default(OPEN)
+  sourceReferences      Json
+  affectedRouteCodes    Json?
+  provisionalResolution String?
+  resolution            String?
+  owner                 String?
+  resolvedAt            DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@index([status])
+  @@map("policy_conflicts")
+}
+
+model PromotionStageRecord {
+  id                 Int                   @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest      @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  stage              PromotionStage
+  sequence           Int
+  status             PromotionStageStatus  @default(PENDING)
+  assignedToId       Int?
+  assignedTo         User?                 @relation("PromotionStageAssignments", fields: [assignedToId], references: [id], onDelete: SetNull)
+  startedAt          DateTime?
+  dueAt              DateTime?
+  completedAt        DateTime?
+  decision           ReviewRecommendation?
+  decisionReason     String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  assessments        PromotionAssessment[]
+  committeeMeetings  CommitteeMeeting[]
+
+  @@unique([promotionRequestId, stage, sequence])
+  @@index([assignedToId, status])
+  @@index([promotionRequestId, status])
+  @@map("promotion_stage_records")
+}
+
+model PromotionAssessment {
+  id                      Int                   @id @default(autoincrement())
+  promotionRequestId      Int
+  promotionRequest        PromotionRequest      @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  stageRecordId           Int?
+  stageRecord             PromotionStageRecord? @relation(fields: [stageRecordId], references: [id], onDelete: SetNull)
+  assessorId              Int
+  assessor                User                  @relation("PromotionAssessments", fields: [assessorId], references: [id], onDelete: Restrict)
+  type                    AssessmentType
+  teachingCategory        PerformanceCategory?
+  knowledgeCategory       PerformanceCategory?
+  serviceCategory         PerformanceCategory?
+  workKnowledgeCategory   PerformanceCategory?
+  workApplicationCategory PerformanceCategory?
+  humanRelationsCategory  PerformanceCategory?
+  narrative               String?
+  recommendation          ReviewRecommendation?
+  isConfidential          Boolean               @default(false)
+  submittedAt             DateTime?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  @@index([promotionRequestId, type])
+  @@index([assessorId])
+  @@map("promotion_assessments")
+}
+
+model ExternalAssessor {
+  id                 Int                    @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest       @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  nominatedById      Int?
+  nominatedBy        User?                  @relation("AssessorNominators", fields: [nominatedById], references: [id], onDelete: SetNull)
+  appointedById      Int?
+  appointedBy        User?                  @relation("AssessorAppointers", fields: [appointedById], references: [id], onDelete: SetNull)
+  name               String
+  institution        String?
+  country            String?
+  specialization     String?
+  officialEmail      String?
+  status             ExternalAssessorStatus @default(NOMINATED)
+  conflictCheckedAt  DateTime?
+  conflictReason     String?
+  invitedAt          DateTime?
+  acceptedAt         DateTime?
+  reportRequestedAt  DateTime?
+  reportReceivedAt   DateTime?
+  reportDocumentId   Int?
+  reportDocument     Document?              @relation("ExternalAssessorReports", fields: [reportDocumentId], references: [id], onDelete: SetNull)
+  reportSummary      String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([promotionRequestId, status])
+  @@index([reportDocumentId])
+  @@map("external_assessors")
+}
+
+model CommitteeMeeting {
+  id                 Int                   @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest      @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  stageRecordId      Int?
+  stageRecord        PromotionStageRecord? @relation(fields: [stageRecordId], references: [id], onDelete: SetNull)
+  authority          DecisionAuthority
+  meetingDate        DateTime
+  quorumRequired     Int?
+  quorumPresent      Int?
+  quorumMet          Boolean?
+  agendaReference    String?
+  minutesDocumentId  Int?
+  minutesDocument    Document?             @relation("CommitteeMinutes", fields: [minutesDocumentId], references: [id], onDelete: SetNull)
+  resolution         String?
+  recommendation     ReviewRecommendation?
+  chairId            Int?
+  chair              User?                 @relation("CommitteeChairs", fields: [chairId], references: [id], onDelete: SetNull)
+  secretaryId        Int?
+  secretary          User?                 @relation("CommitteeSecretaries", fields: [secretaryId], references: [id], onDelete: SetNull)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([promotionRequestId, authority])
+  @@index([chairId])
+  @@index([secretaryId])
+  @@map("committee_meetings")
+}
+
+model AppealCase {
+  id                 Int              @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  filedById          Int
+  filedBy            User             @relation("PromotionAppealFilers", fields: [filedById], references: [id], onDelete: Restrict)
+  status             AppealStatus     @default(FILED)
+  grounds            String
+  filedAt            DateTime         @default(now())
+  dueAt              DateTime?
+  decidedAt          DateTime?
+  decision           String?
+  decisionById       Int?
+  decisionBy         User?            @relation("PromotionAppealDeciders", fields: [decisionById], references: [id], onDelete: SetNull)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([promotionRequestId, status])
+  @@index([filedById])
+  @@index([decisionById])
+  @@map("promotion_appeals")
+}
+
+model AcademicDossier {
+  id                   Int              @id @default(autoincrement())
+  promotionRequestId   Int              @unique
+  promotionRequest     PromotionRequest @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  status               DossierStatus    @default(DRAFT)
+  version              Int              @default(1)
+  orcid                String?
+  googleScholarUrl     String?
+  teachingStatement    String?
+  researchStatement    String?
+  serviceStatement     String?
+  applicantDeclaration Boolean          @default(false)
+  declaredAt           DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  scholarlyOutputs  ScholarlyOutput[]
+  assessmentPackets AcademicAssessmentPacket[]
+
+  @@index([status])
+  @@map("academic_dossiers")
+}
+
+model ScholarlyOutput {
+  id                           Int                 @id @default(autoincrement())
+  academicDossierId            Int
+  academicDossier              AcademicDossier     @relation(fields: [academicDossierId], references: [id], onDelete: Cascade)
+  type                         ScholarlyOutputType
+  title                        String
+  citation                     String
+  abstract                     String?
+  publicationDate              DateTime?
+  doi                          String?
+  url                          String?
+  issn                         String?
+  isbn                         String?
+  journalOrPublisher           String?
+  volumeIssuePages             String?
+  indexingSource               String?
+  indexingVerifiedOn           DateTime?
+  authors                      Json
+  applicantAuthorPosition      Int?
+  contributionStatement        String
+  isRefereed                   Boolean             @default(false)
+  isIndexed                    Boolean             @default(false)
+  claimedForCurrentRoute       Boolean             @default(true)
+  equivalenceUnits             Float
+  departmentVerificationStatus VerificationStatus  @default(PENDING)
+  departmentVerifiedById       Int?
+  departmentVerifiedBy         User?               @relation("DepartmentOutputVerifier", fields: [departmentVerifiedById], references: [id], onDelete: SetNull)
+  departmentVerificationNote   String?
+  departmentVerifiedAt         DateTime?
+  libraryVerificationStatus    VerificationStatus  @default(PENDING)
+  libraryVerifiedById          Int?
+  libraryVerifiedBy            User?               @relation("LibraryOutputVerifier", fields: [libraryVerifiedById], references: [id], onDelete: SetNull)
+  libraryVerificationNote      String?
+  libraryVerifiedAt            DateTime?
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+
+  packetItems   AcademicAssessmentPacketItem[]
+  evidenceLinks ScholarlyOutputEvidence[]
+
+  @@unique([academicDossierId, doi])
+  @@index([academicDossierId, claimedForCurrentRoute])
+  @@index([departmentVerificationStatus, libraryVerificationStatus])
+  @@map("scholarly_outputs")
+}
+
+model ScholarlyOutputEvidence {
+  id                Int             @id @default(autoincrement())
+  scholarlyOutputId Int
+  scholarlyOutput   ScholarlyOutput @relation(fields: [scholarlyOutputId], references: [id], onDelete: Cascade)
+  documentId        Int
+  document          Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  purpose           String?
+  createdAt         DateTime        @default(now())
+
+  @@unique([scholarlyOutputId, documentId], map: "scholarly_output_evidence_output_document_key")
+  @@index([documentId])
+  @@map("scholarly_output_evidence")
+}
+
+model AcademicAssessmentPacket {
+  id                      Int                  @id @default(autoincrement())
+  academicDossierId       Int
+  academicDossier         AcademicDossier      @relation(fields: [academicDossierId], references: [id], onDelete: Cascade)
+  promotionRouteId        Int
+  promotionRoute          PromotionRoute       @relation(fields: [promotionRouteId], references: [id], onDelete: Restrict)
+  version                 Int                  @default(1)
+  status                  AcademicPacketStatus @default(DRAFT)
+  submittedOutputMinimum  Int?
+  submittedOutputMaximum  Int?
+  minimumRefereedOutputs  Int?
+  bestOutputsRequired     Int?
+  selectedOutputCount     Int                  @default(0)
+  selectedEquivalentUnits Float                @default(0)
+  ruleSnapshot            Json
+  frozenById              Int?
+  frozenBy                User?                @relation("AcademicPacketFreezer", fields: [frozenById], references: [id], onDelete: SetNull)
+  frozenAt                DateTime?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  items AcademicAssessmentPacketItem[]
+
+  @@unique([academicDossierId, version])
+  @@index([promotionRouteId, status])
+  @@index([frozenById])
+  @@map("academic_assessment_packets")
+}
+
+model AcademicAssessmentPacketItem {
+  id                         Int                      @id @default(autoincrement())
+  academicAssessmentPacketId Int
+  academicAssessmentPacket   AcademicAssessmentPacket @relation(fields: [academicAssessmentPacketId], references: [id], onDelete: Cascade)
+  scholarlyOutputId          Int
+  scholarlyOutput            ScholarlyOutput          @relation(fields: [scholarlyOutputId], references: [id], onDelete: Restrict)
+  selectionOrder             Int
+  equivalenceUnitsSnapshot   Float
+  outputSnapshot             Json?
+  createdAt                  DateTime                 @default(now())
+
+  @@unique([academicAssessmentPacketId, scholarlyOutputId], map: "academic_packet_items_packet_output_key")
+  @@unique([academicAssessmentPacketId, selectionOrder], map: "academic_packet_items_packet_order_key")
+  @@index([scholarlyOutputId])
+  @@map("academic_assessment_packet_items")
 }

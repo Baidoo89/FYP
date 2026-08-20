@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getEdgeAuthSession } from './lib/auth-edge';
 import { canAccessPath, getDashboardForRole } from './lib/rbac';
 
-const publicRoutes = ['/login', '/register', '/verify-email', '/check-email', '/onboarding'];
-const publicApiRoutes = ['/api/health', '/api/auth/login', '/api/auth/register', '/api/auth/verify-email', '/api/auth/resend-verification'];
+const publicRoutes = ['/login', '/activate-account', '/verify-email', '/check-email', '/onboarding'];
+const publicApiRoutes = ['/api/health', '/api/auth/login', '/api/auth/activate-account', '/api/auth/verify-email', '/api/auth/resend-verification'];
 const PUBLIC_FILE_PATTERN = /\.(?:png|jpg|jpeg|jfif|gif|webp|svg|ico|txt|xml|pdf|css|js|map)$/i;
 
 // Admin setup is a public route for initial account creation
@@ -27,6 +27,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname === '/register') {
+    return NextResponse.redirect(new URL('/login?access=staff-issued', request.url));
+  }
+
+  if (pathname === '/api/auth/register') {
+    return NextResponse.json(
+      { success: false, error: 'Public registration is disabled.', code: 'PUBLIC_REGISTRATION_DISABLED' },
+      { status: 403 },
+    );
+  }
+
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
@@ -45,8 +56,8 @@ export async function middleware(request: NextRequest) {
 
   // Allow public routes if not authenticated
   if (isPublicRoute(pathname)) {
-    // If authenticated and trying to access login/register, redirect based on onboarding status
-    if (authenticated && (pathname === '/login' || pathname === '/register')) {
+    // If authenticated and trying to access login, redirect based on onboarding status
+    if (authenticated && pathname === '/login') {
       if (emailVerified === false) {
         return NextResponse.redirect(new URL('/check-email', request.url));
       }
@@ -104,7 +115,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
       }
 
-      if (pathname.startsWith('/api/uploads') && !['LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(role || '')) {
+      if (pathname.startsWith('/api/uploads') && !['STAFF', 'LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(role || '')) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
       }
 

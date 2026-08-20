@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, ArrowRight, CheckCircle2, ClipboardCheck, Clock3, FileCheck2, ShieldCheck } from 'lucide-react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
+import GovernedStageWorkspace from '../../../components/promotion/GovernedStageWorkspace';
+import CommitteeMeetingPanel from '../../../components/promotion/CommitteeMeetingPanel';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
@@ -345,6 +347,8 @@ export default function CommitteeReviewPage() {
           </div>
         ) : (
           <PromotionApplicationDetail application={selectedRequest} role="COMMITTEE_REVIEWER" showGuidance={false}>
+            <GovernedStageWorkspace requestId={selectedRequest.id} role="COMMITTEE_REVIEWER" applicantName={selectedRequest.lecturerName} />
+            <CommitteeMeetingPanel requestId={selectedRequest.id} role="COMMITTEE_REVIEWER" />
             <form onSubmit={submitReview}>
               <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
                 <section className="rounded-xl border border-gray-200 bg-gray-50 p-4">

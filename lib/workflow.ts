@@ -22,6 +22,7 @@ const TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
 
 const ROLE_TRANSITION_TARGETS: Record<AuthRole, RequestStatus[]> = {
   LECTURER: [RequestStatus.SUBMITTED],
+  STAFF: [RequestStatus.SUBMITTED],
   HOD_DEAN: [RequestStatus.UNDER_DEPARTMENT_REVIEW, RequestStatus.UNDER_HR_VERIFICATION, RequestStatus.RETURNED_FOR_CORRECTION, RequestStatus.REQUIRES_FURTHER_REVIEW],
   HR_ADMIN: [
     RequestStatus.UNDER_HR_VERIFICATION,
@@ -49,5 +50,5 @@ export function assertStatusTransition(oldStatus: RequestStatus, newStatus: Requ
 }
 
 export function getNextSubmissionStatus(role: AuthRole) {
-  return role === 'LECTURER' ? RequestStatus.SUBMITTED : RequestStatus.UNDER_DEPARTMENT_REVIEW;
+  return role === 'STAFF' || role === 'LECTURER' ? RequestStatus.SUBMITTED : RequestStatus.UNDER_DEPARTMENT_REVIEW;
 }

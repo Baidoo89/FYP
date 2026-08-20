@@ -20,7 +20,7 @@ export async function createNotification(input: {
 }
 
 export async function notifyRole(input: {
-  roles: Array<'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN'>;
+  roles: Array<'STAFF' | 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN'>;
   title: string;
   message: string;
   type?: NotificationType;

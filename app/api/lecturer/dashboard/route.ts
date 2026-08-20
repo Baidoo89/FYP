@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = getAuthSession(request);
 
-    if (!session?.userId || session.role !== 'LECTURER') {
+    if (!session?.userId || !['STAFF', 'LECTURER'].includes(session.role)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }

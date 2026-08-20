@@ -86,7 +86,9 @@ export function RegisterForm() {
       setSuccess(true);
       toast.success('Account created', data.message || 'Verification email sent. Check your GCTU staff mailbox to continue.');
       if (data.verificationUrl) {
-        setVerificationUrl(data.verificationUrl);
+        window.sessionStorage.setItem('localVerificationUrl', data.verificationUrl);
+      } else {
+        window.sessionStorage.removeItem('localVerificationUrl');
       }
 
       router.push('/check-email');
@@ -113,18 +115,6 @@ export function RegisterForm() {
         </div>
       )}
 
-      {verificationUrl && (
-        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
-          Development verification link:{' '}
-          <button
-            type="button"
-            onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-            className={`${linkClass} underline transition hover:text-brand-primaryDark dark:hover:text-white`}
-          >
-            verify account
-          </button>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>

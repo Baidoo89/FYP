@@ -6,7 +6,7 @@ export const SESSION_COOKIE_NAME = 'lpads_session';
 const LEGACY_SESSION_COOKIE_VALUE = 'admin-authenticated';
 const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'lpads-fyp-secret';
 
-export type AuthRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
+export type AuthRole = 'STAFF' | 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 export type AuthSession = {
   userId: number;

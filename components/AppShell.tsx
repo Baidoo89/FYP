@@ -15,7 +15,7 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-type AuthRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
+type AuthRole = 'STAFF' | 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 type NavItem = {
   href: string;
@@ -43,7 +43,7 @@ const baseNavItems: NavItem[] = [
 ];
 
 function isAuthRole(value: string | null): value is AuthRole {
-  return Boolean(value && ['LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(value));
+  return Boolean(value && ['STAFF', 'LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(value));
 }
 
 function getExplicitPortalRole(pathname: string): AuthRole | null {
@@ -78,6 +78,8 @@ export default function AppShell({ children }: AppShellProps) {
     pathname.startsWith('/check-email/') ||
     pathname === '/verify-email' ||
     pathname.startsWith('/verify-email/') ||
+    pathname === '/activate-account' ||
+    pathname.startsWith('/activate-account/') ||
     pathname === '/onboarding' ||
     pathname.startsWith('/onboarding/');
 
@@ -90,7 +92,7 @@ export default function AppShell({ children }: AppShellProps) {
   const isHodNav = effectivePortalRole === 'HOD_DEAN';
 
   const portalTitle = isLecturerNav
-    ? 'Lecturer Portal'
+    ? 'Staff Applicant Portal'
     : isHrNav
       ? 'HR Admin Portal'
       : isSystemAdminNav
@@ -115,8 +117,10 @@ export default function AppShell({ children }: AppShellProps) {
   const navItems: NavItem[] = isLecturerNav
     ? [
         { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview' },
+        { href: '/lecturer-portal/start-application', icon: 'SA', label: 'Start Application', subtitle: 'Policy route selection' },
         { href: '/lecturer-portal/application', icon: 'PR', label: 'My Application', subtitle: 'Workflow tracker' },
         { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence Portfolio', subtitle: 'Upload documents' },
+        { href: '/lecturer-portal/academic-dossier', icon: 'AD', label: 'Academic Dossier', subtitle: 'Schedule J outputs' },
         { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback', subtitle: 'Returned evidence' },
         { href: '/lecturer-portal/eligibility', icon: 'EL', label: 'Eligibility', subtitle: 'Criteria outcome' },
         { href: '/lecturer-portal/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
@@ -129,7 +133,8 @@ export default function AppShell({ children }: AppShellProps) {
           { href: '/hr/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Workload overview' },
           { href: '/hr/requests', icon: 'AA', label: 'Application Registry', subtitle: 'All promotion files' },
           { href: '/hr/verify', icon: 'VQ', label: 'Verification Queue', subtitle: 'Evidence review' },
-          { href: '/lecturers', icon: 'SR', label: 'Staff Records', subtitle: 'Lecturer profiles' },
+          { href: '/hr/staff-records', icon: 'SR', label: 'Staff Verification', subtitle: 'Authoritative records' },
+          { href: '/hr/staff-records/new', icon: 'IA', label: 'Issue Staff Access', subtitle: 'Provision and invite' },
           { href: '/analytics', icon: 'RP', label: 'Reports & Analytics', subtitle: 'Dashboards' },
           { href: '/hr/logs', icon: 'AU', label: 'Audit Trail', subtitle: 'Activity history' },
           { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
@@ -369,7 +374,7 @@ export default function AppShell({ children }: AppShellProps) {
           </Suspense>
         </main>
 
-        <footer className="border-t border-brand-border bg-white px-4 py-4 pb-20 text-center text-xs text-brand-muted md:px-8 lg:pb-4">
+        <footer className="hidden border-t border-brand-border bg-white px-4 py-4 text-center text-xs text-brand-muted md:px-8 lg:block">
           <p>&copy; 2026 GCTU | Promotion System v1.0</p>
         </footer>
         <Suspense fallback={null}>
@@ -475,7 +480,7 @@ function initialsFor(name?: string | null) {
 }
 
 function profileHref(role: AuthRole | null) {
-  if (role === 'LECTURER') return '/lecturer-portal/profile';
+  if (role === 'STAFF' || role === 'LECTURER') return '/lecturer-portal/profile';
   if (role === 'HR_ADMIN') return '/hr/profile';
   if (role === 'SYSTEM_ADMIN') return '/system-admin/dashboard';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/profile';
@@ -484,7 +489,7 @@ function profileHref(role: AuthRole | null) {
 }
 
 function settingsHref(role: AuthRole | null) {
-  if (role === 'LECTURER') return '/lecturer-portal/settings';
+  if (role === 'STAFF' || role === 'LECTURER') return '/lecturer-portal/settings';
   if (role === 'SYSTEM_ADMIN') return '/system-admin/settings';
   if (role === 'HR_ADMIN') return '/hr/profile';
   if (role === 'COMMITTEE_REVIEWER') return '/committee/profile';
@@ -493,11 +498,11 @@ function settingsHref(role: AuthRole | null) {
 }
 
 function helpHref(role: AuthRole | null) {
-  if (role === 'LECTURER') return '/lecturer-portal/help';
+  if (role === 'STAFF' || role === 'LECTURER') return '/lecturer-portal/help';
   return '/notifications';
 }
 function rolePanelLabel(role: AuthRole | null) {
-  if (role === 'LECTURER') return 'Lecturer';
+  if (role === 'STAFF' || role === 'LECTURER') return 'Staff Applicant';
   if (role === 'HR_ADMIN') return 'HR Admin';
   if (role === 'SYSTEM_ADMIN') return 'System Admin';
   if (role === 'COMMITTEE_REVIEWER') return 'Committee Reviewer';

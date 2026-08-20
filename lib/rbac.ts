@@ -2,6 +2,7 @@ import type { AuthRole } from './auth';
 
 export const ROLE_DASHBOARDS: Record<AuthRole, string> = {
   LECTURER: '/lecturer-portal',
+  STAFF: '/lecturer-portal',
   HOD_DEAN: '/hod/dashboard',
   HR_ADMIN: '/hr/dashboard',
   COMMITTEE_REVIEWER: '/committee/dashboard',
@@ -9,7 +10,7 @@ export const ROLE_DASHBOARDS: Record<AuthRole, string> = {
 };
 
 export const ROUTE_ROLE_RULES: Array<{ prefix: string; roles: AuthRole[] }> = [
-  { prefix: '/lecturer-portal', roles: ['LECTURER'] },
+  { prefix: '/lecturer-portal', roles: ['STAFF', 'LECTURER'] },
   { prefix: '/hod', roles: ['HOD_DEAN', 'SYSTEM_ADMIN'] },
   { prefix: '/hr', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
   { prefix: '/committee', roles: ['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
@@ -20,7 +21,7 @@ export const ROUTE_ROLE_RULES: Array<{ prefix: string; roles: AuthRole[] }> = [
   { prefix: '/lecturers', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
   { prefix: '/appraisals', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
   { prefix: '/promotions', roles: ['HR_ADMIN', 'HOD_DEAN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
-  { prefix: '/notifications', roles: ['LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
+  { prefix: '/notifications', roles: ['STAFF', 'LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
 ];
 
 export function getDashboardForRole(role?: AuthRole | null) {

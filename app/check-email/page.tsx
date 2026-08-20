@@ -17,6 +17,11 @@ export default function CheckEmailPage() {
   const [justVerified, setJustVerified] = useState(false);
   const redirectingRef = useRef(false);
 
+  useEffect(() => {
+    const localUrl = window.sessionStorage.getItem('localVerificationUrl');
+    if (localUrl) setVerificationUrl(localUrl);
+  }, []);
+
   // The session cookie set at registration has emailVerified:false baked in.
   // If the verification link is opened on a different device/tab, that
   // device gets a fresh, verified cookie -- but this page's own session
@@ -38,6 +43,7 @@ export default function CheckEmailPage() {
         if (data.emailVerified) {
           redirectingRef.current = true;
           setJustVerified(true);
+          window.sessionStorage.removeItem('localVerificationUrl');
           toast.success('Email verified', 'Your account is verified. Continuing...');
           setTimeout(() => {
             if (!cancelled) router.push(data.nextPath || '/onboarding');
@@ -82,6 +88,7 @@ export default function CheckEmailPage() {
       toast.success('Verification email sent', message);
       if (data.verificationUrl) {
         setVerificationUrl(data.verificationUrl);
+        window.sessionStorage.setItem('localVerificationUrl', data.verificationUrl);
       }
     } catch (resendError) {
       const message = resendError instanceof Error ? resendError.message : 'Unable to resend verification email';
@@ -106,21 +113,24 @@ export default function CheckEmailPage() {
         <p className="mt-3 text-sm leading-6 text-brand-muted dark:text-[#b7c6da]">
           {justVerified
             ? 'Email verified. Continuing to your workspace...'
-            : 'We sent a verification link to your registered official GCTU staff email. Verify your email before accessing your secure promotion workspace. If you open the link on a different phone or computer, this page will notice automatically and continue on its own -- no need to log in again here.'}
+            : verificationUrl
+              ? 'Email delivery is running in local demonstration mode. Use the verification action below to activate this newly registered lecturer account before completing the staff profile.'
+              : 'We sent a verification link to your registered official GCTU staff email. Verify your email before accessing your secure promotion workspace. If you open the link on a different phone or computer, this page will notice automatically and continue on its own -- no need to log in again here.'}
         </p>
 
         {message && <div className="mt-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>}
         {error && <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
 
         {verificationUrl && (
-          <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            Development link:{' '}
+          <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+            <p className="font-semibold">Local verification for the defence environment</p>
+            <p className="mt-1 leading-5">This replaces inbox delivery only while the local email provider is active.</p>
             <button
               type="button"
               onClick={() => router.push(verificationUrl.replace(window.location.origin, ''))}
-              className="font-semibold text-brand-primary underline dark:text-[#bfd7ff]"
+              className="mt-3 font-semibold text-brand-primary underline dark:text-[#bfd7ff]"
             >
-              verify account
+              Verify email and continue
             </button>
           </div>
         )}

@@ -72,7 +72,7 @@ export type PromotionApplicationDetailRecord = {
 
 type PromotionApplicationDetailProps = {
   application: PromotionApplicationDetailRecord;
-  role: 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN' | 'LECTURER';
+  role: 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN' | 'STAFF' | 'LECTURER';
   children?: ReactNode;
   showGuidance?: boolean;
   showEvidenceDocuments?: boolean;
@@ -122,6 +122,7 @@ function formatDate(value?: string | null) {
 
 function roleLabel(role: PromotionApplicationDetailProps['role']) {
   const labels: Record<PromotionApplicationDetailProps['role'], string> = {
+    STAFF: 'Applicant View',
     LECTURER: 'Applicant View',
     HOD_DEAN: 'Department Review',
     HR_ADMIN: 'HR Verification',
@@ -151,7 +152,7 @@ function getRoleGuidance(application: PromotionApplicationDetailRecord, role: Pr
   const status = application.status;
   const needsCorrection = status === 'RETURNED_FOR_CORRECTION' || stats.correction > 0 || stats.rejected > 0;
 
-  if (role === 'LECTURER') {
+  if (role === 'STAFF' || role === 'LECTURER') {
     if (status === 'DRAFT') {
       return stats.total < stats.required
         ? {

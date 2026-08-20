@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
+import GovernedStageWorkspace from '../../../components/promotion/GovernedStageWorkspace';
+import AppealPanel from '../../../components/promotion/AppealPanel';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import StartPromotionRequestCard from '../../../components/promotion/StartPromotionRequestCard';
 import { ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
@@ -326,6 +328,11 @@ export default function ApplicationPage() {
       )}
 
       <PromotionApplicationDetail application={selectedRequest} role="LECTURER" showGuidance={false} />
+      <GovernedStageWorkspace requestId={selectedRequest.id} role="LECTURER" applicantName={selectedRequest.lecturerName} />
+      <AppealPanel requestId={selectedRequest.id} role="LECTURER" requestStatus={selectedRequest.status} />
+      <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+        <a href={`/api/promotion-requests/${selectedRequest.id}/official-pack`} className="inline-flex min-h-10 items-center rounded-lg border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primarySoft">Download official file pack</a>
+      </div>
 
       <Link href="/lecturer-portal" className="inline-flex rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
         Back to Dashboard

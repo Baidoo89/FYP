@@ -158,7 +158,7 @@ export default function ProfilePage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">Official University Email</p>
-              <p className="mt-3 font-mono text-lg font-bold text-slate-900 break-all">{profile.email}</p>
+              <p className="mt-3 font-mono text-lg font-bold text-slate-900 break-words">{profile.email}</p>
               <p className="mt-2 text-xs text-teal-700">
                 <span className="inline-block rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5">Verified</span>
               </p>
@@ -196,7 +196,7 @@ export default function ProfilePage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">System Role</p>
                 <p className="mt-3">
                   <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-teal-700">
-                    {profile.role === 'LECTURER' ? ' Lecturer' : ' Administrator'}
+                    {['STAFF', 'LECTURER'].includes(profile.role) ? ' Staff Applicant' : ' Administrator'}
                   </span>
                 </p>
                 <p className="mt-2 text-xs text-slate-600">Portal access level</p>

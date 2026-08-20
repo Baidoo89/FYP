@@ -1,115 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
-import { hashPassword, createSessionToken, SESSION_COOKIE_NAME } from '../../../../lib/auth';
-import { prisma } from '../../../../lib/prisma';
-import { registerSchema } from '../../../../lib/validation/auth.schema';
-import { sendVerificationEmail } from '../../../../lib/email-verification';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    // Validate with Zod
-    const validation = registerSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json(
-        { success: false, error: validation.error.issues[0]?.message || 'Validation failed' },
-        { status: 400 }
-      );
-    }
-
-    const { email, password } = validation.data;
-    const derivedName = email.split('@')[0] || email;
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: 'An account with this email already exists' },
-        { status: 409 }
-      );
-    }
-
-    const passwordHash = hashPassword(password);
-
-    // Create user with onboarded: false
-    const user = await prisma.user.create({
-      data: {
-        name: derivedName,
-        email,
-        password: passwordHash,
-        passwordHash,
-        role: 'LECTURER',
-        emailVerified: false,
-        onboarded: false, // User must complete onboarding
-      },
-    });
-
-    const verification = await sendVerificationEmail({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    }, { throwOnDeliveryFailure: false });
-
-    await prisma.auditLog.create({
-      data: {
-        actorId: user.id,
-        action: 'USER_REGISTERED',
-        entityType: 'User',
-        entityId: String(user.id),
-        description: verification.emailDeliveryError
-          ? `Lecturer account registered, but verification email delivery failed: ${verification.emailDeliveryError}`
-          : 'Lecturer account registered and email verification requested.',
-      },
-    });
-
-    // Auto-login the user with onboarded: false
-    const response = NextResponse.json(
-      {
-        success: true,
-        message: verification.emailDeliveryError
-          ? 'Account created successfully, but the verification email could not be sent automatically. Please use resend verification.'
-          : 'Account created successfully. Please verify your email address.',
-        userId: user.id,
-        emailDeliveryFailed: Boolean(verification.emailDeliveryError),
-        verificationUrl: process.env.NODE_ENV === 'production' ? undefined : verification.verificationUrl,
-      },
-      { status: 201 }
-    );
-
-    response.cookies.set({
-      name: SESSION_COOKIE_NAME,
-      value: createSessionToken({
-        userId: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        onboarded: false,
-        emailVerified: false,
-      }),
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 8,
-    });
-
-    return response;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json(
-        { success: false, error: 'An account with this email already exists' },
-        { status: 409 }
-      );
-    }
-
-    console.error('Registration error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create account' },
-      { status: 500 }
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Public registration is disabled. Staff access must be issued from an HRODD-verified staff record.',
+      code: 'PUBLIC_REGISTRATION_DISABLED',
+    },
+    { status: 403 },
+  );
 }

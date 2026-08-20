@@ -5,6 +5,8 @@ import { AlertTriangle, CheckCircle2, Clock3, FileText, MessageSquareText, Rotat
 import type { LucideIcon } from 'lucide-react';
 import StatusBadge from '../promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../promotion/PromotionApplicationDetail';
+import GovernedStageWorkspace from '../promotion/GovernedStageWorkspace';
+import ExternalAssessorLifecycle from '../promotion/ExternalAssessorLifecycle';
 import { EmptyState, ErrorState, LoadingState } from '../enterprise-ui';
 import { useToast } from '../Toast';
 
@@ -494,6 +496,8 @@ export default function HodApplicationsWorkspace({
             )}
 
             <PromotionApplicationDetail application={selectedRequest} role="HOD_DEAN" showGuidance={false}>
+              <GovernedStageWorkspace requestId={selectedRequest.id} role="HOD_DEAN" applicantName={selectedRequest.lecturerName} />
+              <ExternalAssessorLifecycle requestId={selectedRequest.id} role="HOD_DEAN" />
               <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.9fr)]">
                 <div className="min-w-0">
                   <h3 className="break-words text-lg font-bold text-gray-950">Academic Review Action</h3>

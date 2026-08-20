@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 import StatusBadge from '../../../components/promotion/StatusBadge';
-import StartPromotionRequestCard from '../../../components/promotion/StartPromotionRequestCard';
+import PolicyPromotionStart from '../../../components/promotion/PolicyPromotionStart';
 import { useToast } from '../../../components/Toast';
 
 type DocumentCategory =
@@ -422,7 +422,7 @@ export default function EvidencePage() {
           </div>
         </section>
 
-        <StartPromotionRequestCard currentRank={data.currentRank} onCreated={() => loadEvidence()} />
+        <PolicyPromotionStart currentRank={data.currentRank} onCreated={() => loadEvidence()} />
 
         <Link href="/lecturer-portal" className="inline-flex rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
           Back to Dashboard

@@ -198,7 +198,7 @@ async function main() {
     {
       currentRank: 'SENIOR_LECTURER',
       targetRank: 'ASSOCIATE_PROFESSOR',
-      minimumYearsInCurrentRank: 5,
+      minimumYearsInCurrentRank: 4,
       minimumPerformanceCategory: 'VERY_GOOD',
       minimumTotalScore: 65,
       publicationRequirement: 'Strong publication record with discipline-relevant research impact.',
@@ -207,7 +207,7 @@ async function main() {
     {
       currentRank: 'ASSOCIATE_PROFESSOR',
       targetRank: 'PROFESSOR',
-      minimumYearsInCurrentRank: 5,
+      minimumYearsInCurrentRank: 3,
       minimumPerformanceCategory: 'EXCELLENT',
       minimumTotalScore: 70,
       publicationRequirement: 'Sustained high-quality publications, leadership, and visible scholarly contribution.',

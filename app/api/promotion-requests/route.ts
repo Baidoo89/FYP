@@ -6,6 +6,8 @@ import { createPromotionRequestWithWorkflow, submitPromotionRequest, WorkflowErr
 import { isValidPromotionTarget } from '../../../lib/promotion-ranks';
 import { REQUIRED_CATEGORIES } from '../../../lib/promotion-engine';
 import { getDepartmentReviewScope } from '../../../lib/department-scope';
+import { PolicyRouteError, resolveVerifiedPromotionRoute } from '../../../lib/policy/promotion-route-resolution';
+import { isV2FoundationUnavailable, V2_FOUNDATION_NOT_READY } from '../../../lib/v2-foundation-status';
 import type { ApiResponse } from '../../../types';
 
 const COMMITTEE_VISIBLE_STATUSES = [
@@ -26,11 +28,27 @@ function criteriaKey(currentRank?: string | null, targetRank?: string | null) {
   return `${normalizeRank(currentRank)}:${normalizeRank(targetRank)}`;
 }
 
+const academicRankValues = new Set([
+  'ASSISTANT_LECTURER',
+  'LECTURER',
+  'SENIOR_LECTURER',
+  'ASSOCIATE_PROFESSOR',
+  'PROFESSOR',
+]);
+
+function isAcademicCriteriaRank(currentRank: string, targetRank: string) {
+  return academicRankValues.has(normalizeRank(currentRank)) && academicRankValues.has(normalizeRank(targetRank));
+}
+
 function countRequiredDocumentsFromCriteria(criteriaCounts: Map<string, number>, requestRecord: any) {
   return criteriaCounts.get(criteriaKey(requestRecord.currentRank, requestRecord.targetRank)) || REQUIRED_CATEGORIES.length;
 }
 
 async function getRequiredDocumentCount(currentRank: string, targetRank: string) {
+  if (!isAcademicCriteriaRank(currentRank, targetRank)) {
+    return REQUIRED_CATEGORIES.length;
+  }
+
   const criteria = await prisma.promotionCriteria.findFirst({
     where: {
       currentRank: normalizeRank(currentRank) as any,
@@ -90,10 +108,10 @@ export async function GET(request: NextRequest) {
   }
 
   const statusFilter = request.nextUrl.searchParams.get('status');
-  const defaultScope = session.role === 'LECTURER' ? 'lecturer' : session.role === 'HOD_DEAN' ? 'department' : session.role === 'COMMITTEE_REVIEWER' ? 'committee' : 'hr';
+  const defaultScope = ['STAFF', 'LECTURER'].includes(session.role) ? 'lecturer' : session.role === 'HOD_DEAN' ? 'department' : session.role === 'COMMITTEE_REVIEWER' ? 'committee' : 'hr';
   const scope = request.nextUrl.searchParams.get('scope') || defaultScope;
 
-  if (scope === 'lecturer' && session.role !== 'LECTURER') {
+  if (scope === 'lecturer' && !['STAFF', 'LECTURER'].includes(session.role)) {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
@@ -259,11 +277,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (session.role !== 'LECTURER') {
-    return NextResponse.json({ success: false, error: 'Only lecturers can start promotion applications.' } as ApiResponse<null>, { status: 403 });
+  if (!['STAFF', 'LECTURER'].includes(session.role)) {
+    return NextResponse.json({ success: false, error: 'Only verified staff applicants can start promotion applications.' } as ApiResponse<null>, { status: 403 });
   }
 
   const parsed = startPromotionRequestSchema.safeParse({
+    routeCode: body.routeCode,
     targetRank: body.targetRank,
     yearsInCurrentRank: body.yearsInCurrentRank,
     adminComment: body.adminComment,
@@ -294,36 +313,53 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Lecturer account not found or inactive.' } as ApiResponse<null>, { status: 404 });
   }
 
-  if (!lecturer.onboarded || !lecturer.currentRank) {
+  if (!parsed.data.routeCode && (!lecturer.onboarded || !lecturer.currentRank)) {
     return NextResponse.json({ success: false, error: 'Complete your staff profile before starting a promotion application.' } as ApiResponse<null>, { status: 400 });
   }
 
-  if (!isValidPromotionTarget(lecturer.currentRank, parsed.data.targetRank)) {
+  if (!parsed.data.routeCode && (!parsed.data.targetRank || !isValidPromotionTarget(lecturer.currentRank, parsed.data.targetRank))) {
+    const selectedTarget = parsed.data.targetRank?.replace(/_/g, ' ') || 'selected rank';
     return NextResponse.json(
       {
         success: false,
-        error: `You cannot apply from ${lecturer.currentRank.replace(/_/g, ' ')} to ${parsed.data.targetRank.replace(/_/g, ' ')}. Select the next approved promotion rank.`,
+        error: `You cannot apply from ${String(lecturer.currentRank).replace(/_/g, ' ')} to ${selectedTarget}. Select the next approved promotion rank.`,
       } as ApiResponse<null>,
       { status: 400 }
     );
   }
 
   try {
-    const requestRecord = await prisma.$transaction((tx) =>
-      createPromotionRequestWithWorkflow(tx, {
-        actor: {
-          id: session.userId,
-          role: session.role,
-          name: session.name,
-        },
+    const requestRecord = await prisma.$transaction(async (tx) => {
+      const actor = { id: session.userId, role: session.role, name: session.name };
+
+      if (parsed.data.routeCode) {
+        const resolved = await resolveVerifiedPromotionRoute(tx, {
+          userId: session.userId,
+          routeCode: parsed.data.routeCode,
+        });
+        return createPromotionRequestWithWorkflow(tx, {
+          actor,
+          lecturerId: session.userId,
+          currentRank: resolved.currentRank,
+          targetRank: resolved.targetRank,
+          yearsInCurrentRank: resolved.completedYearsInRank,
+          promotionRouteId: resolved.promotionRouteId,
+          staffRankHistoryId: resolved.staffRankHistoryId,
+          staffAssignmentId: resolved.staffAssignmentId,
+          policySnapshot: resolved.policySnapshot,
+          adminComment: parsed.data.adminComment || null,
+        });
+      }
+
+      return createPromotionRequestWithWorkflow(tx, {
+        actor,
         lecturerId: session.userId,
-        currentRank: lecturer.currentRank,
-        targetRank: parsed.data.targetRank,
+        currentRank: String(lecturer.currentRank),
+        targetRank: String(parsed.data.targetRank),
         yearsInCurrentRank: parsed.data.yearsInCurrentRank || 0,
         adminComment: parsed.data.adminComment || null,
-      }),
-      WORKFLOW_TRANSACTION_OPTIONS
-    );
+      });
+    }, WORKFLOW_TRANSACTION_OPTIONS);
 
     const requiredDocumentCount = await getRequiredDocumentCount(requestRecord.currentRank, requestRecord.targetRank);
 
@@ -336,6 +372,22 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (isV2FoundationUnavailable(error)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Policy-based application creation is waiting for the V2 database migration and seed.',
+          code: V2_FOUNDATION_NOT_READY,
+        } as ApiResponse<null> & { code: string },
+        { status: 503 },
+      );
+    }
+    if (error instanceof PolicyRouteError) {
+      return NextResponse.json(
+        { success: false, error: error.message } as ApiResponse<null>,
+        { status: error.statusCode },
+      );
+    }
     return workflowErrorResponse(error, 'Promotion request creation failed');
   }
 }

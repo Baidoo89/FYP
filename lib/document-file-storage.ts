@@ -18,31 +18,6 @@ export type StoredDocumentFile = {
   data: Buffer;
 };
 
-let tableEnsured = false;
-
-export async function ensureDocumentFileStorage(client: RawDatabaseClient) {
-  if (tableEnsured) return;
-
-  await client.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "document_file_blobs" (
-      "documentId" INTEGER PRIMARY KEY REFERENCES "documents"("id") ON DELETE CASCADE,
-      "fileName" TEXT NOT NULL,
-      "mimeType" TEXT NOT NULL,
-      "size" INTEGER NOT NULL,
-      "data" BYTEA NOT NULL,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  await client.$executeRawUnsafe(`
-    CREATE INDEX IF NOT EXISTS "document_file_blobs_fileName_idx"
-    ON "document_file_blobs"("fileName")
-  `);
-
-  tableEnsured = true;
-}
-
 export async function saveDocumentFileBlob(client: RawDatabaseClient, input: DocumentFileInput) {
   await client.$executeRawUnsafe(
     `

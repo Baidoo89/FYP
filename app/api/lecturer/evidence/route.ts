@@ -6,7 +6,7 @@ import { createSecureFileName, isPdfUpload, MAX_PROMOTION_PDF_SIZE, savePdfFileB
 import { documentUploadSchema } from '../../../../lib/validation/promotion-request.schema';
 import { savePromotionDocumentRecord, WorkflowError } from '../../../../lib/promotion-workflow';
 import { REQUIRED_CATEGORIES } from '../../../../lib/promotion-engine';
-import { ensureDocumentFileStorage, saveDocumentFileBlob } from '../../../../lib/document-file-storage';
+import { saveDocumentFileBlob } from '../../../../lib/document-file-storage';
 
 const ALL_CATEGORIES = Object.values(DocumentCategory);
 
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = getAuthSession(request);
 
-    if (!session?.userId || session.role !== 'LECTURER') {
+    if (!session?.userId || !['STAFF', 'LECTURER'].includes(session.role)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = getAuthSession(request);
 
-    if (!session?.userId || session.role !== 'LECTURER') {
+    if (!session?.userId || !['STAFF', 'LECTURER'].includes(session.role)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -306,7 +306,6 @@ export async function POST(request: NextRequest) {
     }
 
     const mimeType = file.type || 'application/pdf';
-    await ensureDocumentFileStorage(prisma);
     await savePdfFileBestEffort(fileName, buffer);
 
     const result = await prisma.$transaction(async (tx) => {

@@ -20,3 +20,5 @@ storage/local-db.json
 storage/promotion-uploads/*
 defence-pack/rendered-slides/
 defence-pack/*-preview.jpg
+test-results/
+playwright-report/

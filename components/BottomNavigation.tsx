@@ -5,7 +5,7 @@ import { Bell, BriefcaseBusiness, Building2, ClipboardList, FileText, LayoutDash
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '../lib/utils';
 
-type PortalRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
+type PortalRole = 'STAFF' | 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 type BottomNavigationProps = {
   role: PortalRole | null;
@@ -20,6 +20,13 @@ type BottomNavItem = {
 };
 
 const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
+  STAFF: [
+    { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },
+    { href: '/lecturer-portal/application', label: 'Promotion', icon: BriefcaseBusiness },
+    { href: '/lecturer-portal/notifications', label: 'Alerts', icon: Bell },
+    { href: '/lecturer-portal/profile', label: 'Profile', icon: UserRound },
+  ],
   LECTURER: [
     { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },

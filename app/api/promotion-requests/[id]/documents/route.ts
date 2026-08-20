@@ -5,7 +5,7 @@ import { createSecureFileName, isPdfUpload, MAX_PROMOTION_PDF_SIZE, savePdfFileB
 import { documentUploadSchema } from '../../../../../lib/validation/promotion-request.schema';
 import { savePromotionDocumentRecord, WorkflowError } from '../../../../../lib/promotion-workflow';
 import type { ApiResponse } from '../../../../../types';
-import { ensureDocumentFileStorage, saveDocumentFileBlob } from '../../../../../lib/document-file-storage';
+import { saveDocumentFileBlob } from '../../../../../lib/document-file-storage';
 
 
 type UploadedFileLike = {
@@ -110,7 +110,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const mimeType = file.type || 'application/pdf';
 
   try {
-    await ensureDocumentFileStorage(prisma);
     await savePdfFileBestEffort(fileName, buffer);
 
     const documentRecord = await prisma.$transaction(async (tx) => {

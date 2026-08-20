@@ -2,6 +2,7 @@ import {
   EligibilityStatus,
   NotificationType,
   RequestStatus,
+  PromotionStage,
   ReviewRecommendation,
   VerificationStatus,
   type DocumentCategory,
@@ -14,9 +15,54 @@ import { findDepartmentReviewRecipientIds } from './department-scope';
 import { calculateEligibility, REQUIRED_CATEGORIES } from './promotion-engine';
 import { sendApplicantMilestoneEmail } from './workflow-email';
 import { assertStatusTransition } from './workflow';
+import { academicRequirementsFromRoute, evaluateAcademicDossier, scholarlyOutputSnapshot } from './academic-dossier-rules';
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
+async function initializePromotionStages(client: DbClient, requestId: number) {
+  const request = await client.promotionRequest.findUnique({
+    where: { id: requestId },
+    include: { promotionRoute: { include: { promotionTrack: true, targetRank: true } } },
+  });
+  const route = request?.promotionRoute;
+  if (!route) return;
+  const trackType = route.promotionTrack.type;
+  const targetRank = route.targetRank?.code || route.targetRank?.name || "";
+  const stages = trackType === "SCHEDULE_J"
+    ? [PromotionStage.DEPARTMENT, PromotionStage.FACULTY, PromotionStage.EXTERNAL_ASSESSMENT, PromotionStage.UAPC, ...(String(targetRank).includes("PROFESSOR") ? [PromotionStage.COUNCIL] : [])]
+    : trackType === "SCHEDULE_K"
+      ? [PromotionStage.DEPARTMENT, PromotionStage.RAPC, PromotionStage.EXTERNAL_ASSESSMENT, PromotionStage.UAPC, PromotionStage.COUNCIL]
+      : [PromotionStage.DEPARTMENT, PromotionStage.UAPC, PromotionStage.COUNCIL];
+  for (const [sequence, stage] of stages.entries()) {
+    await client.promotionStageRecord.upsert({
+      where: { promotionRequestId_stage_sequence: { promotionRequestId: requestId, stage, sequence: sequence + 1 } },
+      update: {},
+      create: { promotionRequestId: requestId, stage, sequence: sequence + 1, status: sequence === 0 ? "IN_PROGRESS" : "PENDING", startedAt: sequence === 0 ? new Date() : null },
+    });
+  }
+}
+async function freezeScheduleJDossierForSubmission(client: DbClient, requestId: number, actorId: number) {
+  const request = await client.promotionRequest.findUnique({ where: { id: requestId }, include: {
+    promotionRoute: { include: { requirements: true, promotionTrack: true } },
+    academicDossier: { include: { scholarlyOutputs: { orderBy: [{ publicationDate: "desc" }, { createdAt: "asc" }] }, assessmentPackets: { where: { status: "DRAFT" }, orderBy: { version: "desc" }, take: 1, include: { items: { orderBy: { selectionOrder: "asc" } } } } } },
+  } });
+  if (request?.promotionRoute?.promotionTrack?.type !== "SCHEDULE_J") return;
+  const dossier = request.academicDossier;
+  if (!dossier) throw new WorkflowError("Complete the academic dossier before submitting this Schedule J application.", 400);
+  const packet = dossier.assessmentPackets[0] || null;
+  const requirements = academicRequirementsFromRoute(request.promotionRoute.requirements);
+  const selectedOutputIds = packet ? packet.items.map((item) => item.scholarlyOutputId) : [];
+  const evaluation = evaluateAcademicDossier({ requirements, outputs: dossier.scholarlyOutputs, selectedOutputIds, applicantDeclaration: dossier.applicantDeclaration });
+  if (!evaluation.readyForSubmission) throw new WorkflowError("Complete the academic dossier before submitting: " + evaluation.blockers.map((blocker) => blocker.message).join(" "), 400);
+  const capturedAt = new Date();
+  const outputSnapshots = dossier.scholarlyOutputs.map((output) => scholarlyOutputSnapshot(output));
+  const packetSnapshot = packet ? { id: packet.id, version: packet.version, selectedOutputIds, selectedEquivalentUnits: evaluation.metrics.selectedEquivalentUnits, items: packet.items.map((item) => ({ selectionOrder: item.selectionOrder, scholarlyOutputId: item.scholarlyOutputId, equivalenceUnitsSnapshot: item.equivalenceUnitsSnapshot, outputSnapshot: item.outputSnapshot || null })) } : null;
+  const dossierSnapshot = { snapshotVersion: 1, capturedAt: capturedAt.toISOString(), dossier: { id: dossier.id, version: dossier.version, status: dossier.status, orcid: dossier.orcid, googleScholarUrl: dossier.googleScholarUrl, teachingStatement: dossier.teachingStatement, researchStatement: dossier.researchStatement, serviceStatement: dossier.serviceStatement, applicantDeclaration: dossier.applicantDeclaration, declaredAt: dossier.declaredAt }, outputs: outputSnapshots, packet: packetSnapshot, evaluation };
+  if (packet) await client.academicAssessmentPacket.update({ where: { id: packet.id }, data: { status: "FROZEN", frozenById: actorId, frozenAt: capturedAt, selectedOutputCount: evaluation.metrics.selectedOutputCount, selectedEquivalentUnits: evaluation.metrics.selectedEquivalentUnits } });
+  await client.academicDossier.update({ where: { id: dossier.id }, data: { status: "FROZEN" } });
+  const receiptNumber = request.receiptNumber || "GCTU-" + capturedAt.getUTCFullYear() + "-" + String(request.id).padStart(6, "0");
+  await client.promotionRequest.update({ where: { id: request.id }, data: { receiptNumber, dossierVersion: dossier.version, dossierSnapshot } });
+}
 export type WorkflowActor = {
   id: number;
   role: AuthRole;
@@ -227,10 +273,14 @@ export async function createPromotionRequestWithWorkflow(
     currentRank: string;
     targetRank: string;
     yearsInCurrentRank: number;
+    promotionRouteId?: number | null;
+    staffRankHistoryId?: number | null;
+    staffAssignmentId?: number | null;
+    policySnapshot?: Prisma.InputJsonValue;
     adminComment?: string | null;
   }
 ) {
-  assertActorRole(input.actor, ['LECTURER']);
+  assertActorRole(input.actor, ['STAFF', 'LECTURER']);
 
   if (input.actor.id !== input.lecturerId) {
     throw new WorkflowError('You can only create a request for your own account.', 403);
@@ -258,6 +308,10 @@ export async function createPromotionRequestWithWorkflow(
       currentRank: input.currentRank,
       targetRank: input.targetRank,
       yearsInCurrentRank: input.yearsInCurrentRank || 0,
+      promotionRouteId: input.promotionRouteId,
+      staffRankHistoryId: input.staffRankHistoryId,
+      staffAssignmentId: input.staffAssignmentId,
+      policySnapshot: input.policySnapshot,
       adminComment: input.adminComment || null,
     },
     include: {
@@ -286,6 +340,10 @@ export async function createPromotionRequestWithWorkflow(
       lecturerId: input.lecturerId,
       currentRank: input.currentRank,
       targetRank: input.targetRank,
+      promotionRouteId: input.promotionRouteId || null,
+      staffRankHistoryId: input.staffRankHistoryId || null,
+      staffAssignmentId: input.staffAssignmentId || null,
+      policySnapshotCaptured: Boolean(input.policySnapshot),
     },
   });
 
@@ -470,7 +528,7 @@ export async function submitPromotionRequest(
     requestId: number;
   }
 ) {
-  assertActorRole(input.actor, ['LECTURER']);
+  assertActorRole(input.actor, ['STAFF', 'LECTURER']);
 
   const requestRecord = await client.promotionRequest.findUnique({
     where: { id: input.requestId },
@@ -513,6 +571,9 @@ export async function submitPromotionRequest(
     throw new WorkflowError('Resolve returned or rejected evidence before submitting the application.', 400);
   }
 
+  await freezeScheduleJDossierForSubmission(client, input.requestId, input.actor.id);
+  await initializePromotionStages(client, input.requestId);
+
   return transitionPromotionRequest(client, {
     actor: input.actor,
     requestId: input.requestId,
@@ -537,7 +598,7 @@ export async function savePromotionDocumentRecord(
     fileSize: number;
   }
 ) {
-  assertActorRole(input.actor, ['LECTURER']);
+  assertActorRole(input.actor, ['STAFF', 'LECTURER']);
 
   const request = await client.promotionRequest.findUnique({
     where: { id: input.requestId },

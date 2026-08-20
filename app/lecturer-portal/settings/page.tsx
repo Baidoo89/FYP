@@ -374,7 +374,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
       <span className="text-xs font-bold uppercase tracking-[0.12em] text-gray-500">{label}</span>
-      <span className="break-all text-sm font-semibold text-gray-950 sm:text-right">{value}</span>
+      <span className="break-words text-sm font-semibold text-gray-950 sm:text-right">{value}</span>
     </div>
   );
 }

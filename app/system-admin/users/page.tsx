@@ -66,7 +66,7 @@ function defaultCreateForm() {
     name: '',
     email: '',
     password: '',
-    role: 'LECTURER',
+    role: 'HR_ADMIN',
     appointmentType: 'HOD' as AppointmentType,
     staffId: '',
     departmentId: '',
@@ -401,7 +401,7 @@ export default function UserManagementPage() {
               </Field>
               <Field label="Role">
                 <select value={createForm.role} onChange={(event) => setCreateForm({ ...createForm, role: event.target.value })} className="brand-input">
-                  {roles.map((role) => <option key={role} value={role}>{label(role)}</option>)}
+                  {roles.filter((role) => !['STAFF', 'LECTURER'].includes(role)).map((role) => <option key={role} value={role}>{label(role)}</option>)}
                 </select>
               </Field>
               {createForm.role === 'HOD_DEAN' && (

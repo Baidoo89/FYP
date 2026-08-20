@@ -19,9 +19,13 @@ export const academicRankSchema = z.enum([
 ]);
 
 export const startPromotionRequestSchema = z.object({
-  targetRank: academicRankSchema,
+  routeCode: z.string().trim().min(2).max(120).optional(),
+  targetRank: academicRankSchema.optional(),
   yearsInCurrentRank: z.coerce.number().int().min(0, 'Years in current rank cannot be negative').max(60, 'Years in current rank looks too high').optional(),
   adminComment: z.string().optional().nullable(),
+}).refine((data) => Boolean(data.routeCode || data.targetRank), {
+  message: 'Select an available promotion route.',
+  path: ['routeCode'],
 });
 
 export const promotionRequestSchema = z.object({

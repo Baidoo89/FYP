@@ -9,7 +9,7 @@ import { useToast } from '../../components/Toast';
 
 type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
 type ReadState = 'all' | 'unread' | 'read';
-type ViewerRole = 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
+type ViewerRole = 'STAFF' | 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
 type PromotionContext = {
   id: number;
@@ -141,7 +141,7 @@ function notificationTypeIcon(type: NotificationType) {
 function applicationHref(notification: NotificationItem, viewerRole: ViewerRole) {
   if (!notification.promotionRequestId) return null;
 
-  if (viewerRole === 'LECTURER') return '/lecturer-portal/application';
+  if (viewerRole === 'STAFF' || viewerRole === 'LECTURER') return '/lecturer-portal/application';
   if (viewerRole === 'HOD_DEAN') return `/hod/review-queue?request=${notification.promotionRequestId}`;
   if (viewerRole === 'COMMITTEE_REVIEWER') return `/committee/review?request=${notification.promotionRequestId}`;
   return `/hr/requests?request=${notification.promotionRequestId}`;

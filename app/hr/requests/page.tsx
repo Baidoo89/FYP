@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
+import GovernedStageWorkspace from '../../../components/promotion/GovernedStageWorkspace';
+import ExternalAssessorLifecycle from '../../../components/promotion/ExternalAssessorLifecycle';
+import CommitteeMeetingPanel from '../../../components/promotion/CommitteeMeetingPanel';
+import AppealPanel from '../../../components/promotion/AppealPanel';
 import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
@@ -419,6 +423,10 @@ export default function MasterQueuePage() {
           </div>
         ) : (
           <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN" showGuidance={false}>
+            <GovernedStageWorkspace requestId={selectedRequest.id} role="HR_ADMIN" applicantName={selectedRequest.lecturerName} />
+            <ExternalAssessorLifecycle requestId={selectedRequest.id} role="HR_ADMIN" />
+            <CommitteeMeetingPanel requestId={selectedRequest.id} role="HR_ADMIN" />
+            <AppealPanel requestId={selectedRequest.id} role="HR_ADMIN" requestStatus={selectedRequest.status} />
             <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
               <div>
                 <h3 className="text-lg font-bold text-gray-950">HR Administrative Actions</h3>
@@ -428,6 +436,9 @@ export default function MasterQueuePage() {
                   </a>
                   <a href="/hr/logs" className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                     View audit activity
+                  </a>
+                  <a href={`/api/promotion-requests/${selectedRequest.id}/official-pack`} className="rounded-lg border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primary shadow-sm hover:bg-brand-primarySoft">
+                    Download official file pack
                   </a>
                 </div>
               </div>
