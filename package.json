@@ -30,7 +30,7 @@
         "defence:check": "dotenv -e .env.local -- node scripts/prepare-defence-demo.js --check",
         "defence:live-check": "dotenv -e .env.local -- node scripts/verify-defence-server.js",
         "defence:team-brief": "node scripts/create-defence-team-brief.js",
-        "test:v2": "node --test tests/v2-foundation.test.js tests/v2-migration.test.js tests/v2-route-eligibility.test.js tests/v2-request-link-migration.test.js tests/v2-account-entry.test.js tests/v2-staff-access-foundation.test.js tests/v2-master-authority.test.js tests/v2-document-blob-preservation.test.js tests/v2-academic-dossier.test.js tests/v2-governed-workflow.test.js",
+        "test:v2": "node --test tests/v2-foundation.test.js tests/v2-migration.test.js tests/v2-route-eligibility.test.js tests/v2-request-link-migration.test.js tests/v2-account-entry.test.js tests/v2-staff-access-foundation.test.js tests/v2-master-authority.test.js tests/v2-document-blob-preservation.test.js tests/v2-academic-dossier.test.js tests/v2-governed-workflow.test.js tests/v2-official-forms-and-compliance.test.js",
         "test:layout": "playwright test tests/visual-layout.spec.ts"
     },
     "dependencies": {

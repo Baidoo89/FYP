@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { CheckCircle2, Mail, Plus, RefreshCw, Send, UsersRound } from 'lucide-react';
+import { CheckCircle2, LockKeyhole, Mail, Plus, RefreshCw, Send, UsersRound } from 'lucide-react';
 
 type Role = 'HOD_DEAN' | 'HR_ADMIN' | 'SYSTEM_ADMIN' | 'COMMITTEE_REVIEWER';
 type Assessor = {
@@ -14,13 +14,16 @@ type Assessor = {
   status: string;
   conflictReason?: string | null;
   reportSummary?: string | null;
+  invitationExpiresAt?: string | null;
+  portalLastAccessAt?: string | null;
+  conflictDeclaredAt?: string | null;
 };
 type Props = { requestId: number; role: Role };
 
 const nextStatuses: Record<string, string[]> = {
-  NOMINATED: ['CONFLICTED', 'INVITED', 'WITHDRAWN'],
+  NOMINATED: ['CONFLICTED', 'WITHDRAWN'],
   CONFLICTED: ['NOMINATED', 'WITHDRAWN'],
-  INVITED: ['ACCEPTED', 'DECLINED', 'WITHDRAWN'],
+  INVITED: ['WITHDRAWN'],
   ACCEPTED: ['REPORT_REQUESTED', 'WITHDRAWN'],
   DECLINED: ['REPLACED'],
   REPORT_REQUESTED: ['REPORT_RECEIVED', 'WITHDRAWN'],
@@ -52,6 +55,7 @@ export default function ExternalAssessorLifecycle({ requestId, role }: Props) {
   const [candidate, setCandidate] = useState({ name: '', institution: '', country: '', specialization: '', officialEmail: '' });
   const [notes, setNotes] = useState<Record<number, string>>({});
   const [selectedStatus, setSelectedStatus] = useState<Record<number, string>>({});
+  const [previewUrl, setPreviewUrl] = useState('');
 
   const canNominate = ['HOD_DEAN', 'HR_ADMIN', 'SYSTEM_ADMIN'].includes(role);
   const canManage = ['HR_ADMIN', 'SYSTEM_ADMIN'].includes(role);
@@ -123,6 +127,30 @@ export default function ExternalAssessorLifecycle({ requestId, role }: Props) {
     }
   };
 
+  const sendInvitation = async (assessor: Assessor) => {
+    setSaving(true);
+    setMessage('');
+    setPreviewUrl('');
+    try {
+      const response = await fetch('/api/promotion-requests/' + requestId + '/external-assessors', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assessorId: assessor.id, action: 'send_invitation' }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to send secure invitation');
+      setPreviewUrl(payload.data.previewUrl || '');
+      setMessage(payload.data.delivered
+        ? assessor.name + ': secure invitation delivered.'
+        : assessor.name + ': invitation generated in development email mode.');
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to send secure invitation');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="mt-6 border-t border-gray-200 pt-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -160,6 +188,12 @@ export default function ExternalAssessorLifecycle({ requestId, role }: Props) {
             </div>
             {assessor.conflictReason && <p className="mt-3 border-l-2 border-amber-300 pl-3 text-sm text-gray-700">Conflict: {assessor.conflictReason}</p>}
             {assessor.reportSummary && <p className="mt-3 border-l-2 border-emerald-300 pl-3 text-sm text-gray-700">Confidential report summary recorded.</p>}
+            {assessor.invitationExpiresAt && <p className="mt-2 text-xs font-medium text-gray-500">Invitation expires {new Date(assessor.invitationExpiresAt).toLocaleString()}{assessor.portalLastAccessAt ? ` � Last opened ${new Date(assessor.portalLastAccessAt).toLocaleString()}` : ''}</p>}
+            {canManage && ['NOMINATED', 'INVITED'].includes(assessor.status) && (
+              <button type="button" onClick={() => void sendInvitation(assessor)} disabled={saving} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-brand-primaryDark disabled:opacity-50">
+                <Mail className="h-4 w-4" aria-hidden="true" /> {assessor.status === 'INVITED' ? 'Reissue secure invitation' : 'Send secure invitation'}
+              </button>
+            )}
             {canManage && (nextStatuses[assessor.status] || []).length > 0 && (
               <div className="mt-4 grid gap-3 border-t border-gray-100 pt-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_auto] md:items-end">
                 <label className="text-sm font-semibold text-gray-800">Next lifecycle event<select value={selectedStatus[assessor.id] || ''} onChange={(event) => setSelectedStatus((current) => ({ ...current, [assessor.id]: event.target.value }))} className="brand-input mt-1"><option value="">Select event</option>{(nextStatuses[assessor.status] || []).map((status) => <option key={status} value={status}>{label(status)}</option>)}</select></label>
@@ -171,6 +205,7 @@ export default function ExternalAssessorLifecycle({ requestId, role }: Props) {
         ))}
       </div>
       {message && <p className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-700"><CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" /> {message}</p>}
+      {previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-md border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primarySoft"><LockKeyhole className="h-4 w-4" aria-hidden="true" /> Open development invitation</a>}
     </section>
   );
 }

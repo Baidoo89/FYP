@@ -5,15 +5,16 @@ import { CheckCircle2, Circle, Clock3, LockKeyhole, RefreshCw, Send, ShieldCheck
 
 type Role = 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN' | 'STAFF' | 'LECTURER';
 type Stage = { id: number; stage: string; sequence: number; status: string; startedAt?: string | null; dueAt?: string | null; decision?: string | null; decisionReason?: string | null };
-type GovernanceData = { promotionRoute?: { name?: string | null; promotionTrack?: { type?: string | null } | null } | null; workflowStages: Stage[] };
+type GovernanceData = { caseDueAt?: string | null; nextApplicantUpdateDueAt?: string | null; decisionCommunicatedAt?: string | null; promotionRoute?: { name?: string | null; promotionTrack?: { type?: string | null } | null } | null; workflowStages: Stage[] };
 type Props = { requestId: number; role: Role; applicantName?: string };
 
 const labels: Record<string, string> = { DEPARTMENT: 'Department review', FACULTY: 'Faculty / FAPC review', RAPC: 'RAPC review', EXTERNAL_ASSESSMENT: 'External assessment', UAPC: 'UAPC decision', COUNCIL: 'Council ratification', ACADEMIC_BOARD: 'Academic Board', FINAL_NOTIFICATION: 'Final notification', APPEAL: 'Appeal review' };
-const notes: Record<string, string> = { DEPARTMENT: 'The head of unit records the departmental assessment.', FACULTY: 'The Dean and Faculty Appointments and Promotions Sub-Committee record the faculty assessment.', RAPC: 'The relevant administrative or professional promotions committee records its assessment.', EXTERNAL_ASSESSMENT: 'External assessor reports are tracked separately from internal decisions.', UAPC: 'The University Appointments and Promotions Committee records the institutional decision.', COUNCIL: 'Professorial cases proceed to Council for ratification.' };
+const notes: Record<string, string> = { DEPARTMENT: 'The head of unit records the departmental assessment.', FACULTY: 'The Dean and Faculty Appointments and Promotions Sub-Committee record the faculty assessment.', RAPC: 'The relevant administrative or professional promotions committee records its assessment.', EXTERNAL_ASSESSMENT: 'Required confidential assessor reports must be received before this stage closes.', UAPC: 'The University Appointments and Promotions Committee records the institutional decision or recommendation.', COUNCIL: 'Council records the approval or ratification required by this configured route.', FINAL_NOTIFICATION: 'HRODD records that the authorized decision has been communicated.' };
+const roleStages: Record<Role, string[]> = { HOD_DEAN: ['DEPARTMENT', 'FACULTY'], HR_ADMIN: ['FACULTY', 'EXTERNAL_ASSESSMENT', 'FINAL_NOTIFICATION'], COMMITTEE_REVIEWER: ['FACULTY', 'RAPC', 'UAPC', 'COUNCIL', 'ACADEMIC_BOARD', 'APPEAL'], SYSTEM_ADMIN: [], STAFF: [], LECTURER: [] };
 
 function pretty(value?: string | null) { return (value || '').toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function date(value?: string | null) { return value ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date(value)) : 'Not scheduled'; }
-function tone(status: string) { return status === 'COMPLETED' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : status === 'IN_PROGRESS' ? 'border-blue-200 bg-blue-50 text-blue-800' : status === 'RETURNED' || status === 'BLOCKED' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-gray-200 bg-gray-50 text-gray-600'; }
+function tone(status: string) { return status === 'COMPLETED' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : status === 'IN_PROGRESS' ? 'border-blue-200 bg-blue-50 text-blue-800' : status === 'RETURNED' || status === 'BLOCKED' || status === 'WAIVED' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-gray-200 bg-gray-50 text-gray-600'; }
 
 export default function GovernedStageWorkspace({ requestId, role, applicantName }: Props) {
   const [data, setData] = useState<GovernanceData | null>(null);
@@ -40,18 +41,20 @@ export default function GovernedStageWorkspace({ requestId, role, applicantName 
   useEffect(() => { void load(); }, [requestId]);
 
   const active = useMemo(() => data?.workflowStages.find((item) => item.status === 'IN_PROGRESS'), [data]);
-  const canAct = Boolean(active) && !['STAFF', 'LECTURER'].includes(role);
-  const isAdmin = data?.promotionRoute?.promotionTrack?.type === 'ADMINISTRATIVE';
+  const canAct = Boolean(active) && roleStages[role].includes(active?.stage || '');
+  const hroddFacultyWaiver = active?.stage === 'FACULTY' && role === 'HR_ADMIN';
+  const isAdmin = data?.promotionRoute?.promotionTrack?.type === 'SCHEDULE_K';
   const categoryLabels = isAdmin ? ['Ability / knowledge', 'Application of knowledge', 'Human relations'] : ['Teaching', 'Promotion of knowledge', 'Service'];
 
   const submit = async () => {
     if (!active || reason.trim().length < 10) { setMessage('A decision reason of at least 10 characters is required.'); return; }
+    const selectedDecision = hroddFacultyWaiver ? 'WAIVED' : decision;
     setSaving(true); setMessage('');
     const assessment = isAdmin
       ? { workKnowledgeCategory: categories.first || undefined, workApplicationCategory: categories.second || undefined, humanRelationsCategory: categories.third || undefined, narrative: narrative.trim() || undefined, recommendation: recommendation || undefined, isConfidential: confidential }
       : { teachingCategory: categories.first || undefined, knowledgeCategory: categories.second || undefined, serviceCategory: categories.third || undefined, narrative: narrative.trim() || undefined, recommendation: recommendation || undefined, isConfidential: confidential };
     try {
-      const response = await fetch('/api/promotion-requests/' + requestId + '/governance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stageRecordId: active.id, decision, reason: reason.trim(), assessment }) });
+      const response = await fetch('/api/promotion-requests/' + requestId + '/governance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stageRecordId: active.id, decision: selectedDecision, reason: reason.trim(), assessment }) });
       const payload = await response.json();
       if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to record stage decision');
       setMessage('Stage decision recorded and audit trail updated.'); setReason(''); setNarrative(''); await load();
@@ -66,7 +69,7 @@ export default function GovernedStageWorkspace({ requestId, role, applicantName 
     <section className="pro-card mt-6 min-w-0 overflow-hidden">
       <div className="border-b border-gray-200 px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Governed promotion route</p><h3 className="mt-1 text-xl font-bold text-gray-950">{data.promotionRoute?.name || 'Promotion workflow'}</h3><p className="mt-1 text-sm text-gray-600">{applicantName ? applicantName + ' | ' : ''}Formal stages, decisions, and assessment records.</p></div>
+          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Governed promotion route</p><h3 className="mt-1 text-xl font-bold text-gray-950">{data.promotionRoute?.name || 'Promotion workflow'}</h3><p className="mt-1 text-sm text-gray-600">{applicantName ? applicantName + ' | ' : ''}Formal stages, decisions, and assessment records.</p><div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-gray-500"><span>Case target: {date(data.caseDueAt)}</span>{data.nextApplicantUpdateDueAt && <span>Next applicant update: {date(data.nextApplicantUpdateDueAt)}</span>}{data.decisionCommunicatedAt && <span>Decision communicated: {date(data.decisionCommunicatedAt)}</span>}</div></div>
           <button type="button" onClick={() => void load()} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" title="Refresh workflow"><RefreshCw className="h-4 w-4" aria-hidden="true" /> Refresh</button>
         </div>
       </div>
@@ -86,8 +89,10 @@ export default function GovernedStageWorkspace({ requestId, role, applicantName 
           {canAct && active ? <>
             <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-blue-700" aria-hidden="true" /><h4 className="font-bold text-gray-950">Record {labels[active.stage] || pretty(active.stage)}</h4></div>
             <p className="mt-2 text-sm leading-6 text-gray-600">This action is recorded against the current stage and audit trail.</p>
-            <label className="mt-4 block text-sm font-semibold text-gray-800">Stage decision<select value={decision} onChange={(event) => setDecision(event.target.value)} className="brand-input mt-1"><option value="COMPLETED">Complete stage</option><option value="RETURNED">Return for correction</option><option value="BLOCKED">Block pending clarification</option></select></label>
+            <label className="mt-4 block text-sm font-semibold text-gray-800">Stage decision<select value={hroddFacultyWaiver ? 'WAIVED' : decision} onChange={(event) => setDecision(event.target.value)} disabled={hroddFacultyWaiver} className="brand-input mt-1">{hroddFacultyWaiver ? <option value="WAIVED">FAPC cannot be lawfully constituted</option> : <><option value="COMPLETED">Complete stage</option><option value="RETURNED">Return for correction</option><option value="BLOCKED">Block pending clarification</option></>}</select></label>
+            {(hroddFacultyWaiver || decision === 'WAIVED') && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-medium leading-5 text-amber-900">Available only after a named FAPC constitution attempt records failed computed quorum and a formal resolution. The case continues through every remaining required evidence stage before UAPC.</p>}
             <label className="mt-3 block text-sm font-semibold text-gray-800">Decision reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className="brand-input mt-1 min-h-24" placeholder="State the evidence-based reason..." /></label>
+            {['FACULTY', 'RAPC', 'UAPC', 'COUNCIL', 'ACADEMIC_BOARD'].includes(active.stage) && <label className="mt-3 block text-sm font-semibold text-gray-800">Recommendation<select value={recommendation} onChange={(event) => setRecommendation(event.target.value)} className="brand-input mt-1"><option value="">Select recommendation</option><option value="RECOMMENDED">Recommended</option><option value="NOT_RECOMMENDED">Not recommended</option><option value="REQUIRES_FURTHER_REVIEW">Requires further review</option></select></label>}
             <div className="mt-4 border-t border-gray-200 pt-4"><p className="text-sm font-bold text-gray-950">Assessment categories</p><div className="mt-3 grid gap-3 sm:grid-cols-3">{categoryLabels.map((label, index) => <label key={label} className="text-xs font-semibold text-gray-700">{label}<select value={[categories.first, categories.second, categories.third][index]} onChange={(event) => setCategories((current) => index === 0 ? { ...current, first: event.target.value } : index === 1 ? { ...current, second: event.target.value } : { ...current, third: event.target.value })} className="brand-input mt-1 text-sm"><option value="">Not recorded</option>{['EXCELLENT', 'VERY_GOOD', 'GOOD', 'SATISFACTORY', 'UNSATISFACTORY'].map((value) => <option key={value} value={value}>{pretty(value)}</option>)}</select></label>)}</div></div>
             <label className="mt-3 block text-sm font-semibold text-gray-800">Assessment narrative<textarea value={narrative} onChange={(event) => setNarrative(event.target.value)} className="brand-input mt-1 min-h-24" placeholder="Record reasoning, evidence considered, and conditions..." /></label>
             <label className="mt-3 flex items-start gap-2 text-xs font-medium text-gray-600"><input type="checkbox" checked={confidential} onChange={(event) => setConfidential(event.target.checked)} className="mt-0.5" /> Treat this assessment as confidential</label>

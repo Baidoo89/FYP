@@ -238,8 +238,8 @@ export async function GET(request: NextRequest) {
   }
 
   const allowedRoles = type === 'analytics'
-    ? ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN']
-    : ['HR_ADMIN', 'SYSTEM_ADMIN'];
+    ? ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER']
+    : ['HR_ADMIN'];
 
   if (!allowedRoles.includes(session.role)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });

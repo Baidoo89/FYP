@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react';
 import StatusBadge from '../promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../promotion/PromotionApplicationDetail';
 import GovernedStageWorkspace from '../promotion/GovernedStageWorkspace';
+import OfficialFormsWorkspace from '../promotion/OfficialFormsWorkspace';
 import ExternalAssessorLifecycle from '../promotion/ExternalAssessorLifecycle';
 import { EmptyState, ErrorState, LoadingState } from '../enterprise-ui';
 import { useToast } from '../Toast';
@@ -497,6 +498,9 @@ export default function HodApplicationsWorkspace({
 
             <PromotionApplicationDetail application={selectedRequest} role="HOD_DEAN" showGuidance={false}>
               <GovernedStageWorkspace requestId={selectedRequest.id} role="HOD_DEAN" applicantName={selectedRequest.lecturerName} />
+              <div className="my-6 border-y border-gray-200 py-6">
+                <OfficialFormsWorkspace requestId={selectedRequest.id} heading="Department and Faculty Forms" embedded />
+              </div>
               <ExternalAssessorLifecycle requestId={selectedRequest.id} role="HOD_DEAN" />
               <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.9fr)]">
                 <div className="min-w-0">

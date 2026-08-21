@@ -90,6 +90,38 @@ enum NotificationType {
   ERROR
 }
 
+enum CommunicationDeliveryStatus {
+  LOGGED
+  SENT
+  FAILED
+}
+
+enum CommunicationPurpose {
+  ACCOUNT_SETUP
+  STAFF_ACTIVATION
+  PROMOTION_MILESTONE
+  EXTERNAL_ASSESSOR_INVITATION
+  QUARTERLY_STATUS_UPDATE
+  DECISION_NOTICE
+  GENERAL
+}
+
+enum RecordAccessClassification {
+  OPEN
+  CONFIDENTIAL
+  CONFIDENTIAL_SENSITIVE
+  SECRET
+}
+
+enum RecordLifecycleStatus {
+  ACTIVE
+  CLOSED
+  UNDER_HOLD
+  ARCHIVED
+  DISPOSITION_AUTHORIZED
+  DISPOSED
+}
+
 enum StaffCategory {
   ACADEMIC_SENIOR_MEMBER
   ADMINISTRATIVE_SENIOR_MEMBER
@@ -264,6 +296,29 @@ enum AssessmentType {
   COUNCIL
 }
 
+enum OfficialFormAudience {
+  APPLICANT
+  SUPERVISOR
+  DEPARTMENT
+  FACULTY
+  RAPC
+  EXTERNAL_ASSESSOR
+  UAPC
+  COUNCIL
+  HRODD
+  REGISTRAR
+  LIBRARY
+}
+
+enum OfficialFormSubmissionStatus {
+  DRAFT
+  READY
+  SUBMITTED
+  FROZEN
+  RETURNED
+  SUPERSEDED
+}
+
 enum AppealStatus {
   FILED
   UNDER_REVIEW
@@ -373,33 +428,36 @@ model User {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  lecturerRequests          PromotionRequest[]         @relation("LecturerPromotionRequests")
-  applicantRequests         PromotionRequest[]         @relation("ApplicantPromotionRequests")
-  requestedPromotions       PromotionRequest[]         @relation("RequestedPromotions")
-  completedReviews          PromotionRequest[]         @relation("CompletedPromotionReviews")
-  verifiedDocuments         Document[]                 @relation("VerifiedDocuments")
-  uploadedDocuments         Document[]                 @relation("UploadedDocuments")
-  verifications             Verification[]             @relation("VerifierVerifications")
-  reviewComments            ReviewComment[]            @relation("ReviewerComments")
-  auditLogs                 AuditLog[]                 @relation("AuditActor")
-  statusChanges             StatusHistory[]            @relation("StatusChangedBy")
+  lecturerRequests          PromotionRequest[]            @relation("LecturerPromotionRequests")
+  applicantRequests         PromotionRequest[]            @relation("ApplicantPromotionRequests")
+  requestedPromotions       PromotionRequest[]            @relation("RequestedPromotions")
+  completedReviews          PromotionRequest[]            @relation("CompletedPromotionReviews")
+  verifiedDocuments         Document[]                    @relation("VerifiedDocuments")
+  uploadedDocuments         Document[]                    @relation("UploadedDocuments")
+  verifications             Verification[]                @relation("VerifierVerifications")
+  reviewComments            ReviewComment[]               @relation("ReviewerComments")
+  auditLogs                 AuditLog[]                    @relation("AuditActor")
+  statusChanges             StatusHistory[]               @relation("StatusChangedBy")
   notifications             Notification[]
   emailVerificationTokens   EmailVerificationToken[]
-  scores                    Score[]                    @relation("ScoreCreatedBy")
-  criteriaCreated           PromotionCriteria[]        @relation("CriteriaCreatedBy")
-  criteriaUpdated           PromotionCriteria[]        @relation("CriteriaUpdatedBy")
+  scores                    Score[]                       @relation("ScoreCreatedBy")
+  criteriaCreated           PromotionCriteria[]           @relation("CriteriaCreatedBy")
+  criteriaUpdated           PromotionCriteria[]           @relation("CriteriaUpdatedBy")
   staffMember               StaffMember?
-  departmentVerifiedOutputs ScholarlyOutput[]          @relation("DepartmentOutputVerifier")
-  libraryVerifiedOutputs    ScholarlyOutput[]          @relation("LibraryOutputVerifier")
-  frozenAcademicPackets     AcademicAssessmentPacket[] @relation("AcademicPacketFreezer")
-  promotionStageAssignments PromotionStageRecord[]     @relation("PromotionStageAssignments")
-  promotionAssessments      PromotionAssessment[]      @relation("PromotionAssessments")
-  assessorNominations       ExternalAssessor[]         @relation("AssessorNominators")
-  assessorAppointments      ExternalAssessor[]         @relation("AssessorAppointers")
-  committeeChairs           CommitteeMeeting[]         @relation("CommitteeChairs")
-  committeeSecretaries      CommitteeMeeting[]         @relation("CommitteeSecretaries")
-  promotionAppealFilers     AppealCase[]               @relation("PromotionAppealFilers")
-  promotionAppealDeciders   AppealCase[]               @relation("PromotionAppealDeciders")
+  departmentVerifiedOutputs ScholarlyOutput[]             @relation("DepartmentOutputVerifier")
+  libraryVerifiedOutputs    ScholarlyOutput[]             @relation("LibraryOutputVerifier")
+  frozenAcademicPackets     AcademicAssessmentPacket[]    @relation("AcademicPacketFreezer")
+  promotionStageAssignments PromotionStageRecord[]        @relation("PromotionStageAssignments")
+  promotionAssessments      PromotionAssessment[]         @relation("PromotionAssessments")
+  assessorNominations       ExternalAssessor[]            @relation("AssessorNominators")
+  assessorAppointments      ExternalAssessor[]            @relation("AssessorAppointers")
+  committeeChairs           CommitteeMeeting[]            @relation("CommitteeChairs")
+  committeeSecretaries      CommitteeMeeting[]            @relation("CommitteeSecretaries")
+  committeeParticipations   CommitteeMeetingParticipant[] @relation("CommitteeParticipants")
+  promotionAppealFilers     AppealCase[]                  @relation("PromotionAppealFilers")
+  promotionAppealDeciders   AppealCase[]                  @relation("PromotionAppealDeciders")
+  officialFormSubmissions   PromotionFormSubmission[]     @relation("OfficialFormCompleters")
+  communicationDeliveries   CommunicationDelivery[]       @relation("CommunicationRecipients")
 
   @@index([role])
   @@index([departmentId])
@@ -408,52 +466,59 @@ model User {
 }
 
 model PromotionRequest {
-  id                 Int                          @id @default(autoincrement())
-  applicantId        Int?
-  lecturerId         Int
-  applicant          User?                        @relation("ApplicantPromotionRequests", fields: [applicantId], references: [id], onDelete: SetNull)
-  lecturer           User                         @relation("LecturerPromotionRequests", fields: [lecturerId], references: [id], onDelete: Cascade)
-  requestedById      Int?
-  requestedBy        User?                        @relation("RequestedPromotions", fields: [requestedById], references: [id], onDelete: SetNull)
-  promotionRouteId   Int?
-  promotionRoute     PromotionRoute?              @relation(fields: [promotionRouteId], references: [id], onDelete: Restrict)
-  staffRankHistoryId Int?
-  staffRankHistory   StaffRankHistory?            @relation(fields: [staffRankHistoryId], references: [id], onDelete: Restrict)
-  staffAssignmentId  Int?
-  staffAssignment    StaffOrganizationAssignment? @relation(fields: [staffAssignmentId], references: [id], onDelete: Restrict)
-  policySnapshot     Json?
-  dossierVersion     Int?
-  dossierSnapshot    Json?
-  receiptNumber      String?                      @unique
-  currentRank        String
-  targetRank         String
-  yearsInCurrentRank Int                          @default(0)
-  status             RequestStatus                @default(DRAFT)
-  eligibilityStatus  EligibilityStatus            @default(NOT_CALCULATED)
-  eligibilityReason  String?
-  totalScore         Float?
-  adminComment       String?
-  submittedAt        DateTime?
-  verifiedAt         DateTime?
-  reviewedAt         DateTime?
-  reviewedById       Int?
-  reviewedBy         User?                        @relation("CompletedPromotionReviews", fields: [reviewedById], references: [id], onDelete: SetNull)
-  completedAt        DateTime?
-  createdAt          DateTime                     @default(now())
-  updatedAt          DateTime                     @updatedAt
+  id                       Int                          @id @default(autoincrement())
+  applicantId              Int?
+  lecturerId               Int
+  applicant                User?                        @relation("ApplicantPromotionRequests", fields: [applicantId], references: [id], onDelete: SetNull)
+  lecturer                 User                         @relation("LecturerPromotionRequests", fields: [lecturerId], references: [id], onDelete: Cascade)
+  requestedById            Int?
+  requestedBy              User?                        @relation("RequestedPromotions", fields: [requestedById], references: [id], onDelete: SetNull)
+  promotionRouteId         Int?
+  promotionRoute           PromotionRoute?              @relation(fields: [promotionRouteId], references: [id], onDelete: Restrict)
+  staffRankHistoryId       Int?
+  staffRankHistory         StaffRankHistory?            @relation(fields: [staffRankHistoryId], references: [id], onDelete: Restrict)
+  staffAssignmentId        Int?
+  staffAssignment          StaffOrganizationAssignment? @relation(fields: [staffAssignmentId], references: [id], onDelete: Restrict)
+  policySnapshot           Json?
+  dossierVersion           Int?
+  dossierSnapshot          Json?
+  receiptNumber            String?                      @unique
+  currentRank              String
+  targetRank               String
+  yearsInCurrentRank       Int                          @default(0)
+  status                   RequestStatus                @default(DRAFT)
+  eligibilityStatus        EligibilityStatus            @default(NOT_CALCULATED)
+  eligibilityReason        String?
+  totalScore               Float?
+  adminComment             String?
+  submittedAt              DateTime?
+  verifiedAt               DateTime?
+  reviewedAt               DateTime?
+  reviewedById             Int?
+  reviewedBy               User?                        @relation("CompletedPromotionReviews", fields: [reviewedById], references: [id], onDelete: SetNull)
+  completedAt              DateTime?
+  caseDueAt                DateTime?
+  nextApplicantUpdateDueAt DateTime?
+  effectiveDate            DateTime?
+  decisionCommunicatedAt   DateTime?
+  createdAt                DateTime                     @default(now())
+  updatedAt                DateTime                     @updatedAt
 
-  documents         Document[]
-  scores            Score[]
-  reviewComments    ReviewComment[]
-  auditLogs         AuditLog[]
-  statusHistory     StatusHistory[]
-  notifications     Notification[]
-  academicDossier   AcademicDossier?
-  workflowStages    PromotionStageRecord[]
-  assessments       PromotionAssessment[]
-  externalAssessors ExternalAssessor[]
-  committeeMeetings CommitteeMeeting[]
-  appealCases       AppealCase[]
+  documents               Document[]
+  scores                  Score[]
+  reviewComments          ReviewComment[]
+  auditLogs               AuditLog[]
+  statusHistory           StatusHistory[]
+  notifications           Notification[]
+  academicDossier         AcademicDossier?
+  workflowStages          PromotionStageRecord[]
+  assessments             PromotionAssessment[]
+  externalAssessors       ExternalAssessor[]
+  committeeMeetings       CommitteeMeeting[]
+  appealCases             AppealCase[]
+  formSubmissions         PromotionFormSubmission[]
+  communicationDeliveries CommunicationDelivery[]
+  recordControl           PromotionRecordControl?
 
   @@index([promotionRouteId])
   @@index([staffRankHistoryId])
@@ -462,6 +527,7 @@ model PromotionRequest {
   @@index([lecturerId])
   @@index([status])
   @@index([eligibilityStatus])
+  @@index([caseDueAt])
   @@map("promotion_requests")
 }
 
@@ -632,6 +698,64 @@ model Notification {
   @@index([userId, isRead])
   @@index([promotionRequestId])
   @@map("notifications")
+}
+
+model CommunicationDelivery {
+  id                 Int                         @id @default(autoincrement())
+  promotionRequestId Int?
+  promotionRequest   PromotionRequest?           @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  recipientUserId    Int?
+  recipientUser      User?                       @relation("CommunicationRecipients", fields: [recipientUserId], references: [id], onDelete: SetNull)
+  externalAssessorId Int?
+  externalAssessor   ExternalAssessor?           @relation(fields: [externalAssessorId], references: [id], onDelete: SetNull)
+  purpose            CommunicationPurpose
+  recipientAddress   String
+  subject            String
+  provider           String
+  providerMessageId  String?
+  status             CommunicationDeliveryStatus
+  errorMessage       String?
+  metadata           Json?
+  attemptedAt        DateTime                    @default(now())
+  sentAt             DateTime?
+
+  @@index([promotionRequestId, attemptedAt])
+  @@index([recipientUserId, attemptedAt])
+  @@index([externalAssessorId, attemptedAt])
+  @@index([status, attemptedAt])
+  @@map("communication_deliveries")
+}
+
+model PromotionRecordControl {
+  id                              Int                        @id @default(autoincrement())
+  promotionRequestId              Int                        @unique
+  promotionRequest                PromotionRequest           @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  accessClassification            RecordAccessClassification @default(CONFIDENTIAL_SENSITIVE)
+  retentionClass                  String                     @default("EMPLOYMENT_END_PLUS_6_YEARS")
+  retentionTriggerDate            DateTime?
+  retainUntil                     DateTime?
+  lifecycleStatus                 RecordLifecycleStatus      @default(ACTIVE)
+  legalHold                       Boolean                    @default(false)
+  holdReason                      String?
+  holdPlacedById                  Int?
+  holdPlacedAt                    DateTime?
+  holdReleasedById                Int?
+  holdReleasedAt                  DateTime?
+  archiveReference                String?
+  archivedById                    Int?
+  archivedAt                      DateTime?
+  dispositionApprovedById         Int?
+  dispositionApprovedAt           DateTime?
+  destructionCertificateReference String?
+  disposedById                    Int?
+  disposedAt                      DateTime?
+  notes                           String?
+  createdAt                       DateTime                   @default(now())
+  updatedAt                       DateTime                   @updatedAt
+
+  @@index([lifecycleStatus, retainUntil])
+  @@index([legalHold])
+  @@map("promotion_record_controls")
 }
 
 model EmailVerificationToken {
@@ -1025,23 +1149,24 @@ model PolicyConflict {
 }
 
 model PromotionStageRecord {
-  id                 Int                   @id @default(autoincrement())
+  id                 Int                       @id @default(autoincrement())
   promotionRequestId Int
-  promotionRequest   PromotionRequest      @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  promotionRequest   PromotionRequest          @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
   stage              PromotionStage
   sequence           Int
-  status             PromotionStageStatus  @default(PENDING)
+  status             PromotionStageStatus      @default(PENDING)
   assignedToId       Int?
-  assignedTo         User?                 @relation("PromotionStageAssignments", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedTo         User?                     @relation("PromotionStageAssignments", fields: [assignedToId], references: [id], onDelete: SetNull)
   startedAt          DateTime?
   dueAt              DateTime?
   completedAt        DateTime?
   decision           ReviewRecommendation?
   decisionReason     String?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
   assessments        PromotionAssessment[]
   committeeMeetings  CommitteeMeeting[]
+  formSubmissions    PromotionFormSubmission[]
 
   @@unique([promotionRequestId, stage, sequence])
   @@index([assignedToId, status])
@@ -1077,30 +1202,37 @@ model PromotionAssessment {
 }
 
 model ExternalAssessor {
-  id                 Int                    @id @default(autoincrement())
-  promotionRequestId Int
-  promotionRequest   PromotionRequest       @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
-  nominatedById      Int?
-  nominatedBy        User?                  @relation("AssessorNominators", fields: [nominatedById], references: [id], onDelete: SetNull)
-  appointedById      Int?
-  appointedBy        User?                  @relation("AssessorAppointers", fields: [appointedById], references: [id], onDelete: SetNull)
-  name               String
-  institution        String?
-  country            String?
-  specialization     String?
-  officialEmail      String?
-  status             ExternalAssessorStatus @default(NOMINATED)
-  conflictCheckedAt  DateTime?
-  conflictReason     String?
-  invitedAt          DateTime?
-  acceptedAt         DateTime?
-  reportRequestedAt  DateTime?
-  reportReceivedAt   DateTime?
-  reportDocumentId   Int?
-  reportDocument     Document?              @relation("ExternalAssessorReports", fields: [reportDocumentId], references: [id], onDelete: SetNull)
-  reportSummary      String?
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
+  id                      Int                       @id @default(autoincrement())
+  promotionRequestId      Int
+  promotionRequest        PromotionRequest          @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  nominatedById           Int?
+  nominatedBy             User?                     @relation("AssessorNominators", fields: [nominatedById], references: [id], onDelete: SetNull)
+  appointedById           Int?
+  appointedBy             User?                     @relation("AssessorAppointers", fields: [appointedById], references: [id], onDelete: SetNull)
+  name                    String
+  institution             String?
+  country                 String?
+  specialization          String?
+  officialEmail           String?
+  status                  ExternalAssessorStatus    @default(NOMINATED)
+  conflictCheckedAt       DateTime?
+  conflictReason          String?
+  invitedAt               DateTime?
+  acceptedAt              DateTime?
+  reportRequestedAt       DateTime?
+  reportReceivedAt        DateTime?
+  reportDocumentId        Int?
+  reportDocument          Document?                 @relation("ExternalAssessorReports", fields: [reportDocumentId], references: [id], onDelete: SetNull)
+  reportSummary           String?
+  invitationTokenHash     String?                   @unique
+  invitationExpiresAt     DateTime?
+  portalLastAccessAt      DateTime?
+  conflictDeclaredAt      DateTime?
+  termsAcceptedAt         DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  formSubmissions         PromotionFormSubmission[]
+  communicationDeliveries CommunicationDelivery[]
 
   @@index([promotionRequestId, status])
   @@index([reportDocumentId])
@@ -1108,11 +1240,11 @@ model ExternalAssessor {
 }
 
 model CommitteeMeeting {
-  id                 Int                   @id @default(autoincrement())
+  id                 Int                           @id @default(autoincrement())
   promotionRequestId Int
-  promotionRequest   PromotionRequest      @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  promotionRequest   PromotionRequest              @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
   stageRecordId      Int?
-  stageRecord        PromotionStageRecord? @relation(fields: [stageRecordId], references: [id], onDelete: SetNull)
+  stageRecord        PromotionStageRecord?         @relation(fields: [stageRecordId], references: [id], onDelete: SetNull)
   authority          DecisionAuthority
   meetingDate        DateTime
   quorumRequired     Int?
@@ -1120,20 +1252,46 @@ model CommitteeMeeting {
   quorumMet          Boolean?
   agendaReference    String?
   minutesDocumentId  Int?
-  minutesDocument    Document?             @relation("CommitteeMinutes", fields: [minutesDocumentId], references: [id], onDelete: SetNull)
+  minutesDocument    Document?                     @relation("CommitteeMinutes", fields: [minutesDocumentId], references: [id], onDelete: SetNull)
   resolution         String?
   recommendation     ReviewRecommendation?
   chairId            Int?
-  chair              User?                 @relation("CommitteeChairs", fields: [chairId], references: [id], onDelete: SetNull)
+  chair              User?                         @relation("CommitteeChairs", fields: [chairId], references: [id], onDelete: SetNull)
   secretaryId        Int?
-  secretary          User?                 @relation("CommitteeSecretaries", fields: [secretaryId], references: [id], onDelete: SetNull)
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  secretary          User?                         @relation("CommitteeSecretaries", fields: [secretaryId], references: [id], onDelete: SetNull)
+  participants       CommitteeMeetingParticipant[]
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
 
   @@index([promotionRequestId, authority])
   @@index([chairId])
   @@index([secretaryId])
   @@map("committee_meetings")
+}
+
+model CommitteeMeetingParticipant {
+  id                  Int              @id @default(autoincrement())
+  committeeMeetingId  Int
+  committeeMeeting    CommitteeMeeting @relation(fields: [committeeMeetingId], references: [id], onDelete: Cascade)
+  memberId            Int?
+  member              User?            @relation("CommitteeParticipants", fields: [memberId], references: [id], onDelete: SetNull)
+  memberName          String
+  memberRole          String?
+  rankCodeSnapshot    String?
+  attended            Boolean          @default(true)
+  conflictDeclared    Boolean          @default(false)
+  conflictDetails     String?
+  recused             Boolean          @default(false)
+  eligibleForCase     Boolean          @default(true)
+  ineligibilityReason String?
+  isChair             Boolean          @default(false)
+  isSecretary         Boolean          @default(false)
+  declarationAt       DateTime         @default(now())
+  createdAt           DateTime         @default(now())
+
+  @@index([committeeMeetingId, attended, eligibleForCase])
+  @@index([memberId])
+  @@map("committee_meeting_participants")
 }
 
 model AppealCase {
@@ -1286,4 +1444,76 @@ model AcademicAssessmentPacketItem {
   @@unique([academicAssessmentPacketId, selectionOrder], map: "academic_packet_items_packet_order_key")
   @@index([scholarlyOutputId])
   @@map("academic_assessment_packet_items")
+}
+
+model OfficialFormTemplate {
+  id                Int                       @id @default(autoincrement())
+  code              String
+  version           Int                       @default(1)
+  name              String
+  description       String?
+  audience          OfficialFormAudience
+  staffCategory     StaffCategory?
+  trackType         PromotionTrackType?
+  routeCodePrefixes Json?
+  jobFamilyCodes    Json?
+  sourceReference   String
+  contentHash       String
+  schema            Json
+  isActive          Boolean                   @default(true)
+  effectiveFrom     DateTime?
+  effectiveTo       DateTime?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  submissions       PromotionFormSubmission[]
+
+  @@unique([code, version], map: "official_form_templates_code_version_key")
+  @@index([audience, isActive])
+  @@index([staffCategory, trackType])
+  @@map("official_form_templates")
+}
+
+model PromotionFormSubmission {
+  id                 Int                          @id @default(autoincrement())
+  promotionRequestId Int
+  promotionRequest   PromotionRequest             @relation(fields: [promotionRequestId], references: [id], onDelete: Cascade)
+  templateId         Int
+  template           OfficialFormTemplate         @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  stageRecordId      Int?
+  stageRecord        PromotionStageRecord?        @relation(fields: [stageRecordId], references: [id], onDelete: SetNull)
+  completedById      Int?
+  completedBy        User?                        @relation("OfficialFormCompleters", fields: [completedById], references: [id], onDelete: SetNull)
+  externalAssessorId Int?
+  externalAssessor   ExternalAssessor?            @relation(fields: [externalAssessorId], references: [id], onDelete: SetNull)
+  status             OfficialFormSubmissionStatus @default(DRAFT)
+  version            Int                          @default(1)
+  templateSnapshot   Json
+  responses          Json
+  completionPercent  Int                          @default(0)
+  validationErrors   Json?
+  isConfidential     Boolean                      @default(false)
+  declared           Boolean                      @default(false)
+  declarationText    String?
+  signedName         String?
+  signedAt           DateTime?
+  signedIpAddress    String?
+  signedUserAgent    String?
+  submittedAt        DateTime?
+  frozenAt           DateTime?
+  returnedReason     String?
+  supersedesId       Int?
+  supersedes         PromotionFormSubmission?     @relation("FormSubmissionSupersession", fields: [supersedesId], references: [id], onDelete: SetNull)
+  supersededBy       PromotionFormSubmission[]    @relation("FormSubmissionSupersession")
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  @@unique([promotionRequestId, templateId, completedById, version], map: "promotion_form_submission_version_key")
+  @@unique([promotionRequestId, templateId, externalAssessorId, version], map: "promotion_form_external_assessor_version_key")
+  @@index([promotionRequestId, status])
+  @@index([templateId, status])
+  @@index([stageRecordId])
+  @@index([completedById])
+  @@index([externalAssessorId])
+  @@index([supersedesId])
+  @@map("promotion_form_submissions")
 }

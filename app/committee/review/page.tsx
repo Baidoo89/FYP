@@ -8,6 +8,7 @@ import StatusBadge from '../../../components/promotion/StatusBadge';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import GovernedStageWorkspace from '../../../components/promotion/GovernedStageWorkspace';
 import CommitteeMeetingPanel from '../../../components/promotion/CommitteeMeetingPanel';
+import OfficialFormsWorkspace from '../../../components/promotion/OfficialFormsWorkspace';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
@@ -348,6 +349,9 @@ export default function CommitteeReviewPage() {
         ) : (
           <PromotionApplicationDetail application={selectedRequest} role="COMMITTEE_REVIEWER" showGuidance={false}>
             <GovernedStageWorkspace requestId={selectedRequest.id} role="COMMITTEE_REVIEWER" applicantName={selectedRequest.lecturerName} />
+            <div className="my-6 border-y border-gray-200 py-6">
+              <OfficialFormsWorkspace requestId={selectedRequest.id} heading="Committee Assessment Forms" embedded />
+            </div>
             <CommitteeMeetingPanel requestId={selectedRequest.id} role="COMMITTEE_REVIEWER" />
             <form onSubmit={submitReview}>
               <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">

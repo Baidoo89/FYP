@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthSession } from '../../../../../lib/auth';
 import { writeAuditLog } from '../../../../../lib/audit-logger';
 import { canAccessDepartmentPromotionRequest } from '../../../../../lib/department-scope';
+import { createAndSendExternalAssessorInvitation } from '../../../../../lib/external-assessor-invitation';
 import { prisma } from '../../../../../lib/prisma';
 import type { ApiResponse } from '../../../../../types';
 
-const INTERNAL_ROLES = new Set(['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN']);
-const NOMINATION_ROLES = new Set(['HOD_DEAN', 'HR_ADMIN', 'SYSTEM_ADMIN']);
-const MANAGEMENT_ROLES = new Set(['HR_ADMIN', 'SYSTEM_ADMIN']);
+const INTERNAL_ROLES = new Set(['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER']);
+const NOMINATION_ROLES = new Set(['HOD_DEAN', 'HR_ADMIN']);
+const MANAGEMENT_ROLES = new Set(['HR_ADMIN']);
 
 const TRANSITIONS: Partial<Record<ExternalAssessorStatus, ExternalAssessorStatus[]>> = {
   NOMINATED: [ExternalAssessorStatus.CONFLICTED, ExternalAssessorStatus.INVITED, ExternalAssessorStatus.WITHDRAWN],
@@ -60,6 +61,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       conflictCheckedAt: true,
       conflictReason: true,
       invitedAt: true,
+      invitationExpiresAt: true,
+      portalLastAccessAt: true,
+      conflictDeclaredAt: true,
       acceptedAt: true,
       reportRequestedAt: true,
       reportReceivedAt: true,
@@ -125,16 +129,58 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   const body = await request.json();
   const assessorId = Number(body.assessorId);
+  const action = typeof body.action === 'string' ? body.action : '';
   const nextStatus = String(body.status || '') as ExternalAssessorStatus;
   const conflictReason = typeof body.conflictReason === 'string' ? body.conflictReason.trim() : '';
   const reportSummary = typeof body.reportSummary === 'string' ? body.reportSummary.trim() : '';
-  if (!Number.isInteger(assessorId) || !Object.values(ExternalAssessorStatus).includes(nextStatus)) return responseError('Select a valid assessor and lifecycle status.', 400);
+  if (!Number.isInteger(assessorId)) return responseError('Select a valid external assessor.', 400);
 
   const assessor = await prisma.externalAssessor.findFirst({
     where: { id: assessorId, promotionRequestId: requestId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, officialEmail: true },
   });
   if (!assessor) return responseError('External assessor record not found.', 404);
+
+  if (action === 'send_invitation') {
+    const invitationStatuses: ExternalAssessorStatus[] = [ExternalAssessorStatus.NOMINATED, ExternalAssessorStatus.INVITED];
+    if (!invitationStatuses.includes(assessor.status)) {
+      return responseError('Only a nominated or previously invited assessor can receive an invitation.', 409);
+    }
+    if (!assessor.officialEmail) return responseError('Record the assessor official email before sending an invitation.', 400);
+
+    try {
+      const invitation = await createAndSendExternalAssessorInvitation(assessor.id);
+      await prisma.externalAssessor.update({ where: { id: assessor.id }, data: { appointedById: session.userId } });
+      await writeAuditLog(prisma, {
+        actorId: session.userId,
+        action: 'external_assessor_invitation_sent',
+        entityType: 'ExternalAssessor',
+        entityId: assessor.id,
+        requestId,
+        description: 'Secure external assessor invitation generated and sent.',
+        metadata: {
+          provider: invitation.delivery.provider,
+          delivered: invitation.delivery.delivered,
+          invitationExpiresAt: invitation.invitationExpiresAt.toISOString(),
+        },
+      });
+      return NextResponse.json({
+        success: true,
+        data: {
+          assessorId: assessor.id,
+          status: ExternalAssessorStatus.INVITED,
+          invitationExpiresAt: invitation.invitationExpiresAt,
+          delivered: invitation.delivery.delivered,
+          provider: invitation.delivery.provider,
+          previewUrl: invitation.delivery.delivered ? null : invitation.portalUrl,
+        },
+      });
+    } catch (error) {
+      return responseError(error instanceof Error ? error.message : 'Unable to send external assessor invitation.', 502);
+    }
+  }
+
+  if (!Object.values(ExternalAssessorStatus).includes(nextStatus)) return responseError('Select a valid lifecycle status.', 400);
   if (!(TRANSITIONS[assessor.status] || []).includes(nextStatus)) return responseError('This lifecycle transition is not allowed.', 409);
   if (nextStatus === ExternalAssessorStatus.CONFLICTED && conflictReason.length < 5) return responseError('Record the reason for the conflict of interest.', 400);
   if (nextStatus === ExternalAssessorStatus.REPORT_RECEIVED && reportSummary.length < 10) return responseError('Record a concise confidential report summary.', 400);

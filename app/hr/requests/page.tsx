@@ -6,7 +6,9 @@ import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } fro
 import GovernedStageWorkspace from '../../../components/promotion/GovernedStageWorkspace';
 import ExternalAssessorLifecycle from '../../../components/promotion/ExternalAssessorLifecycle';
 import CommitteeMeetingPanel from '../../../components/promotion/CommitteeMeetingPanel';
+import OfficialFormsWorkspace from '../../../components/promotion/OfficialFormsWorkspace';
 import AppealPanel from '../../../components/promotion/AppealPanel';
+import RecordsControlPanel from '../../../components/promotion/RecordsControlPanel';
 import { EmptyState, ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
@@ -424,9 +426,13 @@ export default function MasterQueuePage() {
         ) : (
           <PromotionApplicationDetail application={selectedRequest} role="HR_ADMIN" showGuidance={false}>
             <GovernedStageWorkspace requestId={selectedRequest.id} role="HR_ADMIN" applicantName={selectedRequest.lecturerName} />
+            <div className="my-6 border-y border-gray-200 py-6">
+              <OfficialFormsWorkspace requestId={selectedRequest.id} heading="HRODD and RAPC Forms" embedded />
+            </div>
             <ExternalAssessorLifecycle requestId={selectedRequest.id} role="HR_ADMIN" />
             <CommitteeMeetingPanel requestId={selectedRequest.id} role="HR_ADMIN" />
             <AppealPanel requestId={selectedRequest.id} role="HR_ADMIN" requestStatus={selectedRequest.status} />
+            <RecordsControlPanel requestId={selectedRequest.id} requestStatus={selectedRequest.status} />
             <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
               <div>
                 <h3 className="text-lg font-bold text-gray-950">HR Administrative Actions</h3>

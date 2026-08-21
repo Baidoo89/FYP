@@ -392,7 +392,7 @@ flowchart TD
 
 Chapter 3 defines a single `HOD_DEAN` role; in practice it covers two review scopes rather than two separate roles. An account assigned a specific department reviews as an HOD, scoped to that department only; an account assigned only a faculty (no department) reviews as a Dean, scoped to every department within that faculty. Both use the same workspace and the same three decision outcomes.
 
-Verification against GCTU's Conditions of Service (section 10.1) and Basic Laws (Schedule J, section 1.3(2)(c)) confirms that academic promotion applications are submitted to the applicant's Head of Department first; the HOD forwards the application with comments to the Dean, who refers it to the Faculty Appointments and Promotions Sub-Committee. A complete institutional configuration can therefore contain one active HOD account for each of the 14 departments and one active Dean account for each of the three faculties/schools (17 personal accounts, not shared logins). The prototype does not pre-create all officeholders: it seeds one Computer Science HOD and one FoCIS Dean to demonstrate both access scopes. System Admin account creation requires an explicit HOD or Dean appointment type, enforces department assignment for HODs and faculty-only assignment for Deans, and prevents duplicate active office assignments. The current single academic-review stage represents the prototype's combined HOD/Dean handling; a separate sequential Dean and FAPC approval stage remains future work.
+Verification against GCTU's Conditions of Service (section 10.1) and Basic Laws (Schedule J, section 1.3(2)(c)) confirms that academic promotion applications are submitted to the applicant's Head of Department first; the HOD forwards the application with comments to the Dean, who refers it to the Faculty Appointments and Promotions Sub-Committee. A complete institutional configuration can therefore contain one active HOD account for each department and one active Dean account for each faculty or school, using personal rather than shared logins. The demonstration database creates representative officeholders only. System Admin account creation requires an explicit HOD or Dean appointment type, enforces department assignment for HODs and faculty-only assignment for Deans, and prevents duplicate active office assignments. The governed workflow now preserves distinct Department, Faculty/FAPC, external-assessment where required, UAPC, Council where required, final-notification, and appeal records. If a lawful FAPC cannot be constituted, HRODD may waive that stage only after a named failed-quorum record and formal resolution have been stored; later mandatory evidence controls remain active.
 
 **Figure 4.8 — HOD/Dean Review Activity Diagram**
 
@@ -492,7 +492,7 @@ flowchart TD
 
 </details>
 
-**Note on committee conflict-of-interest handling.** The activity diagram above shows a conflict-of-interest decision because it is the academically correct step for a promotion committee to take. In the current implementation, recusal is a procedural step the reviewer follows outside the system (a Committee Reviewer simply does not act on that file); the system does not yet have a dedicated "declare conflict of interest" control that reassigns the file to another reviewer. This is noted as a limitation in Chapter 5.
+**Committee conflict-of-interest handling.** Every recorded committee participant now has explicit attendance, conflict-declaration, conflict-details, recusal, rank-eligibility, chair, and secretary fields. The server excludes the applicant, conflicted or recused members, and members below the target rank before computing case-specific quorum. A stage cannot be completed without named participant records, valid quorum, a resolution, and an explicit recommendation. Authorized users may record a replacement membership record when the committee is reconvened; the earlier failed or recused record remains in the audit history.
 
 ### 4.7.6 Application Submission and Routing (Sequence Diagram)
 
@@ -627,7 +627,7 @@ export async function recordCommitteeReview(
   client: DbClient,
   input: { actor: WorkflowActor; requestId: number; comment: string; recommendation?: ReviewRecommendation | null }
 ) {
-  assertActorRole(input.actor, ['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN']);
+  assertActorRole(input.actor, ['COMMITTEE_REVIEWER']);
 
   const current = await client.promotionRequest.findUnique({ where: { id: input.requestId } });
   if (current.status !== RequestStatus.UNDER_COMMITTEE_REVIEW) {
@@ -665,7 +665,7 @@ The eligibility engine implements the rule-based decision support model specifie
 
 The interface reflects this distinction directly: role dashboards label the numeric output "Criteria Score" (displayed as `n/100`, not as a percentage) and display the eligibility recommendation as a separate status badge with its own explanatory text (e.g. Figure 4.18). This avoids the numeric score being misread as a performance grade or as GCTU's own qualitative promotion assessment.
 
-**Scope relative to Schedule J and Schedule K.** The implemented prototype operationalises selected academic promotion scenarios under the Schedule J structure (Teaching, Research, Service categories, as set out in Chapter 3 §3.17). The evidence-category model, criteria configuration, and eligibility engine are built to be configurable rather than hard-coded, so the same mechanism can in principle be extended to the administrative and professional staff requirements under Schedule K. However, the complete Schedule K assessment framework was not implemented within the prototype's scope; the demonstrated end-to-end scenario in this chapter is the academic promotion pathway only. This is consistent with the delimitations agreed in the approved proposal (§1.8) and is revisited as future work in Chapter 5.
+**Scope relative to Schedule J and Schedule K.** The current implementation distinguishes Schedule J Academic Senior Member routes from Schedule K Administrative and Professional Senior Member routes. Schedule J uses Teaching, Promotion of Knowledge, and Service classifications together with route-specific years, outputs, best-N packets, and external-assessor rules. Schedule K uses its four independent assessment areas, core-area requirements, combination rules, official unit forms, and output-reuse prohibition. Only routes supported by the verified GCTU evidence set are enabled. Senior Staff, Junior Staff, and incomplete professional families remain disabled until their controlled schemes are supplied; the software does not convert missing policy into a guessed score.
 
 The calculation sequence itself is shown in Figure 4.12 (§4.7.7).
 
@@ -698,8 +698,12 @@ During implementation testing, the initial version of `calculateEligibility` com
 
 | Module | Location | Responsibility |
 |---|---|---|
-| Authentication | `lib/auth.ts`, `app/api/auth/**` | Session issuance/verification, registration, email verification, password change |
+| Authentication | `lib/auth.ts`, `app/api/auth/**` | Session issuance/verification, HRODD-provisioned staff activation, password change, and public-registration denial |
 | Promotion Workflow | `lib/promotion-workflow.ts`, `lib/workflow.ts` | Status transitions, document verification, committee review, role enforcement |
+| Official Forms | `lib/forms/**`, `app/api/promotion-requests/[id]/forms` | Versioned Schedule J/K forms, validation, signatures, freezing, and audience controls |
+| External Assessment | `app/api/external-assessment/**`, `lib/external-assessor-invitation.ts` | Hashed expiring invitations, conflict declarations, confidential reports, and delivery evidence |
+| Committee Governance | `app/api/promotion-requests/[id]/committee-meetings` | Named membership, attendance, rank eligibility, conflict, recusal, computed quorum, and resolutions |
+| Records and Communication | `app/api/promotion-requests/[id]/records` | Quarterly notices, effective dates, retention, legal holds, archive transfer, and guarded disposition |
 | Eligibility Engine | `lib/promotion-engine.ts` | Score computation and eligibility recommendation |
 | Department Scope | `lib/department-scope.ts` | Department/faculty-scoped queue filtering, access checks, and notification routing for HOD/Dean |
 | Audit Logging | `lib/audit-logger.ts`, `lib/audit.ts` | Append-only action history for every state-changing operation |
@@ -734,7 +738,7 @@ The interface is organised around five role-specific portals sharing one respons
 
 ![Login screen](images/fig-4-14-login.png)
 
-Staff sign in with their official GCTU email and password. The role attached to the account is resolved server-side at login (§4.8) rather than selected by the user in the UI, so the same login screen routes every one of the five roles to its own dashboard and no client-side control can be used to request a different role's view. This directly implements the "secure user registration and authentication" functional requirement from Chapter 3.
+Staff sign in with their official GCTU email and password. The role and effective-dated access assignments attached to the account are resolved server-side at login (§4.8), so users do not select an account category or request a more privileged view. Public self-registration is disabled: HRODD creates or imports a verified staff record and sends a single-use activation link to the official address. This prevents students or unrelated official-email holders from creating applicant accounts while retaining one shared login screen for all authorized roles.
 
 ### 4.12.2 Lecturer Portal
 
@@ -832,10 +836,10 @@ Table 4.1 records the functional test cases exercised against the running applic
 | TC-01 | Auth | Valid login routes to correct role dashboard | Active account exists for each of the 5 roles | Log in with each role's credentials | Redirected to that role's own dashboard | As expected | Pass |
 | TC-02 | Auth | Invalid password rejected | Active account exists | Submit correct email, wrong password | 401 response, "Invalid credentials", no session cookie set | As expected | Pass |
 | TC-03 | Auth | Session cookie required for protected routes | No active session | Request `/hr/dashboard` directly without logging in | Redirected to login | As expected | Pass |
-| TC-04 | Registration | New lecturer self-registration | Email not already registered | Complete registration form with `@live.gctu.edu.gh` email | Account created, verification email sent | As expected | Pass |
-| TC-05 | Registration | Duplicate email rejected | Account already exists for the email | Attempt to register the same email again | Registration rejected with a clear error | As expected | Pass |
-| TC-06 | Email verification | Verification link activates account | Registered but unverified account | Open the emailed verification link | `emailVerified` set true, user can now log in fully | As expected | Pass |
-| TC-07 | Lecturer application | Draft application created | Verified lecturer account, no existing draft | Select current/target rank, create application | `PromotionRequest` created with status `DRAFT` | As expected | Pass |
+| TC-04 | Account entry | Public self-registration is denied | No active session | Open `/register` and call `/api/auth/register` | Page redirects to login and API returns 403 | As expected | Pass |
+| TC-05 | Staff provisioning | HRODD creates a neutral staff account | Verified staff identity and official email available | Provision the staff record and applicant access | Staff record and single-use activation invitation created | As expected | Pass |
+| TC-06 | Account activation | Single-use activation link enables login | HRODD-provisioned inactive account | Open the valid activation link and set a password | Token is consumed, official email is verified, and login is enabled | As expected | Pass |
+| TC-07 | Applicant application | Route-bound draft created | Verified active staff account with applicant access | Select an available policy route and start application | `PromotionRequest` created as `DRAFT` and linked to the frozen route version | As expected | Pass |
 | TC-08 | Evidence upload | Valid PDF accepted | Draft application exists | Upload a PDF under the Teaching category | Document stored, category status updates to "uploaded" | As expected | Pass |
 | TC-09 | Evidence upload | Non-PDF file rejected | Draft application exists | Attempt to upload a `.docx` file | Upload rejected client-side with "Please choose a PDF file" | As expected | Pass |
 | TC-10 | Evidence upload | Oversized file rejected | Draft application exists | Attempt to upload a PDF larger than 10MB | Upload rejected with a clear size-limit error | As expected | Pass |

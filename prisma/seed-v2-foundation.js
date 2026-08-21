@@ -10,11 +10,51 @@ const {
   POLICY_CONFLICTS,
   validateFoundation,
 } = require('../lib/policy/v2-foundation');
+const {
+  FORM_TEMPLATES,
+  contentHash,
+  validateOfficialFormTemplates,
+} = require('../lib/forms/gctu-official-forms');
 
 const prisma = new PrismaClient();
 
 function dateOrNull(value) {
   return value ? new Date(`${value}T00:00:00.000Z`) : null;
+}
+
+async function seedOfficialFormTemplates() {
+  validateOfficialFormTemplates();
+
+  for (const template of FORM_TEMPLATES) {
+    const data = {
+      name: template.name,
+      description: template.schema.instructions || null,
+      audience: template.audience,
+      staffCategory: template.staffCategory || null,
+      trackType: template.trackType || null,
+      routeCodePrefixes: template.routeCodePrefixes || null,
+      jobFamilyCodes: template.jobFamilyCodes || null,
+      sourceReference: template.sourceReference,
+      contentHash: contentHash(template),
+      schema: template.schema,
+      isActive: true,
+    };
+
+    await prisma.officialFormTemplate.upsert({
+      where: {
+        code_version: {
+          code: template.code,
+          version: template.version,
+        },
+      },
+      update: data,
+      create: {
+        code: template.code,
+        version: template.version,
+        ...data,
+      },
+    });
+  }
 }
 
 async function seedPolicyRegistry() {
@@ -306,6 +346,16 @@ async function seedFoundationSettings() {
       description: 'Blocks eligibility decisions for tracks without a controlled approved policy version.',
     },
   });
+
+  await prisma.systemSetting.upsert({
+    where: { key: 'promotion.appeal.initialWindowMonths' },
+    update: { value: '1' },
+    create: {
+      key: 'promotion.appeal.initialWindowMonths',
+      value: '1',
+      description: 'Working Rule 10 filing period. Configurable pending Registrar/Legal resolution of the conflicting 14-day form note.',
+    },
+  });
 }
 
 async function main() {
@@ -317,6 +367,7 @@ async function main() {
   await seedTracksAndRoutes(versionsByKey, ranksByCode);
   await seedPolicyConflicts();
   await seedFoundationSettings();
+  await seedOfficialFormTemplates();
 
   console.log('GCTU V2 policy foundation seeded successfully.');
   console.log(`Policy sources: ${POLICY_SOURCES.length}`);
@@ -325,6 +376,7 @@ async function main() {
   console.log(`Promotion tracks: ${TRACKS.length}`);
   console.log(`Verified or provisional routes: ${ROUTES.length}`);
   console.log(`Tracked policy conflicts: ${POLICY_CONFLICTS.length}`);
+  console.log(`Official form templates: ${FORM_TEMPLATES.length}`);
   console.log('No lecturer or applicant account was seeded.');
 }
 

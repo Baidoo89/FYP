@@ -115,15 +115,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
-  if (scope === 'department' && !['HOD_DEAN', 'SYSTEM_ADMIN'].includes(session.role)) {
+  if (scope === 'department' && session.role !== 'HOD_DEAN') {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
-  if (scope === 'committee' && !['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(session.role)) {
+  if (scope === 'committee' && session.role !== 'COMMITTEE_REVIEWER') {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
-  if (scope === 'hr' && !['HR_ADMIN', 'SYSTEM_ADMIN'].includes(session.role)) {
+  if (scope === 'hr' && session.role !== 'HR_ADMIN') {
     return NextResponse.json({ success: false, error: 'Forbidden' } as ApiResponse<null>, { status: 403 });
   }
 
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
     where = { ...where, lecturerId: session.userId };
   }
 
-  if ((scope === 'department' || session.role === 'HOD_DEAN') && session.role !== 'SYSTEM_ADMIN') {
+  if (scope === 'department' || session.role === 'HOD_DEAN') {
     const departmentScope = await getDepartmentReviewScope(prisma, {
       userId: session.userId,
       role: session.role,

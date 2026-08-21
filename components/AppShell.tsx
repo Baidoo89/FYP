@@ -81,7 +81,8 @@ export default function AppShell({ children }: AppShellProps) {
     pathname === '/activate-account' ||
     pathname.startsWith('/activate-account/') ||
     pathname === '/onboarding' ||
-    pathname.startsWith('/onboarding/');
+    pathname.startsWith('/onboarding/') ||
+    pathname.startsWith('/external-assessment/');
 
   const explicitPortalRole = getExplicitPortalRole(pathname);
   const effectivePortalRole = explicitPortalRole || sessionRole;
@@ -119,6 +120,7 @@ export default function AppShell({ children }: AppShellProps) {
         { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview' },
         { href: '/lecturer-portal/start-application', icon: 'SA', label: 'Start Application', subtitle: 'Policy route selection' },
         { href: '/lecturer-portal/application', icon: 'PR', label: 'My Application', subtitle: 'Workflow tracker' },
+        { href: '/lecturer-portal/official-forms', icon: 'OF', label: 'Official Forms', subtitle: 'GCTU application record' },
         { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence Portfolio', subtitle: 'Upload documents' },
         { href: '/lecturer-portal/academic-dossier', icon: 'AD', label: 'Academic Dossier', subtitle: 'Schedule J outputs' },
         { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback', subtitle: 'Returned evidence' },
@@ -146,7 +148,6 @@ export default function AppShell({ children }: AppShellProps) {
             { href: '/system-admin/users', icon: 'US', label: 'Users & Access', subtitle: 'Accounts, roles, status' },
             { href: '/system-admin/structure', icon: 'ST', label: 'Institution Structure', subtitle: 'Faculties & departments' },
             { href: '/system-admin/criteria', icon: 'CR', label: 'Promotion Rules', subtitle: 'Ranks, criteria, evidence' },
-            { href: '/audit', icon: 'AU', label: 'Audit Trail', subtitle: 'Governance activity' },
             { href: '/system-admin/settings', icon: 'SE', label: 'Platform Settings', subtitle: 'General configuration' },
           ]
         : isCommitteeNav

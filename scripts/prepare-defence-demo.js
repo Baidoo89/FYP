@@ -13,6 +13,11 @@ const ROLE_ACCOUNTS = [
   ['Committee Reviewer', 'committee.reviewer@live.gctu.edu.gh', 'COMMITTEE_REVIEWER'],
   ['System Administrator', 'system.admin@live.gctu.edu.gh', 'SYSTEM_ADMIN'],
 ];
+const DEMO_APPLICANTS = [
+  ['Benjamin Baidoo', '4231230141@live.gctu.edu.gh', 'ACADEMIC_SENIOR_MEMBER'],
+  ['Sucess Likem', '4231230154@live.gctu.edu.gh', 'ADMINISTRATIVE_SENIOR_MEMBER'],
+  ['Esther Appiah', '4231231237@live.gctu.edu.gh', 'PROFESSIONAL_SENIOR_MEMBER'],
+];
 
 async function requireInstitutionalSetup(client) {
   const emails = ROLE_ACCOUNTS.map(([, email]) => email);
@@ -122,10 +127,24 @@ function emailMode() {
 
 async function readiness() {
   const structure = await requireInstitutionalSetup(prisma);
-  const [lecturers, legacyFixture, fixtureMarkers] = await Promise.all([
+  const [applicants, legacyFixture, fixtureMarkers] = await Promise.all([
     prisma.user.findMany({
-      where: { role: 'LECTURER' },
-      select: { name: true, email: true, emailVerified: true, onboarded: true },
+      where: { email: { in: DEMO_APPLICANTS.map(([, email]) => email) } },
+      select: {
+        name: true,
+        email: true,
+        role: true,
+        emailVerified: true,
+        onboarded: true,
+        isActive: true,
+        staffMember: {
+          select: {
+            category: true,
+            verificationState: true,
+            accessAssignments: { where: { role: 'APPLICANT', endedAt: null }, select: { id: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'asc' },
     }),
     findLegacyFixture(prisma),
@@ -136,21 +155,34 @@ async function readiness() {
     throw new Error('Legacy representative lecturer data remains. Run npm run defence:prepare.');
   }
 
-  return { structure, lecturers, email: emailMode() };
+  const byEmail = new Map(applicants.map((applicant) => [applicant.email, applicant]));
+  for (const [name, email, category] of DEMO_APPLICANTS) {
+    const applicant = byEmail.get(email);
+    if (!applicant) throw new Error(`Missing ${name} HRODD demo account (${email}). Run npm run demo:recreate.`);
+    if (applicant.role !== 'STAFF' || !applicant.emailVerified || !applicant.onboarded || !applicant.isActive) {
+      throw new Error(`${email} is not an active, verified, onboarded neutral staff account.`);
+    }
+    if (applicant.staffMember?.category !== category || applicant.staffMember.verificationState !== 'VERIFIED' || applicant.staffMember.accessAssignments.length === 0) {
+      throw new Error(`${email} is missing its verified HRODD staff record or applicant access assignment.`);
+    }
+  }
+
+  return { structure, applicants, email: emailMode() };
 }
 
 function printReadiness(result) {
-  console.log('Registration-first defence setup is ready.');
+  console.log('HRODD roster-first defence setup is ready.');
   console.log(`Institutional setup: ${result.structure.facultyCount} faculties, ${result.structure.departmentCount} departments, ${result.structure.criteriaCount} active criteria.`);
   console.log(`Pre-created staff-role accounts: ${ROLE_ACCOUNTS.length}.`);
-  console.log(`Self-registered lecturer accounts currently present: ${result.lecturers.length}.`);
+  console.log(`Verified HRODD applicant accounts: ${result.applicants.length}.`);
   console.log(`Email provider: ${result.email.provider}.`);
   if (result.email.realDeliveryReady) {
     console.log('Real verification-email delivery is configured.');
   } else {
-    console.log('Real inbox delivery is not configured; the local check-email screen will expose a clearly labelled verification action.');
+    console.log('Real inbox delivery is not configured; development emails are logged for demonstration.');
   }
-  console.log('Create the defence lecturer through http://localhost:3000/register, verify the email, complete onboarding, and start the application in the lecturer portal.');
+  console.log('Public registration is disabled. Sign in with a verified HRODD account and start the application from the applicant portal.');
+  for (const [name, email] of DEMO_APPLICANTS) console.log(`Applicant: ${name} <${email}>`);
 }
 
 async function main() {
@@ -170,7 +202,7 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error('Defence registration setup failed:', error);
+    console.error('Defence roster setup failed:', error);
     process.exitCode = 1;
   })
   .finally(async () => {

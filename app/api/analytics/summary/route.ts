@@ -5,7 +5,7 @@ import { getDepartmentReviewScope } from '../../../../lib/department-scope';
 import { prisma } from '../../../../lib/prisma';
 import { loadPromotionAnalytics, type PromotionAnalyticsSummary } from '../../../../lib/promotion-analytics';
 
-const ANALYTICS_ROLES = ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'];
+const ANALYTICS_ROLES = ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER'];
 
 export async function GET(request: NextRequest) {
   try {

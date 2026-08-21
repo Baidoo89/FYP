@@ -6,7 +6,7 @@ import { prisma } from '../../../../lib/prisma';
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
 
-  if (!session || session.legacy || !['HR_ADMIN', 'SYSTEM_ADMIN'].includes(session.role)) {
+  if (!session || session.legacy || session.role !== 'HR_ADMIN') {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 

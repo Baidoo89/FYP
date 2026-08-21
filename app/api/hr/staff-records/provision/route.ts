@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   if (!session || session.legacy) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
-  if (session.role !== Role.HR_ADMIN && session.role !== Role.SYSTEM_ADMIN) {
+  if (session.role !== Role.HR_ADMIN) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 

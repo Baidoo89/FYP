@@ -47,10 +47,14 @@ test('committee meeting records enforce authority, quorum, recommendation, and a
   const component = fs.readFileSync(path.join(root, 'components', 'promotion', 'CommitteeMeetingPanel.tsx'), 'utf8');
   assert.ok(route.includes('export async function POST'));
   assert.ok(route.includes('MEETING_ROLES'));
-  assert.ok(route.includes('quorumPresent >= quorumRequired'));
+  assert.ok(route.includes('eligiblePresent.length >= resolvedQuorumRequired'));
+  assert.ok(route.includes('Member rank below target rank'));
+  assert.ok(route.includes('requiresScheduleKViceChancellor'));
+  assert.ok(route.includes('participants:'));
   assert.ok(route.includes('committee_meeting_recorded'));
   assert.ok(component.includes('Committee Meeting Record'));
   assert.ok(component.includes('Formal resolution'));
+  assert.ok(component.includes('Membership, attendance, and declarations'));
 });
 test('appeal lifecycle protects applicant filing, decision controls, and audit trail', () => {
   const route = fs.readFileSync(path.join(root, 'app', 'api', 'promotion-requests', '[id]', 'appeals', 'route.ts'), 'utf8');

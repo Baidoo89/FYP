@@ -1,8 +1,12 @@
 import {
+  DecisionAuthority,
   EligibilityStatus,
   NotificationType,
+  OfficialFormAudience,
+  OfficialFormSubmissionStatus,
   RequestStatus,
   PromotionStage,
+  PolicyRequirementType,
   ReviewRecommendation,
   VerificationStatus,
   type DocumentCategory,
@@ -16,28 +20,68 @@ import { calculateEligibility, REQUIRED_CATEGORIES } from './promotion-engine';
 import { sendApplicantMilestoneEmail } from './workflow-email';
 import { assertStatusTransition } from './workflow';
 import { academicRequirementsFromRoute, evaluateAcademicDossier, scholarlyOutputSnapshot } from './academic-dossier-rules';
+import { templateApplies } from './forms/official-form-service';
+import { promotionCaseTiming, stageDueAt } from './promotion-stage-rules';
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
 async function initializePromotionStages(client: DbClient, requestId: number) {
   const request = await client.promotionRequest.findUnique({
     where: { id: requestId },
-    include: { promotionRoute: { include: { promotionTrack: true, targetRank: true } } },
+    include: {
+      promotionRoute: {
+        include: {
+          promotionTrack: true,
+          targetRank: true,
+          requirements: {
+            where: { type: PolicyRequirementType.EXTERNAL_ASSESSOR_COUNT },
+            select: { numberValue: true },
+          },
+        },
+      },
+    },
   });
   const route = request?.promotionRoute;
   if (!route) return;
   const trackType = route.promotionTrack.type;
-  const targetRank = route.targetRank?.code || route.targetRank?.name || "";
-  const stages = trackType === "SCHEDULE_J"
-    ? [PromotionStage.DEPARTMENT, PromotionStage.FACULTY, PromotionStage.EXTERNAL_ASSESSMENT, PromotionStage.UAPC, ...(String(targetRank).includes("PROFESSOR") ? [PromotionStage.COUNCIL] : [])]
-    : trackType === "SCHEDULE_K"
-      ? [PromotionStage.DEPARTMENT, PromotionStage.RAPC, PromotionStage.EXTERNAL_ASSESSMENT, PromotionStage.UAPC, PromotionStage.COUNCIL]
-      : [PromotionStage.DEPARTMENT, PromotionStage.UAPC, PromotionStage.COUNCIL];
+  const externalAssessorCount = route.requirements[0]?.numberValue || 0;
+  const finalAuthorityStage = route.finalAuthority === DecisionAuthority.COUNCIL
+    ? PromotionStage.COUNCIL
+    : route.finalAuthority === DecisionAuthority.ACADEMIC_BOARD
+      ? PromotionStage.ACADEMIC_BOARD
+      : null;
+  const stages = trackType === 'SCHEDULE_J'
+    ? [
+        PromotionStage.DEPARTMENT,
+        PromotionStage.FACULTY,
+        ...(externalAssessorCount > 0 ? [PromotionStage.EXTERNAL_ASSESSMENT] : []),
+        PromotionStage.UAPC,
+        ...(finalAuthorityStage ? [finalAuthorityStage] : []),
+        PromotionStage.FINAL_NOTIFICATION,
+      ]
+    : trackType === 'SCHEDULE_K'
+      ? [
+          PromotionStage.DEPARTMENT,
+          PromotionStage.RAPC,
+          ...(externalAssessorCount > 0 ? [PromotionStage.EXTERNAL_ASSESSMENT] : []),
+          PromotionStage.UAPC,
+          ...(finalAuthorityStage ? [finalAuthorityStage] : []),
+          PromotionStage.FINAL_NOTIFICATION,
+        ]
+      : [PromotionStage.DEPARTMENT, ...(finalAuthorityStage ? [finalAuthorityStage] : []), PromotionStage.FINAL_NOTIFICATION];
+  const startedAt = new Date();
   for (const [sequence, stage] of stages.entries()) {
     await client.promotionStageRecord.upsert({
       where: { promotionRequestId_stage_sequence: { promotionRequestId: requestId, stage, sequence: sequence + 1 } },
       update: {},
-      create: { promotionRequestId: requestId, stage, sequence: sequence + 1, status: sequence === 0 ? "IN_PROGRESS" : "PENDING", startedAt: sequence === 0 ? new Date() : null },
+      create: {
+        promotionRequestId: requestId,
+        stage,
+        sequence: sequence + 1,
+        status: sequence === 0 ? 'IN_PROGRESS' : 'PENDING',
+        startedAt: sequence === 0 ? startedAt : null,
+        dueAt: sequence === 0 ? stageDueAt(stage, trackType, startedAt) : null,
+      },
     });
   }
 }
@@ -62,6 +106,69 @@ async function freezeScheduleJDossierForSubmission(client: DbClient, requestId: 
   await client.academicDossier.update({ where: { id: dossier.id }, data: { status: "FROZEN" } });
   const receiptNumber = request.receiptNumber || "GCTU-" + capturedAt.getUTCFullYear() + "-" + String(request.id).padStart(6, "0");
   await client.promotionRequest.update({ where: { id: request.id }, data: { receiptNumber, dossierVersion: dossier.version, dossierSnapshot } });
+}
+
+async function assertOfficialApplicantFormsFrozen(client: DbClient, requestId: number, actorId: number) {
+  const request = await client.promotionRequest.findUnique({
+    where: { id: requestId },
+    select: {
+      promotionRoute: {
+        select: {
+          code: true,
+          promotionTrack: {
+            select: {
+              type: true,
+              staffCategory: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!request?.promotionRoute) {
+    throw new WorkflowError('Select a verified promotion route before submitting the application.', 400);
+  }
+
+  const templates = await client.officialFormTemplate.findMany({
+    where: {
+      isActive: true,
+      audience: OfficialFormAudience.APPLICANT,
+    },
+    select: {
+      id: true,
+      name: true,
+      trackType: true,
+      staffCategory: true,
+      routeCodePrefixes: true,
+    },
+  });
+  const route = {
+    routeCode: request.promotionRoute.code,
+    trackType: request.promotionRoute.promotionTrack.type,
+    staffCategory: request.promotionRoute.promotionTrack.staffCategory,
+  };
+  const requiredTemplates = templates.filter((template) => templateApplies(template, route));
+  if (requiredTemplates.length === 0) {
+    throw new WorkflowError('No controlled applicant form is configured for this promotion route. Contact HRODD.', 503);
+  }
+
+  const frozen = await client.promotionFormSubmission.findMany({
+    where: {
+      promotionRequestId: requestId,
+      completedById: actorId,
+      templateId: { in: requiredTemplates.map((template) => template.id) },
+      status: OfficialFormSubmissionStatus.FROZEN,
+    },
+    select: { templateId: true },
+  });
+  const frozenTemplateIds = new Set(frozen.map((submission) => submission.templateId));
+  const missing = requiredTemplates.filter((template) => !frozenTemplateIds.has(template.id));
+  if (missing.length > 0) {
+    throw new WorkflowError(
+      `Complete, sign and submit the official promotion form before submitting this application: ${missing.map((template) => template.name).join(', ')}.`,
+      400,
+    );
+  }
 }
 export type WorkflowActor = {
   id: number;
@@ -109,13 +216,13 @@ const APPLICANT_NOTIFICATION_TYPE: Partial<Record<RequestStatus, NotificationTyp
 };
 
 const NEXT_OWNER_ROLES: Partial<Record<RequestStatus, AuthRole[]>> = {
-  [RequestStatus.SUBMITTED]: ['HOD_DEAN', 'SYSTEM_ADMIN'],
-  [RequestStatus.UNDER_DEPARTMENT_REVIEW]: ['HOD_DEAN', 'SYSTEM_ADMIN'],
-  [RequestStatus.UNDER_HR_VERIFICATION]: ['HR_ADMIN', 'SYSTEM_ADMIN'],
-  [RequestStatus.UNDER_COMMITTEE_REVIEW]: ['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'],
-  [RequestStatus.REQUIRES_FURTHER_REVIEW]: ['HOD_DEAN', 'HR_ADMIN', 'SYSTEM_ADMIN'],
-  [RequestStatus.RECOMMENDED]: ['HR_ADMIN', 'SYSTEM_ADMIN'],
-  [RequestStatus.NOT_RECOMMENDED]: ['HR_ADMIN', 'SYSTEM_ADMIN'],
+  [RequestStatus.SUBMITTED]: ['HOD_DEAN'],
+  [RequestStatus.UNDER_DEPARTMENT_REVIEW]: ['HOD_DEAN'],
+  [RequestStatus.UNDER_HR_VERIFICATION]: ['HR_ADMIN'],
+  [RequestStatus.UNDER_COMMITTEE_REVIEW]: ['COMMITTEE_REVIEWER'],
+  [RequestStatus.REQUIRES_FURTHER_REVIEW]: ['HOD_DEAN', 'HR_ADMIN'],
+  [RequestStatus.RECOMMENDED]: ['HR_ADMIN'],
+  [RequestStatus.NOT_RECOMMENDED]: ['HR_ADMIN'],
 };
 
 function formatEnum(value: string) {
@@ -571,8 +678,32 @@ export async function submitPromotionRequest(
     throw new WorkflowError('Resolve returned or rejected evidence before submitting the application.', 400);
   }
 
+  await assertOfficialApplicantFormsFrozen(client, input.requestId, input.actor.id);
   await freezeScheduleJDossierForSubmission(client, input.requestId, input.actor.id);
   await initializePromotionStages(client, input.requestId);
+
+  const route = await client.promotionRequest.findUnique({
+    where: { id: input.requestId },
+    select: {
+      promotionRoute: {
+        select: {
+          targetRank: { select: { code: true } },
+          promotionTrack: { select: { type: true } },
+        },
+      },
+    },
+  });
+  if (route?.promotionRoute) {
+    const submittedAt = new Date();
+    await client.promotionRequest.update({
+      where: { id: input.requestId },
+      data: promotionCaseTiming({
+        trackType: route.promotionRoute.promotionTrack.type,
+        targetRankCode: route.promotionRoute.targetRank.code,
+        submittedAt,
+      }),
+    });
+  }
 
   return transitionPromotionRequest(client, {
     actor: input.actor,
@@ -718,7 +849,7 @@ export async function recordDepartmentReview(
     comment: string;
   }
 ) {
-  assertActorRole(input.actor, ['HOD_DEAN', 'SYSTEM_ADMIN']);
+  assertActorRole(input.actor, ['HOD_DEAN']);
 
   const current = await client.promotionRequest.findUnique({
     where: { id: input.requestId },
@@ -807,7 +938,7 @@ export async function verifyPromotionDocument(
     comment?: string | null;
   }
 ) {
-  assertActorRole(input.actor, ['HR_ADMIN', 'SYSTEM_ADMIN']);
+  assertActorRole(input.actor, ['HR_ADMIN']);
 
   const documentRecord = await client.document.findUnique({
     where: { id: input.documentId },
@@ -946,7 +1077,7 @@ export async function recordCommitteeReview(
     recommendation?: ReviewRecommendation | null;
   }
 ) {
-  assertActorRole(input.actor, ['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN']);
+  assertActorRole(input.actor, ['COMMITTEE_REVIEWER']);
 
   const current = await client.promotionRequest.findUnique({
     where: { id: input.requestId },

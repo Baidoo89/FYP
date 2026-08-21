@@ -5,7 +5,7 @@ import { writeAuditLog } from '../../../../../lib/audit-logger';
 import { prisma } from '../../../../../lib/prisma';
 import type { ApiResponse } from '../../../../../types';
 
-const EXPORT_ROLES = new Set(['STAFF', 'LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN']);
+const EXPORT_ROLES = new Set(['STAFF', 'LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER']);
 
 function responseError(error: string, status: number) {
   return NextResponse.json({ success: false, error } as ApiResponse<null>, { status });
@@ -45,6 +45,41 @@ function wrap(text: string, max = 100) {
   return lines.length ? lines : ['Not recorded'];
 }
 
+function valueText(value: unknown) {
+  if (value === null || value === undefined || value === '') return 'Not recorded';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.length === 0 ? 'No entries' : `${value.length} entr${value.length === 1 ? 'y' : 'ies'}`;
+  if (typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => `${label(key)}: ${valueText(item)}`)
+      .join(' | ');
+  }
+  return String(value);
+}
+
+function formResponseRows(templateSnapshot: unknown, responsesValue: unknown) {
+  const schema = templateSnapshot && typeof templateSnapshot === 'object'
+    ? templateSnapshot as { sections?: Array<{ fields?: Array<{ id?: string; label?: string }> }> }
+    : {};
+  const responses = responsesValue && typeof responsesValue === 'object' && !Array.isArray(responsesValue)
+    ? responsesValue as Record<string, unknown>
+    : {};
+  const fields = (schema.sections || []).flatMap((section) => section.fields || []);
+  return fields.flatMap((field) => {
+    if (!field.id) return [];
+    const value = responses[field.id];
+    if (Array.isArray(value)) {
+      if (value.length === 0) return [{ name: field.label || label(field.id), value: 'No entries' }];
+      return value.map((entry, index) => ({
+        name: `${field.label || label(field.id)} ${index + 1}`,
+        value: valueText(entry),
+      }));
+    }
+    return [{ name: field.label || label(field.id), value: valueText(value) }];
+  });
+}
+
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = getAuthSession(request);
   const requestId = await getRequestId(context);
@@ -68,18 +103,71 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       verifiedAt: true,
       reviewedAt: true,
       completedAt: true,
+      caseDueAt: true,
+      nextApplicantUpdateDueAt: true,
+      effectiveDate: true,
+      decisionCommunicatedAt: true,
       lecturer: { select: { name: true, email: true, department: true, faculty: true } },
       promotionRoute: { select: { code: true, name: true, finalAuthority: true, promotionTrack: { select: { name: true, type: true, staffCategory: true } } } },
       documents: { orderBy: { createdAt: 'asc' }, select: { title: true, category: true, verificationStatus: true, verifiedAt: true } },
-      workflowStages: { orderBy: { sequence: 'asc' }, select: { sequence: true, stage: true, status: true, decision: true, completedAt: true } },
+      workflowStages: { orderBy: { sequence: 'asc' }, select: { sequence: true, stage: true, status: true, decision: true, dueAt: true, completedAt: true } },
       externalAssessors: { orderBy: { createdAt: 'asc' }, select: { name: true, institution: true, country: true, specialization: true, status: true, reportReceivedAt: true } },
-      committeeMeetings: { orderBy: { meetingDate: 'asc' }, select: { authority: true, meetingDate: true, quorumRequired: true, quorumPresent: true, quorumMet: true, agendaReference: true, recommendation: true, resolution: true } },
+      committeeMeetings: {
+        orderBy: { meetingDate: 'asc' },
+        select: {
+          authority: true,
+          meetingDate: true,
+          quorumRequired: true,
+          quorumPresent: true,
+          quorumMet: true,
+          agendaReference: true,
+          recommendation: true,
+          resolution: true,
+          participants: {
+            orderBy: [{ isChair: 'desc' }, { memberName: 'asc' }],
+            select: {
+              memberName: true,
+              memberRole: true,
+              rankCodeSnapshot: true,
+              attended: true,
+              eligibleForCase: true,
+              conflictDeclared: true,
+              recused: true,
+              ineligibilityReason: true,
+              isChair: true,
+            },
+          },
+        },
+      },
       appealCases: { orderBy: { filedAt: 'asc' }, select: { status: true, grounds: true, filedAt: true, dueAt: true, decidedAt: true, decision: true } },
+      recordControl: true,
+      communicationDeliveries: {
+        orderBy: { attemptedAt: 'asc' },
+        select: { purpose: true, recipientAddress: true, subject: true, provider: true, status: true, attemptedAt: true, sentAt: true, errorMessage: true },
+      },
+      formSubmissions: {
+        orderBy: [{ createdAt: 'asc' }, { version: 'asc' }],
+        select: {
+          version: true,
+          status: true,
+          templateSnapshot: true,
+          responses: true,
+          completionPercent: true,
+          isConfidential: true,
+          signedName: true,
+          signedAt: true,
+          submittedAt: true,
+          template: { select: { code: true, name: true, audience: true, version: true, sourceReference: true, contentHash: true } },
+          completedBy: { select: { name: true } },
+          externalAssessor: { select: { name: true } },
+        },
+      },
     },
   });
 
   if (!file) return responseError('Promotion file not found.', 404);
   if ((session.role === 'STAFF' || session.role === 'LECTURER') && file.lecturerId !== session.userId) return responseError('You can only export your own promotion file.', 403);
+  const canViewConfidential = session.role === 'HR_ADMIN' || session.role === 'COMMITTEE_REVIEWER';
 
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -114,22 +202,59 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   row('Status', label(file.status));
   row('Eligibility', label(file.eligibilityStatus));
   row('Submitted', dateLabel(file.submittedAt));
+  row('Case Target', dateLabel(file.caseDueAt));
+  row('Next Applicant Update', dateLabel(file.nextApplicantUpdateDueAt));
+  row('Effective Date', dateLabel(file.effectiveDate));
+  row('Decision Communicated', dateLabel(file.decisionCommunicatedAt));
   row('Completed', dateLabel(file.completedAt));
 
   section('Workflow Stages');
-  for (const stage of file.workflowStages) row(stage.sequence + '. ' + label(stage.stage), label(stage.status) + ' / ' + label(stage.decision) + ' / ' + dateLabel(stage.completedAt));
+  for (const stage of file.workflowStages) row(stage.sequence + '. ' + label(stage.stage), label(stage.status) + ' / ' + label(stage.decision) + ' / Due ' + dateLabel(stage.dueAt) + ' / Completed ' + dateLabel(stage.completedAt));
 
   section('Evidence Documents');
   for (const document of file.documents) row(label(document.category), document.title + ' - ' + label(document.verificationStatus) + ' - ' + dateLabel(document.verifiedAt));
   if (file.documents.length === 0) draw('No evidence documents recorded.');
 
-  section('External Assessors');
-  for (const assessor of file.externalAssessors) row(assessor.name, [assessor.institution, assessor.country, assessor.specialization, label(assessor.status), dateLabel(assessor.reportReceivedAt)].filter(Boolean).join(' | '));
-  if (file.externalAssessors.length === 0) draw('No external assessor records entered.');
+  section('External Assessment');
+  if (!canViewConfidential) {
+    const reportsReceived = file.externalAssessors.filter((assessor) => assessor.status === 'REPORT_RECEIVED').length;
+    row('Confidential reports received', reportsReceived);
+    draw('External assessor identities and reports are confidential and are not included in the applicant copy.');
+  } else {
+    for (const assessor of file.externalAssessors) row(assessor.name, [assessor.institution, assessor.country, assessor.specialization, label(assessor.status), dateLabel(assessor.reportReceivedAt)].filter(Boolean).join(' | '));
+    if (file.externalAssessors.length === 0) draw('No external assessor records entered.');
+  }
+
+  section('Official Forms');
+  const visibleForms = file.formSubmissions.filter((form) => (
+    canViewConfidential
+      ? true
+      : form.template.audience === 'APPLICANT' && !form.isConfidential
+  ));
+  for (const form of visibleForms) {
+    draw(form.template.name + ' - Submission v' + form.version, { bold: true });
+    row('Template', form.template.code + ' v' + form.template.version);
+    row('Audience', label(form.template.audience));
+    row('Status', label(form.status));
+    row('Completion', form.completionPercent + '%');
+    row('Signed by', form.signedName || form.completedBy?.name || form.externalAssessor?.name);
+    row('Signed', dateLabel(form.signedAt || form.submittedAt));
+    for (const responseRow of formResponseRows(form.templateSnapshot, form.responses)) {
+      const lines = wrap(responseRow.name + ': ' + responseRow.value, 115);
+      for (const line of lines) draw(line, { indent: 12 });
+    }
+  }
+  if (visibleForms.length === 0) draw('No visible official form submissions recorded.');
 
   section('Committee Meetings');
   for (const meeting of file.committeeMeetings) {
     row(label(meeting.authority), dateLabel(meeting.meetingDate) + ' | Quorum ' + (meeting.quorumPresent ?? 0) + '/' + (meeting.quorumRequired ?? 0) + ' | ' + (meeting.quorumMet ? 'Met' : 'Not met') + ' | ' + label(meeting.recommendation));
+    for (const participant of meeting.participants) {
+      row(
+        participant.memberName,
+        [participant.memberRole, participant.rankCodeSnapshot ? label(participant.rankCodeSnapshot) : null, participant.attended ? 'Attended' : 'Absent', participant.eligibleForCase ? 'Eligible' : 'Excluded', participant.conflictDeclared ? 'Conflict declared' : null, participant.recused ? 'Recused' : null, participant.isChair ? 'Chair' : null, participant.ineligibilityReason].filter(Boolean).join(' | '),
+      );
+    }
     for (const line of wrap(meeting.resolution || '', 120)) draw(line, { indent: 12 });
   }
   if (file.committeeMeetings.length === 0) draw('No committee meeting records entered.');
@@ -142,8 +267,27 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   }
   if (file.appealCases.length === 0) draw('No appeal records entered.');
 
+  if (session.role === 'HR_ADMIN') {
+    section('Records Control');
+    row('Access Classification', label(file.recordControl?.accessClassification));
+    row('Retention Class', label(file.recordControl?.retentionClass));
+    row('Retention Trigger', dateLabel(file.recordControl?.retentionTriggerDate));
+    row('Retain Until', dateLabel(file.recordControl?.retainUntil));
+    row('Lifecycle', label(file.recordControl?.lifecycleStatus));
+    row('Legal Hold', file.recordControl?.legalHold ? 'Active' : 'No active hold');
+    row('Archive Reference', file.recordControl?.archiveReference);
+    row('Destruction Certificate', file.recordControl?.destructionCertificateReference);
+
+    section('Communication Delivery History');
+    for (const delivery of file.communicationDeliveries) {
+      row(label(delivery.purpose), `${label(delivery.status)} | ${delivery.recipientAddress} | ${delivery.provider} | ${dateLabel(delivery.sentAt || delivery.attemptedAt)}`);
+      if (delivery.errorMessage) for (const line of wrap('Delivery error: ' + delivery.errorMessage, 120)) draw(line, { indent: 12 });
+    }
+    if (file.communicationDeliveries.length === 0) draw('No promotion email delivery attempts recorded.');
+  }
+
   section('Certification Note');
-  for (const line of wrap('This pack is generated from the digital promotion workflow records, including uploaded evidence metadata, governed stage decisions, assessor lifecycle records, committee meetings, appeal records, notifications, and audit-backed administrative actions.', 120)) draw(line);
+  for (const line of wrap('This pack is generated from the digital promotion workflow records, including signed versioned official forms, uploaded evidence metadata, governed stage decisions, assessor lifecycle records, committee meetings, appeal records, communication delivery evidence, records controls, and audit-backed administrative actions. Confidential sections are included only for authorised internal exports.', 120)) draw(line);
 
   const pdfBytes = await doc.save();
   await writeAuditLog(prisma, {

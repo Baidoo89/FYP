@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getEdgeAuthSession } from './lib/auth-edge';
 import { canAccessPath, getDashboardForRole } from './lib/rbac';
 
-const publicRoutes = ['/login', '/activate-account', '/verify-email', '/check-email', '/onboarding'];
-const publicApiRoutes = ['/api/health', '/api/auth/login', '/api/auth/activate-account', '/api/auth/verify-email', '/api/auth/resend-verification'];
+const publicRoutes = ['/login', '/activate-account', '/verify-email', '/check-email', '/onboarding', '/external-assessment'];
+const publicApiRoutes = ['/api/health', '/api/auth/login', '/api/auth/activate-account', '/api/auth/verify-email', '/api/auth/resend-verification', '/api/external-assessment'];
 const PUBLIC_FILE_PATTERN = /\.(?:png|jpg|jpeg|jfif|gif|webp|svg|ico|txt|xml|pdf|css|js|map)$/i;
 
 // Admin setup is a public route for initial account creation

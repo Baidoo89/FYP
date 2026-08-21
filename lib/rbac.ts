@@ -11,16 +11,16 @@ export const ROLE_DASHBOARDS: Record<AuthRole, string> = {
 
 export const ROUTE_ROLE_RULES: Array<{ prefix: string; roles: AuthRole[] }> = [
   { prefix: '/lecturer-portal', roles: ['STAFF', 'LECTURER'] },
-  { prefix: '/hod', roles: ['HOD_DEAN', 'SYSTEM_ADMIN'] },
-  { prefix: '/hr', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
-  { prefix: '/committee', roles: ['COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
+  { prefix: '/hod', roles: ['HOD_DEAN'] },
+  { prefix: '/hr', roles: ['HR_ADMIN'] },
+  { prefix: '/committee', roles: ['COMMITTEE_REVIEWER'] },
   { prefix: '/system-admin', roles: ['SYSTEM_ADMIN'] },
-  { prefix: '/dashboard', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
-  { prefix: '/analytics', roles: ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
-  { prefix: '/audit', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
-  { prefix: '/lecturers', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
-  { prefix: '/appraisals', roles: ['HR_ADMIN', 'SYSTEM_ADMIN'] },
-  { prefix: '/promotions', roles: ['HR_ADMIN', 'HOD_DEAN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
+  { prefix: '/dashboard', roles: ['HR_ADMIN'] },
+  { prefix: '/analytics', roles: ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER'] },
+  { prefix: '/audit', roles: ['HR_ADMIN', 'COMMITTEE_REVIEWER'] },
+  { prefix: '/lecturers', roles: ['HR_ADMIN'] },
+  { prefix: '/appraisals', roles: ['HR_ADMIN'] },
+  { prefix: '/promotions', roles: ['HR_ADMIN', 'HOD_DEAN', 'COMMITTEE_REVIEWER'] },
   { prefix: '/notifications', roles: ['STAFF', 'LECTURER', 'HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'] },
 ];
 

@@ -43,7 +43,7 @@ function requireHrodd(request: NextRequest) {
   if (!session || session.legacy) {
     return { session: null, response: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) };
   }
-  if ((session.role as Role) !== Role.HR_ADMIN && (session.role as Role) !== Role.SYSTEM_ADMIN) {
+  if ((session.role as Role) !== Role.HR_ADMIN) {
     return { session: null, response: NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 }) };
   }
   return { session, response: null };

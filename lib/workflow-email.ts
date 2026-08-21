@@ -1,5 +1,6 @@
-import { RequestStatus } from '@prisma/client';
+import { CommunicationPurpose, RequestStatus } from '@prisma/client';
 import { getAppBaseUrl } from './app-url';
+import { recordCommunicationDelivery } from './communication-delivery';
 import { sendEmail } from './email';
 
 type ApplicantMilestoneRequest = {
@@ -8,6 +9,7 @@ type ApplicantMilestoneRequest = {
   targetRank: string;
   status: RequestStatus;
   lecturer: {
+    id: number;
     name: string;
     email: string;
   };
@@ -23,14 +25,14 @@ type MilestoneCopy = {
 const MILESTONE_COPY: Partial<Record<RequestStatus, MilestoneCopy>> = {
   [RequestStatus.SUBMITTED]: {
     subject: 'Your GCTU promotion application has been submitted',
-    title: 'Application submitted for academic review',
-    summary: 'Your promotion application has been submitted and is ready for HOD/Dean review.',
-    nextStep: 'The assigned academic reviewer will review your evidence and either forward the application to HR or return it for correction.',
+    title: 'Application submitted for unit review',
+    summary: 'Your promotion application has been submitted and is ready for the assigned head of unit or academic reviewer.',
+    nextStep: 'The assigned reviewer will assess the file and either forward it through the configured promotion route or return permitted sections for correction.',
   },
   [RequestStatus.UNDER_HR_VERIFICATION]: {
     subject: 'Your GCTU promotion application has reached HR verification',
     title: 'Application forwarded to HR',
-    summary: 'Your HOD/Dean review has been recorded and the application has moved to HR verification.',
+    summary: 'Your department or unit review has been recorded and the application has moved to HRODD verification.',
     nextStep: 'HR will verify the uploaded evidence before eligibility is calculated.',
   },
   [RequestStatus.RETURNED_FOR_CORRECTION]: {
@@ -181,10 +183,103 @@ export async function sendApplicantMilestoneEmail(input: {
       }),
     });
 
+    await recordCommunicationDelivery({
+      promotionRequestId: request.id,
+      recipientUserId: request.lecturer.id,
+      purpose: CommunicationPurpose.PROMOTION_MILESTONE,
+      recipientAddress: request.lecturer.email,
+      subject: copy.subject,
+      provider: result.provider,
+      providerMessageId: result.id,
+      delivered: result.delivered,
+      metadata: { previousStatus: input.previousStatus, newStatus: request.status },
+    });
+
     return { attempted: true, ...result };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Workflow email delivery failed';
     console.error('Workflow email delivery failed:', message);
+    await recordCommunicationDelivery({
+      promotionRequestId: request.id,
+      recipientUserId: request.lecturer.id,
+      purpose: CommunicationPurpose.PROMOTION_MILESTONE,
+      recipientAddress: request.lecturer.email,
+      subject: copy.subject,
+      provider: 'error',
+      errorMessage: message,
+      metadata: { previousStatus: input.previousStatus, newStatus: request.status },
+    });
+    return { attempted: true, delivered: false, provider: 'error', error: message };
+  }
+}
+
+export async function sendApplicantQuarterlyStatusEmail(input: {
+  request: ApplicantMilestoneRequest;
+  currentStage?: string | null;
+  note?: string | null;
+}) {
+  const request = input.request;
+  const subject = `Quarterly status update for ${applicationCode(request.id)}`;
+  const actionUrl = `${getAppBaseUrl()}/lecturer-portal/application`;
+  const stage = input.currentStage ? formatEnum(input.currentStage) : formatEnum(request.status);
+  const note = input.note?.trim() || '';
+  const summary = `Your promotion application remains active at: ${stage}.`;
+
+  try {
+    const result = await sendEmail({
+      to: request.lecturer.email,
+      subject,
+      text: [
+        `Hello ${request.lecturer.name},`,
+        '',
+        'This is your scheduled GCTU promotion application status update.',
+        summary,
+        `Application ID: ${applicationCode(request.id)}`,
+        `Promotion path: ${formatEnum(request.currentRank)} to ${formatEnum(request.targetRank)}`,
+        note ? `HRODD note: ${note}` : '',
+        '',
+        'No action is required unless your portal shows a task or correction request.',
+        actionUrl,
+      ].filter(Boolean).join('\n'),
+      html: [
+        '<div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6; max-width: 620px;">',
+        '<p style="margin: 0 0 8px; color: #475569; font-size: 13px; font-weight: 700; text-transform: uppercase;">GCTU Digital Staff Promotion Support System</p>',
+        '<h2 style="margin: 0 0 12px; color: #0b2d5b; font-size: 22px;">Scheduled application status update</h2>',
+        `<p>Hello ${escapeHtml(request.lecturer.name)},</p>`,
+        '<p>This is your scheduled GCTU promotion application status update.</p>',
+        `<p><strong>${escapeHtml(summary)}</strong></p>`,
+        `<p>Application ID: ${applicationCode(request.id)}<br />Promotion path: ${escapeHtml(formatEnum(request.currentRank))} to ${escapeHtml(formatEnum(request.targetRank))}</p>`,
+        note ? `<p><strong>HRODD note:</strong> ${escapeHtml(note)}</p>` : '',
+        '<p>No action is required unless your portal shows a task or correction request.</p>',
+        `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; background: #0b2d5b; color: #ffffff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: 700;">Open Application</a></p>`,
+        '</div>',
+      ].join(''),
+    });
+
+    await recordCommunicationDelivery({
+      promotionRequestId: request.id,
+      recipientUserId: request.lecturer.id,
+      purpose: CommunicationPurpose.QUARTERLY_STATUS_UPDATE,
+      recipientAddress: request.lecturer.email,
+      subject,
+      provider: result.provider,
+      providerMessageId: result.id,
+      delivered: result.delivered,
+      metadata: { currentStage: input.currentStage || null, requestStatus: request.status },
+    });
+    return { attempted: true, ...result };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Quarterly status email delivery failed';
+    await recordCommunicationDelivery({
+      promotionRequestId: request.id,
+      recipientUserId: request.lecturer.id,
+      purpose: CommunicationPurpose.QUARTERLY_STATUS_UPDATE,
+      recipientAddress: request.lecturer.email,
+      subject,
+      provider: 'error',
+      errorMessage: message,
+      metadata: { currentStage: input.currentStage || null, requestStatus: request.status },
+    });
     return { attempted: true, delivered: false, provider: 'error', error: message };
   }
 }

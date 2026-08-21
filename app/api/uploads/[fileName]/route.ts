@@ -94,7 +94,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
   }
 
   const isOwner = documentRecord.request.lecturerId === session.userId;
-  const isWorkflowReviewer = ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN'].includes(session.role);
+  const isWorkflowReviewer = ['HOD_DEAN', 'HR_ADMIN', 'COMMITTEE_REVIEWER'].includes(session.role);
 
   if (!isOwner && !isWorkflowReviewer) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

@@ -5,8 +5,8 @@ import { writeAuditLog } from '../../../../../lib/audit-logger';
 import { prisma } from '../../../../../lib/prisma';
 import type { ApiResponse } from '../../../../../types';
 
-const VIEW_ROLES = new Set(['STAFF', 'LECTURER', 'HR_ADMIN', 'COMMITTEE_REVIEWER', 'SYSTEM_ADMIN']);
-const DECISION_ROLES = new Set(['HR_ADMIN', 'SYSTEM_ADMIN']);
+const VIEW_ROLES = new Set(['STAFF', 'LECTURER', 'HR_ADMIN', 'COMMITTEE_REVIEWER']);
+const DECISION_ROLES = new Set(['COMMITTEE_REVIEWER']);
 const APPEALABLE_STATUSES = new Set(['NOT_RECOMMENDED', 'REJECTED', 'COMPLETED', 'APPROVED_BY_AUTHORITY']);
 
 const TRANSITIONS: Partial<Record<AppealStatus, AppealStatus[]>> = {
@@ -79,8 +79,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const openAppeal = await prisma.appealCase.findFirst({ where: { promotionRequestId: requestId, status: { in: [AppealStatus.FILED, AppealStatus.UNDER_REVIEW, AppealStatus.HEARING_SCHEDULED] } }, select: { id: true } });
   if (openAppeal) return responseError('An open appeal already exists for this promotion file.', 409);
 
+  const filingWindowSetting = await prisma.systemSetting.findUnique({
+    where: { key: 'promotion.appeal.initialWindowMonths' },
+    select: { value: true },
+  });
+  const configuredMonths = Number(filingWindowSetting?.value || 1);
+  const filingWindowMonths = Number.isInteger(configuredMonths) && configuredMonths > 0 && configuredMonths <= 6
+    ? configuredMonths
+    : 1;
   const dueAt = new Date();
-  dueAt.setDate(dueAt.getDate() + 14);
+  dueAt.setMonth(dueAt.getMonth() + filingWindowMonths);
   const appeal = await prisma.appealCase.create({
     data: { promotionRequestId: requestId, filedById: session.userId, grounds, dueAt },
     select: { id: true, status: true, filedAt: true, dueAt: true },
@@ -93,7 +101,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     entityId: appeal.id,
     requestId,
     description: 'Promotion appeal filed by applicant.',
-    metadata: { status: appeal.status, dueAt: appeal.dueAt?.toISOString() },
+    metadata: {
+      status: appeal.status,
+      dueAt: appeal.dueAt?.toISOString(),
+      filingWindowMonths,
+      policySetting: 'promotion.appeal.initialWindowMonths',
+    },
   });
 
   return NextResponse.json({ success: true, data: appeal } as ApiResponse<typeof appeal>, { status: 201 });
