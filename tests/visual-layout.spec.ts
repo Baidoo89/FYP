@@ -255,3 +255,36 @@ for (const viewport of viewports) {
     await context.close();
   });
 }
+
+const applicantAccount = accounts.find((account) => account.key === 'applicant')!;
+
+for (const viewport of viewports) {
+  test(`${viewport.name}: automatic applicant route resolution`, async ({ browser }, testInfo) => {
+    const context = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height },
+      screen: { width: viewport.width, height: viewport.height },
+      deviceScaleFactor: 1,
+    });
+    await signIn(context, applicantAccount);
+    const page = await context.newPage();
+    const response = await page.goto('/lecturer-portal/start-application', { waitUntil: 'domcontentloaded', timeout: 45_000 });
+    expect(response?.status()).toBeLessThan(400);
+    await page.locator('body').waitFor({ state: 'visible' });
+    await waitForLoadingPanels(page);
+
+    await expect(page.getByText('Promotion route resolved automatically')).toBeVisible();
+    await expect(page.locator('select')).toHaveCount(0);
+
+    const metrics = await inspectLayout(page);
+    expect(metrics.fatalText).toEqual([]);
+    expect(metrics.unresolvedLoading).toEqual([]);
+    expect(metrics.verticalText).toEqual([]);
+    expect(metrics.overflowPixels, `Route page overflows by ${metrics.overflowPixels}px`).toBeLessThanOrEqual(2);
+    await page.screenshot({
+      path: testInfo.outputPath('screenshots', viewport.name, 'applicant', 'automatic-route-resolution.png'),
+      fullPage: true,
+      animations: 'disabled',
+    });
+    await context.close();
+  });
+}

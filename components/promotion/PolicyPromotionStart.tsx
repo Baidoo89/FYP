@@ -87,11 +87,12 @@ export default function PolicyPromotionStart({ currentRank, onCreated }: Props) 
       if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to load promotion routes.');
 
       const nextData = payload.data as RouteData;
+      const eligibleRoutes = nextData.routes.filter((route) => route.canStart);
       setLegacyFallback(false);
       setData(nextData);
       setSelectedCode((current) => {
-        if (nextData.routes.some((route) => route.code === current)) return current;
-        return nextData.routes.find((route) => route.canStart)?.code || nextData.routes[0]?.code || '';
+        if (eligibleRoutes.some((route) => route.code === current)) return current;
+        return eligibleRoutes[0]?.code || nextData.routes[0]?.code || '';
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load promotion routes.');
@@ -108,6 +109,12 @@ export default function PolicyPromotionStart({ currentRank, onCreated }: Props) 
     () => data?.routes.find((route) => route.code === selectedCode) || null,
     [data, selectedCode],
   );
+  const startableRoutes = useMemo(
+    () => data?.routes.filter((route) => route.canStart) || [],
+    [data],
+  );
+  const requiresRouteChoice = startableRoutes.length > 1;
+  const routeResolvedAutomatically = startableRoutes.length === 1;
 
   async function startApplication() {
     if (!selectedRoute?.canStart) return;
@@ -204,20 +211,41 @@ export default function PolicyPromotionStart({ currentRank, onCreated }: Props) 
 
       <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)]">
         <div className="min-w-0">
-          <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-slate-600">Available Policy Route</span>
-            <select value={selectedCode} onChange={(event) => setSelectedCode(event.target.value)} className="brand-input" disabled={saving || data.routes.length === 0}>
-              {data.routes.length === 0 ? (
-                <option value="">No route configured</option>
-              ) : (
-                data.routes.map((route) => (
+          {requiresRouteChoice ? (
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-slate-600">Available Promotion Options</span>
+              <select value={selectedCode} onChange={(event) => setSelectedCode(event.target.value)} className="brand-input" disabled={saving}>
+                {startableRoutes.map((route) => (
                   <option key={route.code} value={route.code}>
-                    {route.currentRank.name} to {route.targetRank.name}{route.canStart ? '' : ' - unavailable'}
+                    {route.currentRank.name} to {route.targetRank.name}
                   </option>
-                ))
-              )}
-            </select>
-          </label>
+                ))}
+              </select>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Your verified record matches more than one approved policy case.</p>
+            </label>
+          ) : selectedRoute ? (
+            <div className={`rounded-lg border p-4 ${routeResolvedAutomatically ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
+              <div className="flex items-start gap-3">
+                {routeResolvedAutomatically ? (
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" aria-hidden="true" />
+                ) : (
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-700" aria-hidden="true" />
+                )}
+                <div className="min-w-0">
+                  <p className={`text-xs font-bold uppercase tracking-[0.14em] ${routeResolvedAutomatically ? 'text-emerald-800' : 'text-rose-800'}`}>
+                    {routeResolvedAutomatically ? 'Promotion route resolved automatically' : 'Promotion route unavailable'}
+                  </p>
+                  <p className="mt-2 break-words text-base font-semibold text-slate-950">
+                    {selectedRoute.currentRank.name} to {selectedRoute.targetRank.name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800">
+              No promotion route is configured for the verified staff record.
+            </div>
+          )}
 
           {selectedRoute && (
             <div className="mt-5 border-t border-slate-200 pt-5">

@@ -15,10 +15,10 @@ export default function StartPromotionApplicationPage() {
           Applicant Case Builder
         </p>
         <h1 className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">Start Promotion Application</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Select an available route calculated from your HRODD-verified rank, service dates, staff category, and current policy version.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Your HRODD-verified staff record determines your promotion route and official forms.</p>
       </header>
 
-      <PolicyPromotionStart onCreated={() => router.push('/lecturer-portal/evidence')} />
+      <PolicyPromotionStart onCreated={() => router.push('/lecturer-portal/official-forms')} />
     </div>
   );
 }

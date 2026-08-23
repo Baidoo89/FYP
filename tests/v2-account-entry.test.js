@@ -47,13 +47,17 @@ test('staff activation requires a namespaced single-use token and verified HRODD
   assert.doesNotMatch(provisioning, /temporaryPassword/);
 });
 
-test('applicant start screen creates drafts through policy route selection', () => {
+test('applicant start screen resolves single routes and only asks for genuine policy alternatives', () => {
   const startPage = source('app/lecturer-portal/start-application/page.tsx');
   const startControl = source('components/promotion/PolicyPromotionStart.tsx');
   const requestApi = source('app/api/promotion-requests/route.ts');
 
   assert.match(startPage, /PolicyPromotionStart/);
+  assert.match(startPage, /lecturer-portal\/official-forms/);
   assert.match(startControl, /\/api\/lecturer\/promotion-routes/);
+  assert.match(startControl, /routeResolvedAutomatically/);
+  assert.match(startControl, /requiresRouteChoice/);
+  assert.match(startControl, /Promotion route resolved automatically/);
   assert.match(startControl, /JSON\.stringify\(\{ routeCode: selectedRoute\.code \}\)/);
   assert.match(requestApi, /resolveVerifiedPromotionRoute/);
 });
