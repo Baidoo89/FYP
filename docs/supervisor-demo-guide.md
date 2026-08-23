@@ -1,47 +1,26 @@
 # Supervisor Demonstration Guide
 
-## Project
+- **Project:** Design and Implementation of a Digital Staff Promotion Support System for GCTU
+- **Main presenter:** Benjamin Baidoo, 4231230141
 
-**Design and Implementation of a Digital Staff Promotion Support System for GCTU**
-**Main presenter:** Benjamin Baidoo, 4231230141
+Use these current documents:
 
-The current authoritative resources are:
+- [TEAM_TESTING_GUIDE.md](./TEAM_TESTING_GUIDE.md): authoritative accounts, routes, UAT cases, role/security tests, reset instructions, and acceptance criteria.
+- [final-demo-walkthrough.md](./final-demo-walkthrough.md): concise defence demonstration order.
+- [defence-day-checklist.md](./defence-day-checklist.md): operational defence-day checks.
+- `defence-pack/GCTU_Promotion_System_Defence_Benjamin_Baidoo.pptx`: presentation deck.
 
-- `docs/defence-prep.md` - presentation script and examiner Q&A;
-- `docs/final-demo-walkthrough.md` - verified routes, credentials, and demo sequence;
-- `docs/defence-day-checklist.md` - one-page operational checklist;
-- `defence-pack/GCTU_Promotion_System_Defence_Benjamin_Baidoo.pptx` - presentation deck.
+Do not use an old account list that assigns `Password123!` to Benjamin. The applicant accounts use `Applicant123!`; internal role accounts use `Password123!`.
 
-## One-command data reset
-
-```powershell
-npm run defence:prepare
-```
-
-This prepares a representative Benjamin Baidoo account, one completed application, and one six-document draft. It resets only Benjamin's demonstration workflow and can be rerun safely.
-
-Verify it with:
+Before a rehearsal:
 
 ```powershell
-npm run defence:check
 npm run db:health
+npm run defence:check
+npm run test:v2
+npm run build
 ```
 
-## Core defence statement
+The core defence statement is:
 
-The system is a role-based promotion decision-support platform. It does not automatically promote staff. It checks configured preconditions using HR-verified evidence, routes the case to human reviewers, and preserves status and audit history. The institutional authority retains the final decision.
-
-## Current account set
-
-All accounts use `Password123!`.
-
-| Role | Email |
-| --- | --- |
-| Benjamin Baidoo | `benjamin.baidoo@live.gctu.edu.gh` |
-| Computer Science HOD | `hod.dean@live.gctu.edu.gh` |
-| FoCIS Dean | `dean.focis@live.gctu.edu.gh` |
-| HR Administrator | `hr.admin@live.gctu.edu.gh` |
-| Committee Reviewer | `committee.reviewer@live.gctu.edu.gh` |
-| System Administrator | `system.admin@live.gctu.edu.gh` |
-
-The HOD and Dean accounts share the prototype's technical `HOD_DEAN` permission set, but System Admin enforces department scope for HOD accounts and faculty scope for Dean accounts.
+> The system is a governed, role-based promotion decision-support platform. It digitises verified Schedule J and Schedule K workflows, enforces evidence and authority gates, preserves confidentiality and audit history, and leaves the promotion decision with authorised GCTU officers and committees.

@@ -1,5 +1,7 @@
 # How to Use This Handbook
 
+> **Historical defence handbook:** This file describes an earlier limited demonstration state and must not be used for current credentials, workflow testing, route counts, or implementation status. Use [TEAM_TESTING_GUIDE.md](./TEAM_TESTING_GUIDE.md) for current testing and [final-demo-walkthrough.md](./final-demo-walkthrough.md) for the current demonstration.
+
 This handbook is the shared defence reference for the project team. It summarises the approved final report, explains the implemented software, identifies the exact claims the evidence supports, and gives consistent answers to likely examiner questions.
 
 Read it in three passes:
@@ -704,9 +706,9 @@ At the time this handbook was prepared, the verified demonstration state is:
 
 ## 6.1 Defence Credentials
 
-All representative accounts use `Password123!`.
+Applicant accounts use `Applicant123!`; internal role accounts use `Password123!`.
 
-- Benjamin Baidoo: `benjamin.baidoo@live.gctu.edu.gh`
+- Benjamin Baidoo: `4231230141@live.gctu.edu.gh`
 - Computer Science HOD: `hod.dean@live.gctu.edu.gh`
 - FoCIS Dean: `dean.focis@live.gctu.edu.gh`
 - HR Administrator: `hr.admin@live.gctu.edu.gh`
