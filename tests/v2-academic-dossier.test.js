@@ -90,17 +90,29 @@ test('best-N readiness rejects incomplete, duplicate, and out-of-route selection
 
 test('Schedule J dossier migration is additive and packet snapshots are modeled', () => {
   const migration = source('prisma/migrations/20260810160000_schedule_j_dossier_foundation/migration.sql');
+  const snapshotMigration = source('prisma/migrations/20260810170000_schedule_j_submission_snapshot/migration.sql');
   assert.match(migration, /CREATE TABLE "academic_dossiers"/);
   assert.match(migration, /CREATE TABLE "scholarly_outputs"/);
   assert.match(migration, /CREATE TABLE "academic_assessment_packets"/);
   assert.match(migration, /"outputSnapshot" JSONB/);
   assert.doesNotMatch(migration, /DROP\s+TABLE|DROP\s+COLUMN|DELETE\s+FROM|TRUNCATE/i);
+  assert.match(snapshotMigration, /ADD COLUMN\s+"dossierSnapshot" JSONB/);
+  assert.match(snapshotMigration, /ADD COLUMN\s+"dossierVersion" INTEGER/);
+  assert.match(snapshotMigration, /ADD COLUMN\s+"receiptNumber" TEXT/);
+  assert.match(snapshotMigration, /CREATE TABLE "scholarly_output_evidence"/);
+  assert.doesNotMatch(snapshotMigration, /DROP\s+TABLE|DROP\s+COLUMN|DELETE\s+FROM|TRUNCATE/i);
 
   for (const schemaPath of ['prisma/schema.prisma', 'prisma/schema.postgres.prisma']) {
     const schema = source(schemaPath);
     assert.match(schema, /model AcademicDossier \{/);
     assert.match(schema, /model ScholarlyOutput \{/);
+    assert.match(schema, /model ScholarlyOutputEvidence \{/);
     assert.match(schema, /model AcademicAssessmentPacket \{/);
+    assert.match(schema, /dossierVersion\s+Int\?/);
+    assert.match(schema, /dossierSnapshot\s+Json\?/);
+    assert.match(schema, /receiptNumber\s+String\?\s+@unique/);
+    assert.match(schema, /evidenceLinks\s+ScholarlyOutputEvidence\[\]/);
+    assert.match(schema, /scholarlyOutputEvidence\s+ScholarlyOutputEvidence\[\]/);
     assert.match(schema, /departmentVerificationStatus\s+VerificationStatus/);
     assert.match(schema, /libraryVerificationStatus\s+VerificationStatus/);
   }

@@ -480,6 +480,9 @@ model PromotionRequest {
   staffAssignmentId        Int?
   staffAssignment          StaffOrganizationAssignment? @relation(fields: [staffAssignmentId], references: [id], onDelete: Restrict)
   policySnapshot           Json?
+  dossierVersion           Int?
+  dossierSnapshot          Json?
+  receiptNumber            String?                      @unique
   currentRank              String
   targetRank               String
   yearsInCurrentRank       Int                          @default(0)
@@ -555,8 +558,9 @@ model Document {
 
   verifications           Verification[]
   fileBlob                DocumentFileBlob?
-  externalAssessorReports ExternalAssessor[] @relation("ExternalAssessorReports")
-  committeeMinutes        CommitteeMeeting[] @relation("CommitteeMinutes")
+  externalAssessorReports ExternalAssessor[]        @relation("ExternalAssessorReports")
+  committeeMinutes        CommitteeMeeting[]        @relation("CommitteeMinutes")
+  scholarlyOutputEvidence ScholarlyOutputEvidence[]
 
   @@unique([requestId, category])
   @@index([promotionRequestId])
@@ -1373,12 +1377,27 @@ model ScholarlyOutput {
   createdAt                    DateTime            @default(now())
   updatedAt                    DateTime            @updatedAt
 
-  packetItems AcademicAssessmentPacketItem[]
+  packetItems   AcademicAssessmentPacketItem[]
+  evidenceLinks ScholarlyOutputEvidence[]
 
   @@unique([academicDossierId, doi])
   @@index([academicDossierId, claimedForCurrentRoute])
   @@index([departmentVerificationStatus, libraryVerificationStatus])
   @@map("scholarly_outputs")
+}
+
+model ScholarlyOutputEvidence {
+  id                Int             @id @default(autoincrement())
+  scholarlyOutputId Int
+  scholarlyOutput   ScholarlyOutput @relation(fields: [scholarlyOutputId], references: [id], onDelete: Cascade)
+  documentId        Int
+  document          Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  purpose           String?
+  createdAt         DateTime        @default(now())
+
+  @@unique([scholarlyOutputId, documentId], map: "scholarly_output_evidence_output_document_key")
+  @@index([documentId])
+  @@map("scholarly_output_evidence")
 }
 
 model AcademicAssessmentPacket {
