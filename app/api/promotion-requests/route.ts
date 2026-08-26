@@ -83,6 +83,12 @@ function buildRequestSummary(requestRecord: any, requiredDocuments: number = REQ
     eligibilityReason: requestRecord.eligibilityReason,
     yearsInCurrentRank: requestRecord.yearsInCurrentRank,
     adminComment: requestRecord.adminComment,
+    promotionRoute: requestRecord.promotionRoute
+      ? {
+          code: requestRecord.promotionRoute.code,
+          name: requestRecord.promotionRoute.name,
+        }
+      : null,
     createdAt: requestRecord.createdAt,
     updatedAt: requestRecord.updatedAt,
     documentCount: documents.length,
@@ -167,6 +173,12 @@ export async function GET(request: NextRequest) {
         include: {
           departmentRef: { include: { faculty: true } },
           faculty: true,
+        },
+      },
+      promotionRoute: {
+        select: {
+          code: true,
+          name: true,
         },
       },
       requestedBy: true,

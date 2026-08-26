@@ -60,4 +60,6 @@ test('applicant start screen resolves single routes and only asks for genuine po
   assert.match(startControl, /Promotion route resolved automatically/);
   assert.match(startControl, /JSON\.stringify\(\{ routeCode: selectedRoute\.code \}\)/);
   assert.match(requestApi, /resolveVerifiedPromotionRoute/);
+  assert.match(requestApi, /promotionRoute: requestRecord\.promotionRoute/);
+  assert.match(requestApi, /promotionRoute:\s*\{\s*select:\s*\{\s*code: true,\s*name: true/s);
 });
