@@ -10,7 +10,12 @@ import SidebarNavLink from './SidebarNavLink';
 import LecturerHeader from './LecturerHeader';
 import ThemeToggle from './ThemeToggle';
 import BottomNavigation from './BottomNavigation';
-import ApplicantApplicationNav, { APPLICANT_WORKSPACE_PATHS, isApplicantWorkspacePath } from './promotion/ApplicantApplicationNav';
+import ApplicantApplicationNav, {
+  APPLICANT_APPLICATION_PATHS,
+  APPLICANT_DOCUMENT_PATHS,
+  APPLICANT_FEEDBACK_PATHS,
+  isApplicantWorkspacePath,
+} from './promotion/ApplicantApplicationNav';
 
 type AppShellProps = {
   children: ReactNode;
@@ -121,7 +126,9 @@ export default function AppShell({ children }: AppShellProps) {
   const navItems: NavItem[] = isLecturerNav
     ? [
         { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview', exact: true },
-        { href: '/lecturer-portal/application', icon: 'PR', label: 'Application Workspace', subtitle: 'Prepare, submit and track', activePaths: APPLICANT_WORKSPACE_PATHS },
+        { href: '/lecturer-portal/application', icon: 'AP', label: 'My Applications', subtitle: 'Prepare, submit and track', activePaths: APPLICANT_APPLICATION_PATHS },
+        { href: '/lecturer-portal/official-forms', icon: 'DC', label: 'Documents', subtitle: 'Forms, evidence and dossier', activePaths: APPLICANT_DOCUMENT_PATHS },
+        { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback & Queries', subtitle: 'Corrections and responses', activePaths: APPLICANT_FEEDBACK_PATHS },
       ]
     : isHrNav
       ? [

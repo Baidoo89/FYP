@@ -1,9 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, BriefcaseBusiness, Building2, ClipboardList, FileCheck2, FileText, LayoutDashboard, Settings, UserRound, UsersRound } from 'lucide-react';
+import { Bell, BriefcaseBusiness, Building2, ClipboardList, FileText, FolderOpen, LayoutDashboard, MessageSquareText, Settings, UserRound, UsersRound } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '../lib/utils';
+import {
+  APPLICANT_APPLICATION_PATHS,
+  APPLICANT_DOCUMENT_PATHS,
+  APPLICANT_FEEDBACK_PATHS,
+} from './promotion/ApplicantApplicationNav';
 
 type PortalRole = 'STAFF' | 'LECTURER' | 'HOD_DEAN' | 'HR_ADMIN' | 'COMMITTEE_REVIEWER' | 'SYSTEM_ADMIN';
 
@@ -17,21 +22,23 @@ type BottomNavItem = {
   label: string;
   icon: typeof LayoutDashboard;
   key?: string;
+  exact?: boolean;
+  activePaths?: string[];
 };
 
 const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
   STAFF: [
-    { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/lecturer-portal/application', label: 'Application', icon: BriefcaseBusiness },
-    { href: '/lecturer-portal/official-forms', label: 'Forms', icon: FileCheck2 },
-    { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },
+    { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+    { href: '/lecturer-portal/application', label: 'Applications', icon: BriefcaseBusiness, activePaths: APPLICANT_APPLICATION_PATHS },
+    { href: '/lecturer-portal/official-forms', label: 'Documents', icon: FolderOpen, activePaths: APPLICANT_DOCUMENT_PATHS },
+    { href: '/lecturer-portal/queries', label: 'Feedback', icon: MessageSquareText, activePaths: APPLICANT_FEEDBACK_PATHS },
     { href: '/lecturer-portal/notifications', label: 'Alerts', icon: Bell },
   ],
   LECTURER: [
-    { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/lecturer-portal/application', label: 'Application', icon: BriefcaseBusiness },
-    { href: '/lecturer-portal/official-forms', label: 'Forms', icon: FileCheck2 },
-    { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },
+    { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+    { href: '/lecturer-portal/application', label: 'Applications', icon: BriefcaseBusiness, activePaths: APPLICANT_APPLICATION_PATHS },
+    { href: '/lecturer-portal/official-forms', label: 'Documents', icon: FolderOpen, activePaths: APPLICANT_DOCUMENT_PATHS },
+    { href: '/lecturer-portal/queries', label: 'Feedback', icon: MessageSquareText, activePaths: APPLICANT_FEEDBACK_PATHS },
     { href: '/lecturer-portal/notifications', label: 'Alerts', icon: Bell },
   ],
   HR_ADMIN: [
@@ -76,7 +83,11 @@ function isActive(role: PortalRole | null, item: BottomNavItem, pathname: string
     return pathname === path && segment !== 'all';
   }
 
-  return pathname === path || pathname.startsWith(`${path}/`);
+  if (item.activePaths?.some((activePath) => pathname === activePath || pathname.startsWith(activePath + '/'))) {
+    return true;
+  }
+
+  return item.exact ? pathname === path : pathname === path || pathname.startsWith(path + '/');
 }
 
 export default function BottomNavigation({ role, notificationCount = 0 }: BottomNavigationProps) {

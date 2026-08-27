@@ -53,6 +53,7 @@ test('applicant application workspace uses verified routes and consolidated prep
   const startControl = source('components/promotion/PolicyPromotionStart.tsx');
   const applicationNav = source('components/promotion/ApplicantApplicationNav.tsx');
   const appShell = source('components/AppShell.tsx');
+  const bottomNavigation = source('components/BottomNavigation.tsx');
   const evidencePage = source('app/lecturer-portal/evidence/page.tsx');
   const requestApi = source('app/api/promotion-requests/route.ts');
 
@@ -70,8 +71,19 @@ test('applicant application workspace uses verified routes and consolidated prep
   assert.match(startControl, /JSON\.stringify\(\{ routeCode: selectedRoute\.code \}\)/);
   assert.match(applicationNav, /Official Form/);
   assert.match(applicationNav, /Academic Dossier/);
-  assert.match(appShell, /Application Workspace/);
+  assert.match(appShell, /label: 'My Applications'/);
+  assert.match(appShell, /label: 'Documents'/);
+  assert.match(appShell, /label: 'Feedback & Queries'/);
   assert.doesNotMatch(appShell, /label: 'Start Application'/);
+  assert.match(applicationNav, /APPLICANT_APPLICATION_PATHS/);
+  assert.match(applicationNav, /APPLICANT_DOCUMENT_PATHS/);
+  assert.match(applicationNav, /APPLICANT_FEEDBACK_PATHS/);
+  assert.match(bottomNavigation, /label: 'Applications'/);
+  assert.match(bottomNavigation, /label: 'Documents'/);
+  assert.match(bottomNavigation, /label: 'Feedback'/);
+  assert.match(bottomNavigation, /activePaths: APPLICANT_APPLICATION_PATHS/);
+  assert.match(bottomNavigation, /activePaths: APPLICANT_DOCUMENT_PATHS/);
+  assert.match(bottomNavigation, /exact: true/);
   assert.match(evidencePage, /Continue to Official Form/);
   assert.doesNotMatch(evidencePage, /draftReadyForSubmission/);
   assert.match(requestApi, /resolveVerifiedPromotionRoute/);

@@ -276,6 +276,17 @@ for (const viewport of viewports) {
     await expect(page.getByText('Application checklist')).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Application workspace' })).toBeVisible();
 
+    if (viewport.name === 'desktop') {
+      await expect(page.getByRole('link', { name: 'My Applications' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Documents' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Feedback & Queries' })).toBeVisible();
+    } else {
+      const mobileNavigation = page.getByRole('navigation', { name: 'Primary mobile navigation' });
+      await expect(mobileNavigation.getByRole('link', { name: 'Applications' })).toBeVisible();
+      await expect(mobileNavigation.getByRole('link', { name: 'Documents' })).toBeVisible();
+      await expect(mobileNavigation.getByRole('link', { name: 'Feedback' })).toBeVisible();
+    }
+
     const metrics = await inspectLayout(page);
     expect(metrics.fatalText).toEqual([]);
     expect(metrics.unresolvedLoading).toEqual([]);

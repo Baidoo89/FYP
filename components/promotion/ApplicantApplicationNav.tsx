@@ -30,9 +30,27 @@ const items = [
 
 const closedStatuses = new Set(['REJECTED', 'COMPLETED']);
 
-export const APPLICANT_WORKSPACE_PATHS = [
+export const APPLICANT_APPLICATION_PATHS = [
+  '/lecturer-portal/application',
+  '/lecturer-portal/applications',
   '/lecturer-portal/start-application',
-  ...items.map((item) => item.href),
+  '/lecturer-portal/eligibility',
+];
+
+export const APPLICANT_DOCUMENT_PATHS = [
+  '/lecturer-portal/official-forms',
+  '/lecturer-portal/evidence',
+  '/lecturer-portal/academic-dossier',
+];
+
+export const APPLICANT_FEEDBACK_PATHS = [
+  '/lecturer-portal/queries',
+];
+
+export const APPLICANT_WORKSPACE_PATHS = [
+  ...APPLICANT_APPLICATION_PATHS,
+  ...APPLICANT_DOCUMENT_PATHS,
+  ...APPLICANT_FEEDBACK_PATHS,
 ];
 
 export function isApplicantWorkspacePath(pathname: string) {
