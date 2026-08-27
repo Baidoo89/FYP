@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, BriefcaseBusiness, Building2, ClipboardList, FileText, LayoutDashboard, Settings, UserRound, UsersRound } from 'lucide-react';
+import { Bell, BriefcaseBusiness, Building2, ClipboardList, FileCheck2, FileText, LayoutDashboard, Settings, UserRound, UsersRound } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '../lib/utils';
 
@@ -22,17 +22,17 @@ type BottomNavItem = {
 const itemsByRole: Partial<Record<PortalRole, BottomNavItem[]>> = {
   STAFF: [
     { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/lecturer-portal/application', label: 'Application', icon: BriefcaseBusiness },
+    { href: '/lecturer-portal/official-forms', label: 'Forms', icon: FileCheck2 },
     { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },
-    { href: '/lecturer-portal/application', label: 'Promotion', icon: BriefcaseBusiness },
     { href: '/lecturer-portal/notifications', label: 'Alerts', icon: Bell },
-    { href: '/lecturer-portal/profile', label: 'Profile', icon: UserRound },
   ],
   LECTURER: [
     { href: '/lecturer-portal', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/lecturer-portal/application', label: 'Application', icon: BriefcaseBusiness },
+    { href: '/lecturer-portal/official-forms', label: 'Forms', icon: FileCheck2 },
     { href: '/lecturer-portal/evidence', label: 'Evidence', icon: FileText },
-    { href: '/lecturer-portal/application', label: 'Promotion', icon: BriefcaseBusiness },
     { href: '/lecturer-portal/notifications', label: 'Alerts', icon: Bell },
-    { href: '/lecturer-portal/profile', label: 'Profile', icon: UserRound },
   ],
   HR_ADMIN: [
     { href: '/hr/dashboard', label: 'Dashboard', icon: LayoutDashboard },

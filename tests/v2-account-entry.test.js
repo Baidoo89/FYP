@@ -47,18 +47,33 @@ test('staff activation requires a namespaced single-use token and verified HRODD
   assert.doesNotMatch(provisioning, /temporaryPassword/);
 });
 
-test('applicant start screen resolves single routes and only asks for genuine policy alternatives', () => {
+test('applicant application workspace uses verified routes and consolidated preparation', () => {
   const startPage = source('app/lecturer-portal/start-application/page.tsx');
+  const applicationPage = source('app/lecturer-portal/application/page.tsx');
   const startControl = source('components/promotion/PolicyPromotionStart.tsx');
+  const applicationNav = source('components/promotion/ApplicantApplicationNav.tsx');
+  const appShell = source('components/AppShell.tsx');
+  const evidencePage = source('app/lecturer-portal/evidence/page.tsx');
   const requestApi = source('app/api/promotion-requests/route.ts');
 
-  assert.match(startPage, /PolicyPromotionStart/);
-  assert.match(startPage, /lecturer-portal\/official-forms/);
+  assert.match(startPage, /redirect\('\/lecturer-portal\/application'\)/);
+  assert.match(applicationPage, /PolicyPromotionStart/);
+  assert.doesNotMatch(applicationPage, /StartPromotionRequestCard/);
+  assert.match(applicationPage, /router\.push\('\/lecturer-portal\/official-forms'\)/);
+  assert.match(applicationPage, /formsReady/);
+  assert.match(applicationPage, /Application checklist/);
   assert.match(startControl, /\/api\/lecturer\/promotion-routes/);
   assert.match(startControl, /routeResolvedAutomatically/);
   assert.match(startControl, /requiresRouteChoice/);
   assert.match(startControl, /Promotion route resolved automatically/);
+  assert.doesNotMatch(startControl, /StartPromotionRequestCard/);
   assert.match(startControl, /JSON\.stringify\(\{ routeCode: selectedRoute\.code \}\)/);
+  assert.match(applicationNav, /Official Form/);
+  assert.match(applicationNav, /Academic Dossier/);
+  assert.match(appShell, /Application Workspace/);
+  assert.doesNotMatch(appShell, /label: 'Start Application'/);
+  assert.match(evidencePage, /Continue to Official Form/);
+  assert.doesNotMatch(evidencePage, /draftReadyForSubmission/);
   assert.match(requestApi, /resolveVerifiedPromotionRoute/);
   assert.match(requestApi, /promotionRoute: requestRecord\.promotionRoute/);
   assert.match(requestApi, /promotionRoute:\s*\{\s*select:\s*\{\s*code: true,\s*name: true/s);

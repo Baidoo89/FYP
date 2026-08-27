@@ -254,7 +254,7 @@ export default function EvidencePage() {
   const readinessMetricDetail = isUploadStage ? `${readinessPercent}% upload readiness` : `${readinessPercent}% verification readiness`;
   const uploadLocked = Boolean(data?.request && !['DRAFT', 'RETURNED_FOR_CORRECTION'].includes(data.request.status));
   const correctionReady = Boolean(isReturnedApplication && data?.request?.id && attentionDocuments.length === 0);
-  const draftReadyForSubmission = Boolean(isDraftApplication && data?.request?.id && data.stats.requiredCategories > 0 && missingRequired.length === 0);
+  const draftEvidenceComplete = Boolean(isDraftApplication && data?.request?.id && data.stats.requiredCategories > 0 && missingRequired.length === 0);
   const needsAttentionCount = (data?.stats.returnedCount || 0) + (data?.stats.rejectedCount || 0);
   const needsAttentionDetail = needsAttentionCount === 0
     ? 'No returned or rejected evidence'
@@ -422,7 +422,7 @@ export default function EvidencePage() {
           </div>
         </section>
 
-        <PolicyPromotionStart currentRank={data.currentRank} onCreated={() => loadEvidence()} />
+        <PolicyPromotionStart onCreated={() => loadEvidence()} />
 
         <Link href="/lecturer-portal" className="inline-flex rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
           Back to Dashboard
@@ -485,30 +485,23 @@ export default function EvidencePage() {
         )}
       </section>
 
-      {draftReadyForSubmission && (
-        <section className="pro-card border-teal-200 bg-teal-50/60 p-5">
+      {draftEvidenceComplete && (
+        <section className="border-y border-teal-200 bg-teal-50/60 px-1 py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">Ready for submission</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">Evidence complete</p>
               <h2 className="mt-2 text-xl font-bold text-gray-950">Required evidence has been uploaded</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-700">
-                Submit to begin department review.
+                Continue to the official form, then return to Application Overview for the final readiness check and submission.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleResubmit}
-              disabled={resubmitting}
-              className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-60"
+            <Link
+              href="/lecturer-portal/official-forms"
+              className="inline-flex min-h-10 items-center justify-center rounded-md bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-900"
             >
-              {resubmitting ? 'Submitting...' : 'Submit Application'}
-            </button>
+              Continue to Official Form
+            </Link>
           </div>
-          {resubmitMessage && (
-            <p className={`mt-4 text-sm font-semibold ${resubmitMessage.includes('successfully') ? 'text-emerald-800' : 'text-amber-900'}`}>
-              {resubmitMessage}
-            </p>
-          )}
         </section>
       )}
 

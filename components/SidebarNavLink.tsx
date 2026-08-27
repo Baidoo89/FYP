@@ -33,6 +33,8 @@ type SidebarNavLinkProps = {
   icon: string;
   children: ReactNode;
   subtitle?: ReactNode;
+  exact?: boolean;
+  activePaths?: string[];
   onNavigate?: () => void;
 };
 
@@ -71,7 +73,7 @@ const iconMap = {
   VQ: FileCheck2,
 } as const;
 
-export default function SidebarNavLink({ href, icon, children, onNavigate }: SidebarNavLinkProps) {
+export default function SidebarNavLink({ href, icon, children, exact = false, activePaths = [], onNavigate }: SidebarNavLinkProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const normalizedHref = href.split('#')[0].split('?')[0];
@@ -80,9 +82,11 @@ export default function SidebarNavLink({ href, icon, children, onNavigate }: Sid
   const queryMatches = hasSpecificQuery
     ? Array.from(hrefQuery.entries()).every(([key, value]) => searchParams.get(key) === value)
     : true;
-  const isActive = hasSpecificQuery
-    ? pathname === normalizedHref && queryMatches
+  const pathMatches = exact
+    ? pathname === normalizedHref
     : pathname === normalizedHref || pathname.startsWith(`${normalizedHref}/`);
+  const additionalPathMatches = activePaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isActive = additionalPathMatches || (hasSpecificQuery ? pathname === normalizedHref && queryMatches : pathMatches);
   const Icon = iconMap[icon as keyof typeof iconMap] || Square;
 
   return (

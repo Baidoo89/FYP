@@ -2,21 +2,31 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { BookOpenCheck, CheckCircle2, FileCheck2, Files, Send, type LucideIcon } from 'lucide-react';
 import PromotionApplicationDetail, { type PromotionApplicationDetailRecord } from '../../../components/promotion/PromotionApplicationDetail';
 import GovernedStageWorkspace from '../../../components/promotion/GovernedStageWorkspace';
 import AppealPanel from '../../../components/promotion/AppealPanel';
 import StatusBadge from '../../../components/promotion/StatusBadge';
-import StartPromotionRequestCard from '../../../components/promotion/StartPromotionRequestCard';
+import PolicyPromotionStart from '../../../components/promotion/PolicyPromotionStart';
 import { ErrorState, LoadingState, PrintSummaryButton } from '../../../components/enterprise-ui';
 import { useToast } from '../../../components/Toast';
 
 type PromotionRequest = PromotionApplicationDetailRecord & {
   submittedAt?: string | null;
   verifiedAt?: string | null;
+  promotionRoute?: { code: string; name: string } | null;
 };
 
-type LecturerProfile = {
-  currentRank: string | null;
+type PreparationReadiness = {
+  requestId: number;
+  loading: boolean;
+  formsRequired: number;
+  formsCompleted: number;
+  formsReady: boolean;
+  dossierRequired: boolean;
+  dossierReady: boolean;
+  error?: string;
 };
 
 const activeStatuses = new Set([
@@ -40,25 +50,43 @@ function label(value?: string | null) {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
-function nextActionFor(request: PromotionRequest) {
+function nextActionFor(request: PromotionRequest, preparation: PreparationReadiness | null) {
   const docs = request.documents || [];
   const required = request.requiredDocumentCount && request.requiredDocumentCount > 0 ? request.requiredDocumentCount : 3;
   const pending = docs.filter((document) => document.verificationStatus === 'PENDING').length;
   const returned = docs.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length;
 
   if (request.status === 'DRAFT') {
+    if (!preparation || preparation.loading || !preparation.formsReady) {
+      return {
+        title: 'Complete the official promotion form',
+        detail: preparation?.loading ? 'Checking your route-specific form status.' : 'Complete every required field, confirm the declaration, sign, and submit the controlled form.',
+        action: 'Open Official Form',
+        href: '/lecturer-portal/official-forms',
+      };
+    }
+
     if (docs.length < required) {
       return {
         title: 'Upload required evidence',
-        detail: `Upload all ${required} required evidence categories before submitting your application.`,
+        detail: `Upload all ${required} required evidence categories that support the claims in your official form.`,
         action: 'Upload Evidence',
         href: '/lecturer-portal/evidence',
       };
     }
 
+    if (preparation.dossierRequired && !preparation.dossierReady) {
+      return {
+        title: 'Complete the academic dossier',
+        detail: 'Add the Schedule J scholarly outputs, select the required assessment set, and confirm the declaration.',
+        action: 'Open Academic Dossier',
+        href: '/lecturer-portal/academic-dossier',
+      };
+    }
+
     return {
       title: 'Submit your application',
-      detail: 'Your evidence is uploaded. Submit the application to begin department review.',
+      detail: 'The official form, required evidence, and route-specific dossier are ready. Submit to begin department review.',
       action: 'Submit Application',
       href: null,
     };
@@ -128,8 +156,9 @@ function nextActionFor(request: PromotionRequest) {
 
 export default function ApplicationPage() {
   const toast = useToast();
+  const router = useRouter();
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
-  const [lecturerProfile, setLecturerProfile] = useState<LecturerProfile | null>(null);
+  const [preparation, setPreparation] = useState<PreparationReadiness | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -141,7 +170,8 @@ export default function ApplicationPage() {
     [requests, selectedId]
   );
 
-  const nextAction = selectedRequest ? nextActionFor(selectedRequest) : null;
+  const currentPreparation = selectedRequest && preparation?.requestId === selectedRequest.id ? preparation : null;
+  const nextAction = selectedRequest ? nextActionFor(selectedRequest, currentPreparation) : null;
 
   async function loadApplications(preferredId?: number | null) {
     setLoading(true);
@@ -158,16 +188,6 @@ export default function ApplicationPage() {
       const data = (payload.data || []) as PromotionRequest[];
       setRequests(data);
 
-      if (data[0]) {
-        setLecturerProfile({ currentRank: data[0].currentRank });
-      } else {
-        const profileResponse = await fetch('/api/lecturer/dashboard', { cache: 'no-store' });
-        const profilePayload = await profileResponse.json();
-        if (profileResponse.ok && profilePayload.success) {
-          setLecturerProfile({ currentRank: profilePayload.data.user.currentRank || null });
-        }
-      }
-
       const next = data.find((request) => request.id === preferredId) || data.find((request) => activeStatuses.has(request.status)) || data[0] || null;
       setSelectedId(next?.id || null);
     } catch (loadError) {
@@ -180,6 +200,72 @@ export default function ApplicationPage() {
   useEffect(() => {
     loadApplications();
   }, []);
+
+  useEffect(() => {
+    if (!selectedRequest) {
+      setPreparation(null);
+      return;
+    }
+
+    const dossierRequired = Boolean(selectedRequest.promotionRoute?.code.startsWith('J-'));
+    let cancelled = false;
+    setPreparation({
+      requestId: selectedRequest.id,
+      loading: true,
+      formsRequired: 0,
+      formsCompleted: 0,
+      formsReady: false,
+      dossierRequired,
+      dossierReady: !dossierRequired,
+    });
+
+    async function loadPreparation() {
+      try {
+        const formsResponse = await fetch(`/api/promotion-requests/${selectedRequest.id}/forms`, { cache: "no-store" });
+        const formsPayload = await formsResponse.json();
+        if (!formsResponse.ok || !formsPayload.success) throw new Error(formsPayload.error || 'Unable to check official forms.');
+        const forms = Array.isArray(formsPayload.data?.forms) ? formsPayload.data.forms : [];
+        const completedForms = forms.filter((item: { submission?: { status?: string } | null }) => ['FROZEN', 'SUBMITTED', 'SUPERSEDED'].includes(item.submission?.status || '')).length;
+
+        let dossierReady = !dossierRequired;
+        if (dossierRequired) {
+          const dossierResponse = await fetch('/api/lecturer/academic-dossier', { cache: 'no-store' });
+          const dossierPayload = await dossierResponse.json();
+          dossierReady = Boolean(dossierResponse.ok && dossierPayload.success && dossierPayload.data?.readiness?.readyForSubmission);
+        }
+
+        if (!cancelled) {
+          setPreparation({
+            requestId: selectedRequest.id,
+            loading: false,
+            formsRequired: forms.length,
+            formsCompleted: completedForms,
+            formsReady: forms.length > 0 && completedForms === forms.length,
+            dossierRequired,
+            dossierReady,
+          });
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setPreparation({
+            requestId: selectedRequest.id,
+            loading: false,
+            formsRequired: 0,
+            formsCompleted: 0,
+            formsReady: false,
+            dossierRequired,
+            dossierReady: !dossierRequired,
+            error: loadError instanceof Error ? loadError.message : 'Unable to check application preparation.',
+          });
+        }
+      }
+    }
+
+    void loadPreparation();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRequest?.id, selectedRequest?.promotionRoute?.code]);
 
   async function submitApplication() {
     if (!selectedRequest) return;
@@ -232,7 +318,7 @@ export default function ApplicationPage() {
 
         </section>
 
-        <StartPromotionRequestCard currentRank={lecturerProfile?.currentRank || null} onCreated={(request) => loadApplications(request.id)} />
+        <PolicyPromotionStart onCreated={() => router.push('/lecturer-portal/official-forms')} />
 
 
       </div>
@@ -243,6 +329,11 @@ export default function ApplicationPage() {
   const verified = documents.filter((document) => document.verificationStatus === 'VERIFIED').length;
   const pending = documents.filter((document) => document.verificationStatus === 'PENDING').length;
   const returned = documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length;
+  const requiredEvidence = selectedRequest.requiredDocumentCount && selectedRequest.requiredDocumentCount > 0 ? selectedRequest.requiredDocumentCount : 3;
+  const evidenceReady = documents.length >= requiredEvidence;
+  const formsReady = Boolean(currentPreparation?.formsReady);
+  const dossierReady = Boolean(!currentPreparation?.dossierRequired || currentPreparation.dossierReady);
+  const readyForFormalSubmission = formsReady && evidenceReady && dossierReady;
 
   return (
     <div className="min-w-0 space-y-6">
@@ -256,8 +347,11 @@ export default function ApplicationPage() {
 
           </div>
           <div className="flex min-w-0 flex-wrap gap-2">
-            <Link href="/lecturer-portal/evidence" className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
-              Upload Evidence
+            <Link href="/lecturer-portal/official-forms" className="inline-flex min-h-10 items-center gap-2 rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primaryDark">
+              <FileCheck2 className="h-4 w-4" aria-hidden="true" /> Official Form
+            </Link>
+            <Link href="/lecturer-portal/evidence" className="inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
+              <Files className="h-4 w-4" aria-hidden="true" /> Evidence
             </Link>
             <PrintSummaryButton />
           </div>
@@ -299,6 +393,59 @@ export default function ApplicationPage() {
         <TrackerMetric code="RET" label="Returned" value={returned} tone="rose" />
       </section>
 
+      {selectedRequest.status === 'DRAFT' && (
+        <section className="min-w-0 border-y border-slate-200 py-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">Draft Preparation</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-950">Application checklist</h2>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">Complete the official form first, then attach its supporting evidence. Draft evidence may still be uploaded before the form when the files are already available.</p>
+            </div>
+            <span className={`w-fit rounded-md border px-2 py-1 text-xs font-bold ${readyForFormalSubmission ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+              {readyForFormalSubmission ? 'Ready to submit' : 'Preparation in progress'}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <PreparationStep
+              code="01"
+              title="Official Form"
+              detail={currentPreparation?.loading ? 'Checking form status' : `${currentPreparation?.formsCompleted || 0}/${currentPreparation?.formsRequired || 1} signed and frozen`}
+              href="/lecturer-portal/official-forms"
+              icon={FileCheck2}
+              complete={formsReady}
+            />
+            <PreparationStep
+              code="02"
+              title="Supporting Evidence"
+              detail={`${documents.length}/${requiredEvidence} required categories uploaded`}
+              href="/lecturer-portal/evidence"
+              icon={Files}
+              complete={evidenceReady}
+            />
+            {currentPreparation?.dossierRequired ? (
+              <PreparationStep
+                code="03"
+                title="Academic Dossier"
+                detail={currentPreparation.dossierReady ? 'Schedule J dossier ready' : 'Scholarly outputs and declaration required'}
+                href="/lecturer-portal/academic-dossier"
+                icon={BookOpenCheck}
+                complete={currentPreparation.dossierReady}
+              />
+            ) : null}
+            <PreparationStep
+              code={currentPreparation?.dossierRequired ? '04' : '03'}
+              title="Review and Submit"
+              detail={readyForFormalSubmission ? 'All applicant requirements complete' : 'Complete the outstanding items first'}
+              href="/lecturer-portal/application"
+              icon={Send}
+              complete={readyForFormalSubmission}
+            />
+          </div>
+          {currentPreparation?.error ? <p className="mt-3 text-sm font-semibold text-amber-800">{currentPreparation.error}</p> : null}
+        </section>
+      )}
+
       {nextAction && (
         <section className="pro-card p-5">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
@@ -338,6 +485,35 @@ export default function ApplicationPage() {
         Back to Dashboard
       </Link>
     </div>
+  );
+}
+
+function PreparationStep({
+  code,
+  title,
+  detail,
+  href,
+  icon: Icon,
+  complete,
+}: {
+  code: string;
+  title: string;
+  detail: string;
+  href: string;
+  icon: LucideIcon;
+  complete: boolean;
+}) {
+  return (
+    <Link href={href} className="group flex min-h-28 min-w-0 items-start gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-primary/30 hover:bg-brand-primarySoft">
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border ${complete ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-brand-primary'}`}>
+        {complete ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <Icon className="h-4 w-4" aria-hidden="true" />}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Step {code}</span>
+        <span className="mt-1 block font-semibold text-slate-950">{title}</span>
+        <span className="mt-1 block text-xs leading-5 text-slate-600">{detail}</span>
+      </span>
+    </Link>
   );
 }
 

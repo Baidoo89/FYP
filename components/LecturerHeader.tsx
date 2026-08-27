@@ -5,7 +5,10 @@ import { usePathname } from 'next/navigation';
 
 const BREADCRUMB_MAP: Record<string, { label: string; code: string }> = {
   '/lecturer-portal': { label: 'Dashboard', code: 'DB' },
-  '/lecturer-portal/application': { label: 'Promotion Requests', code: 'PR' },
+  '/lecturer-portal/start-application': { label: 'Application Workspace', code: 'AP' },
+  '/lecturer-portal/application': { label: 'Application Workspace', code: 'AP' },
+  '/lecturer-portal/official-forms': { label: 'Official Promotion Form', code: 'OF' },
+  '/lecturer-portal/academic-dossier': { label: 'Academic Dossier', code: 'AD' },
   '/lecturer-portal/applications': { label: 'My Applications', code: 'AP' },
   '/lecturer-portal/evidence': { label: 'Evidence Portfolio', code: 'EV' },
   '/lecturer-portal/eligibility': { label: 'Eligibility Status', code: 'EL' },

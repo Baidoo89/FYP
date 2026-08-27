@@ -10,6 +10,7 @@ import SidebarNavLink from './SidebarNavLink';
 import LecturerHeader from './LecturerHeader';
 import ThemeToggle from './ThemeToggle';
 import BottomNavigation from './BottomNavigation';
+import ApplicantApplicationNav, { APPLICANT_WORKSPACE_PATHS, isApplicantWorkspacePath } from './promotion/ApplicantApplicationNav';
 
 type AppShellProps = {
   children: ReactNode;
@@ -22,6 +23,8 @@ type NavItem = {
   icon: string;
   label: string;
   subtitle?: string;
+  exact?: boolean;
+  activePaths?: string[];
 };
 
 type SessionUser = {
@@ -117,18 +120,8 @@ export default function AppShell({ children }: AppShellProps) {
 
   const navItems: NavItem[] = isLecturerNav
     ? [
-        { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview' },
-        { href: '/lecturer-portal/start-application', icon: 'SA', label: 'Start Application', subtitle: 'Policy route selection' },
-        { href: '/lecturer-portal/application', icon: 'PR', label: 'My Application', subtitle: 'Workflow tracker' },
-        { href: '/lecturer-portal/official-forms', icon: 'OF', label: 'Official Forms', subtitle: 'GCTU application record' },
-        { href: '/lecturer-portal/evidence', icon: 'EV', label: 'Evidence Portfolio', subtitle: 'Upload documents' },
-        { href: '/lecturer-portal/academic-dossier', icon: 'AD', label: 'Academic Dossier', subtitle: 'Schedule J outputs' },
-        { href: '/lecturer-portal/queries', icon: 'FB', label: 'Feedback', subtitle: 'Returned evidence' },
-        { href: '/lecturer-portal/eligibility', icon: 'EL', label: 'Eligibility', subtitle: 'Criteria outcome' },
-        { href: '/lecturer-portal/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-        { href: '/lecturer-portal/profile', icon: 'PF', label: 'Profile', subtitle: 'Academic record' },
-        { href: '/lecturer-portal/help', icon: 'HC', label: 'Help Center', subtitle: 'Support' },
-        { href: '/lecturer-portal/settings', icon: 'SE', label: 'Settings', subtitle: 'Account' },
+        { href: '/lecturer-portal', icon: 'DB', label: 'Dashboard', subtitle: 'Readiness overview', exact: true },
+        { href: '/lecturer-portal/application', icon: 'PR', label: 'Application Workspace', subtitle: 'Prepare, submit and track', activePaths: APPLICANT_WORKSPACE_PATHS },
       ]
     : isHrNav
       ? [
@@ -136,11 +129,8 @@ export default function AppShell({ children }: AppShellProps) {
           { href: '/hr/requests', icon: 'AA', label: 'Application Registry', subtitle: 'All promotion files' },
           { href: '/hr/verify', icon: 'VQ', label: 'Verification Queue', subtitle: 'Evidence review' },
           { href: '/hr/staff-records', icon: 'SR', label: 'Staff Verification', subtitle: 'Authoritative records' },
-          { href: '/hr/staff-records/new', icon: 'IA', label: 'Issue Staff Access', subtitle: 'Provision and invite' },
           { href: '/analytics', icon: 'RP', label: 'Reports & Analytics', subtitle: 'Dashboards' },
           { href: '/hr/logs', icon: 'AU', label: 'Audit Trail', subtitle: 'Activity history' },
-          { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-          { href: '/hr/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
         ]
       : isSystemAdminNav
         ? [
@@ -153,21 +143,15 @@ export default function AppShell({ children }: AppShellProps) {
         : isCommitteeNav
           ? [
               { href: '/committee/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Assigned work' },
-              { href: '/committee/review?segment=pending', icon: 'RQ', label: 'Review Queue', subtitle: 'Pending decisions' },
-              { href: '/committee/review?segment=all', icon: 'AP', label: 'Applications', subtitle: 'Committee files' },
-              { href: '/committee/review?segment=decided', icon: 'RM', label: 'Recommendations', subtitle: 'Decisions' },
+              { href: '/committee/review?segment=pending', icon: 'RQ', label: 'Review Workspace', subtitle: 'Queues, files and decisions', activePaths: ['/committee/review'] },
               { href: '/analytics', icon: 'ER', label: 'Eligibility Reports', subtitle: 'Outcomes' },
               { href: '/audit', icon: 'AU', label: 'Audit Trail', subtitle: 'Review history' },
-              { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-              { href: '/committee/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
             ]
           : isHodNav
             ? [
                 { href: '/hod/dashboard', icon: 'DB', label: 'Dashboard', subtitle: 'Department overview' },
                 { href: '/hod/review-queue', icon: 'RW', label: 'Review Workspace', subtitle: 'Applications and decisions' },
                 { href: '/analytics', icon: 'RP', label: 'Reports & Analytics', subtitle: 'Department reports' },
-                { href: '/notifications', icon: 'NT', label: 'Notifications', subtitle: 'Updates' },
-                { href: '/hod/profile', icon: 'PF', label: 'Profile', subtitle: 'Account' },
               ]
             : baseNavItems;
 
@@ -310,7 +294,15 @@ export default function AppShell({ children }: AppShellProps) {
         <Suspense fallback={<div className="px-3 py-4" aria-hidden="true" />}>
           <ul className="space-y-1 px-3 py-4">
             {navItems.map((item) => (
-              <SidebarNavLink key={`${item.href}-${item.label}`} href={item.href} icon={item.icon} subtitle={item.subtitle} onNavigate={() => setMobileOpen(false)}>
+              <SidebarNavLink
+                key={`${item.href}-${item.label}`}
+                href={item.href}
+                icon={item.icon}
+                subtitle={item.subtitle}
+                exact={item.exact}
+                activePaths={item.activePaths}
+                onNavigate={() => setMobileOpen(false)}
+              >
                 {item.label}
               </SidebarNavLink>
             ))}
@@ -370,6 +362,7 @@ export default function AppShell({ children }: AppShellProps) {
         </header>
 
         <main className="min-w-0 flex-1 overflow-x-hidden px-3 pb-24 pt-24 lpads-fade-in sm:px-4 md:px-8 md:pt-24 lg:pb-6">
+          {isLecturerNav && isApplicantWorkspacePath(pathname) ? <ApplicantApplicationNav /> : null}
           <Suspense fallback={<div className="pro-card p-5 text-sm font-semibold text-brand-muted">Loading workspace...</div>}>
             {children}
           </Suspense>

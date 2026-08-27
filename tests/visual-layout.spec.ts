@@ -259,7 +259,7 @@ for (const viewport of viewports) {
 const applicantAccount = accounts.find((account) => account.key === 'applicant')!;
 
 for (const viewport of viewports) {
-  test(`${viewport.name}: automatic applicant route resolution`, async ({ browser }, testInfo) => {
+  test(`${viewport.name}: consolidated applicant workspace`, async ({ browser }, testInfo) => {
     const context = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
       screen: { width: viewport.width, height: viewport.height },
@@ -269,11 +269,12 @@ for (const viewport of viewports) {
     const page = await context.newPage();
     const response = await page.goto('/lecturer-portal/start-application', { waitUntil: 'domcontentloaded', timeout: 45_000 });
     expect(response?.status()).toBeLessThan(400);
+    await expect(page).toHaveURL(/\/lecturer-portal\/application$/);
     await page.locator('body').waitFor({ state: 'visible' });
     await waitForLoadingPanels(page);
 
-    await expect(page.getByText('Promotion route resolved automatically')).toBeVisible();
-    await expect(page.locator('select')).toHaveCount(0);
+    await expect(page.getByText('Application checklist')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Application workspace' })).toBeVisible();
 
     const metrics = await inspectLayout(page);
     expect(metrics.fatalText).toEqual([]);

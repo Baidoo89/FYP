@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useToast } from '../Toast';
-import StartPromotionRequestCard from './StartPromotionRequestCard';
 
 type CreatedRequest = {
   id: number;
@@ -54,7 +53,6 @@ type RouteData = {
 };
 
 type Props = {
-  currentRank?: string | null;
   onCreated?: (request: CreatedRequest) => void | Promise<void>;
 };
 
@@ -63,13 +61,12 @@ function label(value?: string | null) {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
-export default function PolicyPromotionStart({ currentRank, onCreated }: Props) {
+export default function PolicyPromotionStart({ onCreated }: Props) {
   const toast = useToast();
   const [data, setData] = useState<RouteData | null>(null);
   const [selectedCode, setSelectedCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [legacyFallback, setLegacyFallback] = useState(false);
   const [error, setError] = useState('');
 
   async function loadRoutes() {
@@ -80,15 +77,12 @@ export default function PolicyPromotionStart({ currentRank, onCreated }: Props) 
       const payload = await response.json();
 
       if (response.status === 503 && payload.code === 'V2_FOUNDATION_NOT_READY') {
-        setLegacyFallback(true);
-        setData(null);
-        return;
+        throw new Error('Verified promotion routing is temporarily unavailable. Contact HRODD before starting an application.');
       }
       if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to load promotion routes.');
 
       const nextData = payload.data as RouteData;
       const eligibleRoutes = nextData.routes.filter((route) => route.canStart);
-      setLegacyFallback(false);
       setData(nextData);
       setSelectedCode((current) => {
         if (eligibleRoutes.some((route) => route.code === current)) return current;
@@ -139,10 +133,6 @@ export default function PolicyPromotionStart({ currentRank, onCreated }: Props) 
     } finally {
       setSaving(false);
     }
-  }
-
-  if (legacyFallback) {
-    return <StartPromotionRequestCard currentRank={currentRank} onCreated={onCreated} />;
   }
 
   if (loading) {
