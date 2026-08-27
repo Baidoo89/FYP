@@ -9,7 +9,6 @@ import {
   FileCheck2,
   Files,
   Gauge,
-  MessageSquareText,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -19,13 +18,15 @@ const academicDossierItem = {
   icon: BookOpenCheck,
 };
 
-const items = [
+const applicationItems = [
   { href: '/lecturer-portal/application', label: 'Overview', icon: BriefcaseBusiness },
+  { href: '/lecturer-portal/eligibility', label: 'Eligibility', icon: Gauge },
+];
+
+const documentItems = [
   { href: '/lecturer-portal/official-forms', label: 'Official Form', icon: FileCheck2 },
   { href: '/lecturer-portal/evidence', label: 'Evidence', icon: Files },
   academicDossierItem,
-  { href: '/lecturer-portal/eligibility', label: 'Eligibility', icon: Gauge },
-  { href: '/lecturer-portal/queries', label: 'Feedback', icon: MessageSquareText },
 ];
 
 const closedStatuses = new Set(['REJECTED', 'COMPLETED']);
@@ -60,6 +61,8 @@ export function isApplicantWorkspacePath(pathname: string) {
 export default function ApplicantApplicationNav() {
   const pathname = usePathname();
   const [showAcademicDossier, setShowAcademicDossier] = useState(pathname === academicDossierItem.href);
+  const inDocuments = APPLICANT_DOCUMENT_PATHS.some((path) => pathname === path || pathname.startsWith(path + '/'));
+  const inApplications = APPLICANT_APPLICATION_PATHS.some((path) => pathname === path || pathname.startsWith(path + '/'));
 
   useEffect(() => {
     let cancelled = false;
@@ -83,12 +86,15 @@ export default function ApplicantApplicationNav() {
     };
   }, []);
 
+  if (!inDocuments && !inApplications) return null;
+
+  const contextualItems = inDocuments ? documentItems : applicationItems;
   const visibleItems = showAcademicDossier
-    ? items
-    : items.filter((item) => item.href !== academicDossierItem.href);
+    ? contextualItems
+    : contextualItems.filter((item) => item.href !== academicDossierItem.href);
 
   return (
-    <nav aria-label="Application workspace" className="mb-5 min-w-0 overflow-x-auto border-b border-gray-200">
+    <nav aria-label={inDocuments ? 'Documents workspace' : 'My applications workspace'} className="mb-5 min-w-0 overflow-x-auto border-b border-gray-200">
       <div className="flex min-w-max gap-1">
         {visibleItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/');

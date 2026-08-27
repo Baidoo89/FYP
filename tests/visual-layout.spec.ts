@@ -274,7 +274,11 @@ for (const viewport of viewports) {
     await waitForLoadingPanels(page);
 
     await expect(page.getByText('Application checklist')).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Application workspace' })).toBeVisible();
+    const applicationNavigation = page.getByRole('navigation', { name: 'My applications workspace' });
+    await expect(applicationNavigation).toBeVisible();
+    await expect(applicationNavigation.getByRole('link', { name: 'Overview' })).toBeVisible();
+    await expect(applicationNavigation.getByRole('link', { name: 'Eligibility' })).toBeVisible();
+    await expect(applicationNavigation.getByRole('link', { name: 'Official Form' })).toHaveCount(0);
 
     if (viewport.name === 'desktop') {
       await expect(page.getByRole('link', { name: 'My Applications' })).toBeVisible();
@@ -297,6 +301,14 @@ for (const viewport of viewports) {
       fullPage: true,
       animations: 'disabled',
     });
+
+    const documentsResponse = await page.goto('/lecturer-portal/official-forms', { waitUntil: 'domcontentloaded', timeout: 45_000 });
+    expect(documentsResponse?.status()).toBeLessThan(400);
+    const documentsNavigation = page.getByRole('navigation', { name: 'Documents workspace' });
+    await expect(documentsNavigation).toBeVisible();
+    await expect(documentsNavigation.getByRole('link', { name: 'Official Form' })).toBeVisible();
+    await expect(documentsNavigation.getByRole('link', { name: 'Evidence' })).toBeVisible();
+    await expect(documentsNavigation.getByRole('link', { name: 'Overview' })).toHaveCount(0);
     await context.close();
   });
 }

@@ -63,6 +63,8 @@ test('applicant application workspace uses verified routes and consolidated prep
   assert.match(applicationPage, /router\.push\('\/lecturer-portal\/official-forms'\)/);
   assert.match(applicationPage, /formsReady/);
   assert.match(applicationPage, /Application checklist/);
+  assert.match(applicationPage, /showEvidenceDocuments=\{false\}/);
+  assert.doesNotMatch(applicationPage, /function TrackerMetric/);
   assert.match(startControl, /\/api\/lecturer\/promotion-routes/);
   assert.match(startControl, /routeResolvedAutomatically/);
   assert.match(startControl, /requiresRouteChoice/);
@@ -78,6 +80,8 @@ test('applicant application workspace uses verified routes and consolidated prep
   assert.match(applicationNav, /APPLICANT_APPLICATION_PATHS/);
   assert.match(applicationNav, /APPLICANT_DOCUMENT_PATHS/);
   assert.match(applicationNav, /APPLICANT_FEEDBACK_PATHS/);
+  assert.match(applicationNav, /Documents workspace/);
+  assert.match(applicationNav, /My applications workspace/);
   assert.match(bottomNavigation, /label: 'Applications'/);
   assert.match(bottomNavigation, /label: 'Documents'/);
   assert.match(bottomNavigation, /label: 'Feedback'/);

@@ -326,9 +326,6 @@ export default function ApplicationPage() {
   }
 
   const documents = selectedRequest.documents || [];
-  const verified = documents.filter((document) => document.verificationStatus === 'VERIFIED').length;
-  const pending = documents.filter((document) => document.verificationStatus === 'PENDING').length;
-  const returned = documents.filter((document) => ['REQUIRES_CORRECTION', 'REJECTED'].includes(document.verificationStatus || '')).length;
   const requiredEvidence = selectedRequest.requiredDocumentCount && selectedRequest.requiredDocumentCount > 0 ? selectedRequest.requiredDocumentCount : 3;
   const evidenceReady = documents.length >= requiredEvidence;
   const formsReady = Boolean(currentPreparation?.formsReady);
@@ -342,17 +339,11 @@ export default function ApplicationPage() {
           <div>
             <div className="pro-eyebrow">Application Tracker</div>
             <h1 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-4xl">
-              {selectedRequest.currentRank} to {selectedRequest.targetRank}
+              {label(selectedRequest.currentRank)} to {label(selectedRequest.targetRank)}
             </h1>
 
           </div>
           <div className="flex min-w-0 flex-wrap gap-2">
-            <Link href="/lecturer-portal/official-forms" className="inline-flex min-h-10 items-center gap-2 rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primaryDark">
-              <FileCheck2 className="h-4 w-4" aria-hidden="true" /> Official Form
-            </Link>
-            <Link href="/lecturer-portal/evidence" className="inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-teal-50">
-              <Files className="h-4 w-4" aria-hidden="true" /> Evidence
-            </Link>
             <PrintSummaryButton />
           </div>
         </div>
@@ -385,13 +376,6 @@ export default function ApplicationPage() {
           </div>
         </section>
       )}
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <TrackerMetric code="DOC" label="Uploaded documents" value={documents.length} />
-        <TrackerMetric code="VER" label="Verified" value={verified} />
-        <TrackerMetric code="UNV" label="Not verified" value={pending} tone="amber" />
-        <TrackerMetric code="RET" label="Returned" value={returned} tone="rose" />
-      </section>
 
       {selectedRequest.status === 'DRAFT' && (
         <section className="min-w-0 border-y border-slate-200 py-5">
@@ -474,7 +458,7 @@ export default function ApplicationPage() {
         </section>
       )}
 
-      <PromotionApplicationDetail application={selectedRequest} role="LECTURER" showGuidance={false} />
+      <PromotionApplicationDetail application={selectedRequest} role="LECTURER" showGuidance={false} showEvidenceDocuments={false} />
       <GovernedStageWorkspace requestId={selectedRequest.id} role="LECTURER" applicantName={selectedRequest.lecturerName} />
       <AppealPanel requestId={selectedRequest.id} role="LECTURER" requestStatus={selectedRequest.status} />
       <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
@@ -514,25 +498,5 @@ function PreparationStep({
         <span className="mt-1 block text-xs leading-5 text-slate-600">{detail}</span>
       </span>
     </Link>
-  );
-}
-
-function TrackerMetric({ code, label, value, tone = 'teal' }: { code: string; label: string; value: number; tone?: 'teal' | 'amber' | 'rose' }) {
-  const toneClass = tone === 'amber'
-    ? 'border-amber-200 bg-amber-50 text-amber-800'
-    : tone === 'rose'
-      ? 'border-rose-200 bg-rose-50 text-rose-800'
-      : 'border-teal-200 bg-teal-50 text-teal-800';
-
-  return (
-    <div className="pro-tile min-w-0 p-4 sm:p-5">
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{value}</p>
-        </div>
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-xs font-bold ${toneClass}`}>{code}</span>
-      </div>
-    </div>
   );
 }
